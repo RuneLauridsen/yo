@@ -92,6 +92,12 @@
     <ClInclude Include="yo_core.c">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="yo_demo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_demo.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

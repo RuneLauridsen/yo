@@ -29,3 +29,4 @@
 #include "yo_svg.c"
 #include "yo_core.c"
 #include "yo_widgets.c"
+#include "yo_demo.c"

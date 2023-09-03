@@ -127,8 +127,6 @@ YO_API  yo_box_t *yo_axis_space(yo_axis_t axis, yo_length_t length)
 
 YO_API  yo_box_t *yo_text(char *text)
 {
-    YO_ASSERT(text != (char *)0xcc);
-
     yo_box_t *box         = yo_box(0, 0);
     box->tag              = "TAG_TEXT";
     box->text             = text;
@@ -567,7 +565,7 @@ YO_API void yo_bullet_item(char *label)
         yo_circle(0, 7, yo_rgb(200, 200, 200), 0, YO_TRANSPARENT, 0);
         yo_new()->v_align      = YO_ALIGN_CENTER;
         yo_new()->margin.top   = 7;
-        yo_new()->margin.right = 3;
+        yo_new()->margin.right = 6;
         yo_new()->margin.left  = 10;
 
         yo_text(label);

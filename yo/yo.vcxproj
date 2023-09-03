@@ -28,6 +28,8 @@
     <ClInclude Include="platforms\yo_platform_win32_opengl.h" />
     <ClInclude Include="yo_core.c" />
     <ClInclude Include="yo_atlas.c" />
+    <ClInclude Include="yo_demo.h" />
+    <ClInclude Include="yo_demo.c" />
     <ClInclude Include="yo_glyph.h" />
     <ClInclude Include="yo_glyph.c" />
     <ClInclude Include="yo.h" />

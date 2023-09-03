@@ -19,6 +19,7 @@ unsafe
     {
         yo_platform_win32_opengl_before_frame(platform);
 
+#if false
         yo_v_layout();
         yo_begin_children();
         yo_box(0, 0); yo_new()->v_dim = yo_rel(1.0f); yo_new()->fill = YO_RED;
@@ -26,6 +27,9 @@ unsafe
         yo_box(0, 0); yo_new()->v_dim = yo_rel(1.0f); yo_new()->fill = YO_BLUE;
         yo_box(0, 0); yo_new()->v_dim = yo_rel(1.0f); yo_new()->fill = YO_CYAN;
         yo_end_children();
+#endif
+
+        yo_demo();
 
         yo_platform_win32_opengl_after_frame(platform);
     }

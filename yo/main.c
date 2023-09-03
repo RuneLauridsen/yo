@@ -50,7 +50,8 @@ int main()
     {
         yo_platform_win32_opengl_before_frame(&platform);
 
-        build_ui();
+        //build_ui();
+        yo_demo();
 
         yo_platform_win32_opengl_after_frame(&platform);
     }
