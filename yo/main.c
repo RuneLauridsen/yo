@@ -49,7 +49,7 @@ int main()
     while (platform.running)
     {
         yo_platform_win32_opengl_before_frame(&platform);
-        yo_begin_frame((float)platform.tick_current / (float)platform.tick_freq, YO_FRAME_FLAG_LAZY);
+        yo_begin_frame((float)platform.tick_current / (float)platform.tick_freq, 0);
 
         build_ui();
 
@@ -58,7 +58,12 @@ int main()
     }
 
     yo_platform_win32_opengl_shutdown(&platform);
+}
 
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+    YO_UNUSED(hInstance, hPrevInstance, lpCmdLine, nShowCmd);
+    main();
 }
 
 #define countof(x) (sizeof(x) / sizeof(x[0]))
