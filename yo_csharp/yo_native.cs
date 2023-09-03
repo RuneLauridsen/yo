@@ -79,7 +79,7 @@ public unsafe static partial class yo_native
         yo_length_t ret = new()
         {
             min = 0.0f,
-            max = float.MinValue,
+            max = float.MaxValue,
             rel = rel,
             is_rel = true,
         };

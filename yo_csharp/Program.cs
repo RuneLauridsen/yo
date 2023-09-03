@@ -19,11 +19,13 @@ unsafe
     {
         yo_platform_win32_opengl_before_frame(platform);
 
-        yo_box(0, 0);
-        yo_new()->fill = YO_WHITE;
-        yo_new()->h_dim = yo_px(200);
-        yo_new()->v_dim = yo_px(100);
-        yo_new()->h_align = YO_ALIGN_LEFT;
+        yo_v_layout();
+        yo_begin_children();
+        yo_box(0, 0); yo_new()->v_dim = yo_rel(1.0f); yo_new()->fill = YO_RED;
+        yo_box(0, 0); yo_new()->v_dim = yo_rel(1.0f); yo_new()->fill = YO_ORANGE;
+        yo_box(0, 0); yo_new()->v_dim = yo_rel(1.0f); yo_new()->fill = YO_BLUE;
+        yo_box(0, 0); yo_new()->v_dim = yo_rel(1.0f); yo_new()->fill = YO_CYAN;
+        yo_end_children();
 
         yo_platform_win32_opengl_after_frame(platform);
     }
