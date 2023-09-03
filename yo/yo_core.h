@@ -306,6 +306,7 @@ enum yo_draw_cmd_type
     YO_DRAW_CMD_NONE,
     YO_DRAW_CMD_AABB,
     YO_DRAW_CMD_TRI,
+    YO_DRAW_CMD_QUAD,
 };
 
 // TODO(rune): Consider making this variably sized. Currently we waste a lot of space for YO_DRAW_CMD_TRI.
@@ -339,6 +340,12 @@ struct yo_draw_cmd
             yo_v2f_t p[3];
             yo_v4f_t color[3];
         } tri;
+
+        struct
+        {
+            yo_v2f_t p[4];
+            yo_v4f_t color[4];
+        } quad;
     };
 };
 

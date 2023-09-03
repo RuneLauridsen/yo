@@ -617,6 +617,43 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
 
             } break;
 
+            case YO_DRAW_CMD_QUAD:
+            {
+                yo_vert_t *vertices = NULL;
+                yo_idx_t *indices = NULL;
+                if (!yo_backend_opengl_vert_idx(state, 4, 6, &vertices, &indices))
+                {
+                    break;
+                }
+
+                vertices[0].corner       = cmd->quad.p[0];
+                vertices[1].corner       = cmd->quad.p[1];
+                vertices[2].corner       = cmd->quad.p[2];
+                vertices[3].corner       = cmd->quad.p[3];
+                vertices[0].corner_color = cmd->quad.color[0];
+                vertices[1].corner_color = cmd->quad.color[1];
+                vertices[2].corner_color = cmd->quad.color[2];
+                vertices[3].corner_color = cmd->quad.color[3];
+
+                vertices[0].rect_p0 = yo_v2f(0, 0);
+                vertices[1].rect_p1 = yo_v2f(0, 0);
+                vertices[2].rect_p0 = yo_v2f(0, 0);
+                vertices[3].rect_p0 = yo_v2f(0, 0);
+                vertices[0].rect_p1 = yo_v2f(0, 0);
+                vertices[1].rect_p0 = yo_v2f(0, 0);
+                vertices[2].rect_p1 = yo_v2f(0, 0);
+                vertices[3].rect_p1 = yo_v2f(0, 0);
+
+                indices[0] = state->idx + 0;
+                indices[1] = state->idx + 1;
+                indices[2] = state->idx + 2;
+
+                indices[3] = state->idx + 1;
+                indices[4] = state->idx + 2;
+                indices[5] = state->idx + 3;
+
+            } break;
+
             default:
             {
                 YO_ASSERT(!"Unknown draw command.");

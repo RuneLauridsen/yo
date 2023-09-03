@@ -860,6 +860,23 @@ static void yo_draw_triangle(yo_v2f_t p0, yo_v2f_t p1, yo_v2f_t p2,
     }
 }
 
+static void yo_draw_quad(yo_v2f_t p[4], yo_v4f_t color[4])
+{
+    yo_draw_cmd_t *cmd = yo_array_add(&yo_ctx->draw_cmds, 1, true);
+    if (cmd)
+    {
+        cmd->type = YO_DRAW_CMD_QUAD;
+        cmd->quad.p[0] = p[0];
+        cmd->quad.p[1] = p[1];
+        cmd->quad.p[2] = p[2];
+        cmd->quad.p[3] = p[3];
+        cmd->quad.color[0] = color[0];
+        cmd->quad.color[1] = color[1];
+        cmd->quad.color[2] = color[2];
+        cmd->quad.color[3] = color[3];
+    }
+}
+
 // TODO(rune): This struct isn't necessary anymore, we can just use yo_draw_cmd_t.aabb directly instead.
 typedef struct yo_draw_aabb yo_draw_aabb_t;
 struct yo_draw_aabb
@@ -1087,7 +1104,7 @@ static void yo_render_recurse(yo_internal_box_t *box, yo_render_info_t *render_i
         clip_p1.y = box->parent->screen_rect.y + box->parent->screen_rect.h;
     }
 
-    if (box->on_top == on_top)
+    if (box->on_top == on_top && box->id != YO_ID_ROOT)
     {
 
         p0.x += box->placement.margin.axis[YO_AXIS_X].forward;
@@ -1541,6 +1558,7 @@ YO_API void yo_begin_frame(float time)
     //
 
     yo_arena_reset(&yo_ctx->this_frame->arena);
+    yo_array_reset(&yo_ctx->draw_cmds, true);
     yo_array_reset(&yo_ctx->parent_stack, false);
     yo_array_reset(&yo_ctx->popup_build_stack, false);
     yo_array_reset(&yo_ctx->id_stack, false);
@@ -1623,8 +1641,6 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         info->tex.dims   = yo_ctx->atlas.dims;
         info->tex.pixels = yo_ctx->atlas.pixels;
         info->tex.dirty  = yo_ctx->atlas.dirty;
-
-        yo_array_reset(&yo_ctx->draw_cmds, true);
 
         yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].render);
         yo_render_recurse(yo_ctx->root, info, false);
