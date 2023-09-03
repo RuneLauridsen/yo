@@ -1,10 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using static Yo.yo;
+using static Yo.yo_native;
 
 unsafe
 {
-    Console.WriteLine("Hello, World!");
-
     //
     // Boiler-plate for setting up a Win32 window with hardware accelerated OpenGL rendering.
     //
@@ -21,6 +19,9 @@ unsafe
     {
         yo_platform_win32_opengl_before_frame(platform);
 
+        yo_box(0, 0);
+        yo_new()->fill = YO_WHITE;
+        yo_new()->font_color = YO_RED;
 
         yo_platform_win32_opengl_after_frame(platform);
     }
