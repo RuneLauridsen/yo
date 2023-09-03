@@ -1,0 +1,11 @@
+// Hint files help the Visual Studio IDE interpret Visual C++ identifiers
+// such as names of functions and macros.
+// For more information see https://go.microsoft.com/fwlink/?linkid=865984
+#define fallthrough
+#define assert(expression) if(!(expression)) { __debugbreak(); }
+#define YO_API
+#define function
+#define bool
+#define yo_array(T) yo_array_##T
+#define YO_ARRAY_FIELDS(T)  T *elems; size_t count, count_allocated, element_size
+#define YO_TYPEDEF_ARRAY(T) typedef struct { YO_ARRAY_FIELDS(T); } yo_array_##T
