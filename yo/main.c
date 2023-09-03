@@ -49,7 +49,7 @@ int main()
     while (platform.running)
     {
         yo_platform_win32_opengl_before_frame(&platform);
-        yo_begin_frame((float)platform.tick_current / (float)platform.tick_freq);
+        yo_begin_frame((float)platform.tick_current / (float)platform.tick_freq, YO_FRAME_FLAG_LAZY);
 
         build_ui();
 

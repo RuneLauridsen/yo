@@ -317,8 +317,14 @@ static yo_internal_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
 
 static float yo_anim_f32(float rate, float origin, float target)
 {
+    // TODO(rune): User configurable episolon?
+    const float EPSILON = 0.01f;
+
     float ret = origin + (target - origin) * rate * yo_delta();
     ret = YO_CLAMP(ret, YO_MIN(origin, target), YO_MAX(origin, target));
+
+    if (fabsf(origin - target) < EPSILON) ret = target;
+    if (ret != origin) yo_ctx->this_frame->played_anim = true;
     return ret;
 }
 
@@ -1044,24 +1050,19 @@ static void yo_draw_text(char *text,
 #if 1
         if (cursor_x)
         {
-            uint32_t blink_millis = 1000;
-            bool blink = (GetTickCount() % blink_millis) > (blink_millis / 2);
-            if (blink)
+            yo_v2f_t cursor_p0 = yo_v2f(cursor_x + 0, baseline_y - measured_text.ascent);
+            yo_v2f_t cursor_p1 = yo_v2f(cursor_x + 1, baseline_y - measured_text.descent);
+            yo_v4f_t cursor_color = yo_rgba(0xff, 0xff, 0xff, 0xff);
+            yo_draw_aabb_t draw =
             {
-                yo_v2f_t cursor_p0 = yo_v2f(cursor_x + 0, baseline_y - measured_text.ascent);
-                yo_v2f_t cursor_p1 = yo_v2f(cursor_x + 1, baseline_y - measured_text.descent);
-                yo_v4f_t cursor_color = yo_rgba(0xff, 0xff, 0xff, 0xff);
-                yo_draw_aabb_t draw =
-                {
-                    .p0      = cursor_p0,
-                    .p1      = cursor_p1,
-                    .clip_p0 = cursor_p0,
-                    .clip_p1 = cursor_p1,
-                    .color = { cursor_color, cursor_color, cursor_color, cursor_color }
-                };
+                .p0      = cursor_p0,
+                .p1      = cursor_p1,
+                .clip_p0 = cursor_p0,
+                .clip_p1 = cursor_p1,
+                .color = { cursor_color, cursor_color, cursor_color, cursor_color }
+            };
 
-                yo_draw_aabb(draw);
-            }
+            yo_draw_aabb(draw);
         }
 #endif
     }
@@ -1551,14 +1552,39 @@ YO_API void yo_select_context(yo_context_t *context)
     yo_ctx = context;
 }
 
-YO_API void yo_begin_frame(float time)
+YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
 {
+    //
+    // Lazy input / animations
+    //
+
+    if ((flags & YO_FRAME_FLAG_LAZY) && (yo_ctx->frame_count > 4))
+    {
+
+        // TODO(rune): Would be easier if all relevant fields were in a nested struct.
+        bool lazy_input = ((yo_ctx->this_frame->events.count == 0) &&
+                           (yo_ctx->prev_frame->events.count == 0) &&
+                           yo_equal_struct(yo_ctx->this_frame->mouse_button, yo_ctx->prev_frame->mouse_button) &&
+                           yo_equal_struct(yo_ctx->this_frame->mouse_button_down, yo_ctx->prev_frame->mouse_button_down) &&
+                           yo_equal_struct(yo_ctx->this_frame->mouse_button_up, yo_ctx->prev_frame->mouse_button_up) &&
+                           yo_v2f_equal(yo_ctx->this_frame->mouse_pos, yo_ctx->prev_frame->mouse_pos) &&
+                           yo_v2f_equal(yo_ctx->this_frame->scroll, yo_ctx->prev_frame->scroll));
+
+        bool lazy_anim = ((yo_ctx->this_frame->played_anim == false) &&
+                          (yo_ctx->prev_frame->played_anim == false));
+
+        yo_ctx->this_frame->lazy = lazy_input && lazy_anim;
+    }
+    else
+    {
+        yo_ctx->this_frame->lazy = false;
+    }
+
     //
     // Setup per-frame builder data
     //
 
     yo_arena_reset(&yo_ctx->this_frame->arena);
-    yo_array_reset(&yo_ctx->draw_cmds, true);
     yo_array_reset(&yo_ctx->parent_stack, false);
     yo_array_reset(&yo_ctx->popup_build_stack, false);
     yo_array_reset(&yo_ctx->id_stack, false);
@@ -1569,8 +1595,9 @@ YO_API void yo_begin_frame(float time)
     yo_ctx->root         = yo_push_box(YO_ID_ROOT, 0);
     yo_ctx->latest_child = yo_ctx->root;
 
-    yo_ctx->this_frame->time  = time;
-    yo_ctx->this_frame->delta = 1.0f / 60.0f; // TODO(rune): Fix time
+    yo_ctx->this_frame->time        = time;
+    yo_ctx->this_frame->delta       = 1.0f / 60.0f; // TODO(rune): Fix time
+    yo_ctx->this_frame->played_anim = false;
 
     //
     // Update hot id
@@ -1607,80 +1634,90 @@ YO_API void yo_begin_frame(float time)
     yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].build);
 
     yo_begin_children();
+
+    return yo_ctx->this_frame->lazy;
 }
 
 YO_API void yo_end_frame(yo_render_info_t *info)
 {
     yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].build);
 
-    //
-    // Measure
-    //
+    info->lazy = yo_ctx->this_frame->lazy;
+
+    if (!yo_ctx->this_frame->lazy)
     {
-        yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].measure);
-        yo_measure_content_recurse(yo_ctx->root);
-        yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].measure);
-    }
 
-    //
-    // Arrange
-    //
-    {
-        yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].arrange);
-        yo_ctx->root->arranged_rect = yo_rectf(0.0f, 0.0f, (float)info->w, (float)info->h);
-        yo_ctx->root->screen_rect   = yo_rectf(0.0f, 0.0f, (float)info->w, (float)info->h);
-        yo_arrange_children_recurse(yo_ctx->root);
-        yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].arrange);
-    }
+        //
+        // Measure
+        //
+        {
+            yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].measure);
+            yo_measure_content_recurse(yo_ctx->root);
+            yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].measure);
+        }
 
-    //
-    // Render
-    //
-    {
-        info->tex.id     = 42; // TODO(rune): Hardcoded texture id
-        info->tex.dims   = yo_ctx->atlas.dims;
-        info->tex.pixels = yo_ctx->atlas.pixels;
-        info->tex.dirty  = yo_ctx->atlas.dirty;
+        //
+        // Arrange
+        //
+        {
+            yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].arrange);
+            yo_ctx->root->arranged_rect = yo_rectf(0.0f, 0.0f, (float)info->w, (float)info->h);
+            yo_ctx->root->screen_rect   = yo_rectf(0.0f, 0.0f, (float)info->w, (float)info->h);
+            yo_arrange_children_recurse(yo_ctx->root);
+            yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].arrange);
+        }
 
-        yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].render);
-        yo_render_recurse(yo_ctx->root, info, false);
-        yo_render_recurse(yo_ctx->root, info, true);
-        yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].render);
+        //
+        // Render
+        //
+        {
+            yo_array_reset(&yo_ctx->draw_cmds, true);
 
-        info->draw_cmds       = yo_ctx->draw_cmds.elems;
-        info->draw_cmds_count = yo_ctx->draw_cmds.count;
-    }
+            info->tex.id     = 42; // TODO(rune): Hardcoded texture id
+            info->tex.dims   = yo_ctx->atlas.dims;
+            info->tex.pixels = yo_ctx->atlas.pixels;
+            info->tex.dirty  = yo_ctx->atlas.dirty;
 
-    //
-    // Print debug information
-    //
+            yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].render);
+            yo_render_recurse(yo_ctx->root, info, false);
+            yo_render_recurse(yo_ctx->root, info, true);
+            yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].render);
+
+            info->draw_cmds       = yo_ctx->draw_cmds.elems;
+            info->draw_cmds_count = yo_ctx->draw_cmds.count;
+        }
+
+        //
+        // Print debug information
+        //
 #if 1
-    {
-        yo_clear_print_buffer();
+        {
+            yo_clear_print_buffer();
 
-        yo_debug_print_clear();
-        //yo_debug_print_input();
-        //yo_debug_print_cache(context);
-        //yo_debug_print_hierarchy(yo_global_context->root, 0);
-        //yo_debug_print_freelist(context);
-        yo_debug_print_performance();
-        //yo_debug_print_popups();
-        //yo_debug_svg_atlas(yo_g_context->glyph_atlas);
+            yo_debug_print_clear();
+            //yo_debug_print_input();
+            //yo_debug_print_cache(context);
+            //yo_debug_print_hierarchy(yo_global_context->root, 0);
+            //yo_debug_print_freelist(context);
+            yo_debug_print_performance();
+            //yo_debug_print_popups();
+            //yo_debug_svg_atlas(yo_g_context->glyph_atlas);
 
-        yo_flush_print_buffer();
-    }
+            yo_flush_print_buffer();
+        }
 #endif
 
-    //
-    // Cache prune
-    //
-    {
-        yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
+        //
+        // Cache prune
+        //
+        {
+            yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
 
-        yo_atlas_prune(&yo_ctx->atlas, 0, yo_safe_sub_u64(yo_ctx->frame_count, 1), yo_ctx->atlas.pending_prune, true);
-        yo_ctx->atlas.pending_prune = false;
+            yo_atlas_prune(&yo_ctx->atlas, 0, yo_safe_sub_u64(yo_ctx->frame_count, 1), yo_ctx->atlas.pending_prune, true);
+            yo_ctx->atlas.pending_prune = false;
 
-        yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
+            yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
+        }
     }
 
     //

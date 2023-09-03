@@ -169,6 +169,7 @@ struct yo_frame
     yo_internal_box_t *hash_table[YO_BOX_CACHE_COUNT]; // TODO(rune): Dynamic hash table size
     yo_id_t active_id;
     yo_id_t hot_id;
+    bool played_anim;
 
     yo_array(yo_event_t) events;
     yo_v2f_t scroll;
@@ -180,6 +181,8 @@ struct yo_frame
     // TODO(rune): Probably not a good idea to store time in floating point. Delta is OK as floating point.
     float time;
     float delta;
+
+    bool lazy;
 };
 
 typedef yo_internal_box_t *yo_internal_box_ptr_t;

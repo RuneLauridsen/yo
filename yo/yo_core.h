@@ -229,6 +229,13 @@ enum yo_modifier
     YO_MODIFIER_COUNT,
 };
 
+typedef uint32_t yo_frame_flags_t;
+enum yo_frame_flags
+{
+    YO_FRAME_FLAG_NONE,
+    YO_FRAME_FLAG_LAZY,
+};
+
 typedef struct yo_signal yo_signal_t;
 struct yo_signal
 {
@@ -385,6 +392,8 @@ struct yo_render_info
         void    *pixels;
         bool     dirty;
     } tex;
+
+    bool lazy;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -506,7 +515,7 @@ YO_API void             yo_select_context(yo_context_t *context);
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void             yo_begin_frame(float time);
+YO_API bool             yo_begin_frame(float time, yo_frame_flags_t flags);
 YO_API void             yo_end_frame(yo_render_info_t *buffer);
 
 ////////////////////////////////////////////////////////////////

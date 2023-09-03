@@ -10,6 +10,7 @@
 
 #define yo_zero_struct(a)           yo_memset0((a), sizeof(*(a)))
 #define yo_zero_struct_array(a,c)   yo_memset0((a), sizeof(*(a)) * c)
+#define yo_equal_struct(a,b)        (yo_memcmp(a, b, sizeof(a)) == 0)
 
 ////////////////////////////////////////////////////////////////
 //

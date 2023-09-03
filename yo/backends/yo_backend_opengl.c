@@ -486,6 +486,12 @@ static bool yo_backend_opengl_vert_idx(yo_backend_opengl_t *state, size_t vert_c
 
 static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_t *info)
 {
+    // DEBUG(rune):
+    if (info->draw_cmds_count == 0)
+    {
+        __nop();
+    }
+
     yo_array_reset(&state->vertex_array, true);
     yo_array_reset(&state->index_array, true);
 
