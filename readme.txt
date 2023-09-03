@@ -4,10 +4,10 @@ Current features
 - No classes/objects
 - Immediate mode API
 - Platform and rendering backend agnostic
-- Self contained, with no dynamically linked dependencies
-- Win32/OpenGl platform/rendering layer
+- Self contained
 - Simple autolayout algorithm
 - Basic widget library
+- Win32/OpenGl platform/rendering layer
 
 TODO:
 - Multiple fonts
