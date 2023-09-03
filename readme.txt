@@ -1,0 +1,36 @@
+Current features
+- No design patterns
+- No SOLID
+- No classes/objects
+- Immediate mode API
+- Platform and rendering backend agnostic
+- Self contained, with no dynamically linked dependencies
+- Win32/OpenGl platform/rendering layer
+- Simple autolayout algorithm
+- Basic widget library
+
+TODO:
+- Multiple fonts
+- Multiple windows
+- More robust autolayout
+- More robust font atlasing
+- More built-in widgets
+- Multiline text
+- Unicode support
+- GPU performance improvements
+- D3D11 rendering backend
+- General purpose SDL platform/rendering layer
+- Tooltips
+- Popups
+- Context menus
+- Menus bars
+- Images/icons
+- Sub pixel precision font rendering
+- Z-ordering
+- Transparency
+- CRT independent
+- Autolayout while window is resizing
+- Flexbox layout
+- Better table layout
+- Virtualized lists/tables
+- Keyboard naviation
