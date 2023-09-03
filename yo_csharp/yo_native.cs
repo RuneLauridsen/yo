@@ -28,6 +28,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using static Yo.yo_native;
 
+// WARNING(rune): These bindings are direct translations of their C counterparts, and are not C# friendly,
+// or written following C# style.
+
 namespace Yo;
 
 // TODO(rune): C-sharp bindings are not fun to write manually.
@@ -348,7 +351,7 @@ public unsafe static class yo_native
 #endif
     public struct yo_draw_cmd_t
     {
-        // TODO(rune): How to unions in C#? };
+        // TODO(rune): How to unions in C#?
     };
 
     public struct yo_render_info_t
@@ -417,8 +420,8 @@ public unsafe static class yo_native
 
     public struct yo_box_t
     {
-        public byte* tag;
-        public byte* text;
+        public byte* tag;   // NOTE(rune): Null terminated ASCII string.
+        public byte* text;  // NOTE(rune): Null terminated ASCII string.
 
         public yo_layout_t child_layout;
         public yo_border_t border;
@@ -427,7 +430,13 @@ public unsafe static class yo_native
         public yo_v4f_t font_color;
         public bool on_top;
 
+#if false
         public yo_placement_t placement;
+#else
+        public yo_length_t h_dim, v_dim;
+        public yo_align_t h_align, v_align;
+        public yo_sides_f32_t margin, padding;
+#endif
         public yo_overflow_t h_overflow, v_overflow;
 
         public yo_v2f_t target_scroll_offset;
@@ -505,9 +514,9 @@ public unsafe static class yo_native
     ////////////////////////////////////////////////////////////////
 
     /*
-    #define YO_ID_NONE      ((yo_id_t)(0x0000'0000'0000'0000))
-    #define YO_ID_ROOT      ((yo_id_t)(0xffff'ffff'ffff'ffff))
-    #define yo_id(...)      yo_id_from_format(__VA_ARGS__) // TODO(rune): If only 1 arg is supplied, we could just use yo_id_from_string instead, to be more efficient.
+#define YO_ID_NONE      ((yo_id_t)(0x0000'0000'0000'0000))
+#define YO_ID_ROOT      ((yo_id_t)(0xffff'ffff'ffff'ffff))
+#define yo_id(...)      yo_id_from_format(__VA_ARGS__) // TODO(rune): If only 1 arg is supplied, we could just use yo_id_from_string instead, to be more efficient.
     */
 
     public const yo_id_t YO_ID_NONE = 0;
@@ -629,6 +638,32 @@ public unsafe static class yo_native
     public static yo_v4f_t yo_rgb(byte r, byte g, byte b)
     {
         yo_v4f_t ret = yo_rgba(r, g, b, 0xff);
+        return ret;
+    }
+
+    public static yo_length_t yo_px(float px)
+    {
+        yo_length_t ret = new()
+        {
+            min = px,
+            max = px,
+            rel = 0.0f,
+            is_rel = false,
+        };
+
+        return ret;
+    }
+
+    public static yo_length_t yo_rel(float rel)
+    {
+        yo_length_t ret = new()
+        {
+            min = 0.0f,
+            max = float.MinValue,
+            rel = rel,
+            is_rel = true,
+        };
+
         return ret;
     }
 

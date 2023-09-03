@@ -21,7 +21,9 @@ unsafe
 
         yo_box(0, 0);
         yo_new()->fill = YO_WHITE;
-        yo_new()->font_color = YO_RED;
+        yo_new()->h_dim = yo_px(200);
+        yo_new()->v_dim = yo_px(100);
+        yo_new()->h_align = YO_ALIGN_LEFT;
 
         yo_platform_win32_opengl_after_frame(platform);
     }
