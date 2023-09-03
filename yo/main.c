@@ -49,11 +49,9 @@ int main()
     while (platform.running)
     {
         yo_platform_win32_opengl_before_frame(&platform);
-        yo_begin_frame((float)platform.tick_current / (float)platform.tick_freq, 0);
 
         build_ui();
 
-        yo_end_frame(&platform.render_info);
         yo_platform_win32_opengl_after_frame(&platform);
     }
 

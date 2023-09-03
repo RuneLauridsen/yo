@@ -25,7 +25,18 @@ static LRESULT CALLBACK yo_platform_win32_opengl_callback(HWND hwnd, UINT uMsg, 
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
 }
 
-static void yo_platform_win32_opengl_startup(yo_platform_win32_opengl_t *platform, uint32_t window_width, uint32_t window_heigth)
+YO_PLATFORM_API yo_platform_win32_opengl_t * yo_platform_win32_opengl_alloc()
+{
+    yo_platform_win32_opengl_t *ret = yo_heap_alloc(sizeof(*ret), false);
+    return ret;
+}
+
+YO_PLATFORM_API void yo_platform_win32_opengl_free(yo_platform_win32_opengl_t *platform)
+{
+    yo_heap_free(platform);
+}
+
+YO_PLATFORM_API void yo_platform_win32_opengl_startup(yo_platform_win32_opengl_t *platform, uint32_t window_width, uint32_t window_heigth)
 {
     // TODO(rune): Error handling
 
@@ -74,12 +85,12 @@ static void yo_platform_win32_opengl_startup(yo_platform_win32_opengl_t *platfor
     platform->cursor = LoadCursorA(NULL, IDC_ARROW);
 }
 
-static void yo_platform_win32_opengl_shutdown(yo_platform_win32_opengl_t *platform)
+YO_PLATFORM_API void yo_platform_win32_opengl_shutdown(yo_platform_win32_opengl_t *platform)
 {
     yo_backend_opengl_win32_shutdown(&platform->backend, platform->window);
 }
 
-static void yo_platform_win32_opengl_before_frame(yo_platform_win32_opengl_t *platform)
+YO_PLATFORM_API void yo_platform_win32_opengl_before_frame(yo_platform_win32_opengl_t *platform)
 {
     yo_input_begin();
 
@@ -161,10 +172,14 @@ static void yo_platform_win32_opengl_before_frame(yo_platform_win32_opengl_t *pl
     //
 
     platform->tick_current =  GetTickCount64() - platform->tick_count_start;
+
+    yo_begin_frame((float)platform->tick_current / (float)platform->tick_freq, 0);
 }
 
-static void yo_platform_win32_opengl_after_frame(yo_platform_win32_opengl_t *platform)
+YO_PLATFORM_API void yo_platform_win32_opengl_after_frame(yo_platform_win32_opengl_t *platform)
 {
+    yo_end_frame(&platform->render_info);
+
     SetCursor(platform->cursor);
 
     HDC dc = GetDC(platform->window);
