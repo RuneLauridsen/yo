@@ -6,8 +6,8 @@ Current features
 - Platform and rendering backend agnostic
 - Self contained
 - Simple autolayout algorithm
-- Basic widget library
-- Win32/OpenGl platform/rendering layer
+- Simple widget library
+- Win32/OpenGL platform/rendering layer
 
 TODO:
 - Multiple fonts
@@ -33,4 +33,4 @@ TODO:
 - Flexbox layout
 - Better table layout
 - Virtualized lists/tables
-- Keyboard naviation
+- Keyboard navigation

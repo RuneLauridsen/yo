@@ -39,29 +39,32 @@
 // Platform & backend
 //
 
-#include "backends/yo_backend_opengl.h"
-#include "backends/yo_backend_opengl.c"
-#include "platforms/yo_platform_win32_opengl.h"
-#include "platforms/yo_platform_win32_opengl.c"
+#define YO_PLATFORM_API static
+#include "impl/yo_backend_opengl.h"
+#include "impl/yo_backend_opengl.c"
+#include "impl/yo_platform_win32.h"
+#include "impl/yo_platform_win32.c"
+#include "impl/yo_impl_win32_opengl.h"
+#include "impl/yo_impl_win32_opengl.c"
 
 static void build_ui(void);
 
 int main()
 {
-    yo_platform_win32_opengl_t platform = { 0 };
-    yo_platform_win32_opengl_startup(&platform, 800, 600);
+    yo_impl_win32_opengl_t impl = { 0 };
+    yo_impl_win32_opengl_startup(&impl, 800, 600);
 
-    while (platform.running)
+    while (impl.platform.running)
     {
-        yo_platform_win32_opengl_before_frame(&platform);
+        yo_impl_win32_opengl_begin_frame(&impl);
 
         //build_ui();
         yo_demo();
 
-        yo_platform_win32_opengl_after_frame(&platform);
+        yo_impl_win32_opengl_end_frame(&impl);
     }
 
-    yo_platform_win32_opengl_shutdown(&platform);
+    yo_impl_win32_opengl_shutdown(&impl);
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)

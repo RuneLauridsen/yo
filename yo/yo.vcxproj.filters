@@ -71,16 +71,16 @@
     <ClInclude Include="yo_string.c">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="backends\yo_backend_opengl.h">
+    <ClInclude Include="impl\yo_backend_opengl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="backends\yo_backend_opengl.c">
+    <ClInclude Include="impl\yo_backend_opengl.c">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="platforms\yo_platform_win32_opengl.h">
+    <ClInclude Include="impl\yo_impl_win32_opengl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="platforms\yo_platform_win32_opengl.c">
+    <ClInclude Include="impl\yo_impl_win32_opengl.c">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yo.h">
@@ -98,10 +98,16 @@
     <ClInclude Include="yo_demo.c">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="impl\yo_platform_win32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\yo_platform_win32.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="backends\yo_opengl_fragment_shader.glsl" />
-    <None Include="backends\yo_opengl_vertex_shader.glsl" />
+    <None Include="impl\yo_opengl_fs.glsl" />
+    <None Include="impl\yo_opengl_vs.glsl" />
   </ItemGroup>
 </Project>

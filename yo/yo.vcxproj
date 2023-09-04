@@ -22,10 +22,12 @@
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="backends\yo_backend_opengl.h" />
-    <ClInclude Include="backends\yo_backend_opengl.c" />
+    <ClInclude Include="impl\yo_backend_opengl.h" />
+    <ClInclude Include="impl\yo_backend_opengl.c" />
     <ClInclude Include="colors.h" />
-    <ClInclude Include="platforms\yo_platform_win32_opengl.h" />
+    <ClInclude Include="impl\yo_platform_win32.h" />
+    <ClInclude Include="impl\yo_impl_win32_opengl.h" />
+    <ClInclude Include="impl\yo_platform_win32.c" />
     <ClInclude Include="yo_core.c" />
     <ClInclude Include="yo_atlas.c" />
     <ClInclude Include="yo_demo.h" />
@@ -35,7 +37,7 @@
     <ClInclude Include="yo.h" />
     <ClInclude Include="yo.c" />
     <ClInclude Include="yo_memory.c" />
-    <ClInclude Include="platforms\yo_platform_win32_opengl.c" />
+    <ClInclude Include="impl\yo_impl_win32_opengl.c" />
     <ClInclude Include="yo_string.c" />
     <ClInclude Include="yo_styles.h" />
     <ClInclude Include="yo_svg.h" />
@@ -51,10 +53,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
-    <None Include="backends\yo_opengl_fragment_shader.glsl">
+    <None Include="impl\yo_opengl_fs.glsl">
       <FileType>Document</FileType>
     </None>
-    <None Include="backends\yo_opengl_vertex_shader.glsl">
+    <None Include="impl\yo_opengl_vs.glsl">
       <FileType>Document</FileType>
     </None>
   </ItemGroup>

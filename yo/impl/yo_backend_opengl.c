@@ -140,71 +140,6 @@ static char *yo_opengl_fs_source =
 "}                                                                                                                     \n"
 ;
 
-////////////////////////////////////////////////////////////////
-//
-//
-// OpenGL function pointers
-//
-//
-////////////////////////////////////////////////////////////////
-
-// TODO(rune): Wrap in struct prefixed with yo
-static PFNGLGENBUFFERSPROC              glGenBuffers;
-static PFNGLBINDBUFFERPROC              glBindBuffer;
-static PFNGLBUFFERDATAPROC              glBufferData;
-static PFNGLCREATESHADERPROC            glCreateShader;
-static PFNGLSHADERSOURCEPROC            glShaderSource;
-static PFNGLCOMPILESHADERPROC           glCompileShader;
-static PFNGLGETSHADERIVPROC             glGetShaderiv;
-static PFNGLGETSHADERINFOLOGPROC        glGetShaderInfoLog;
-static PFNGLCREATEPROGRAMPROC           glCreateProgram;
-static PFNGLATTACHSHADERPROC            glAttachShader;
-static PFNGLLINKPROGRAMPROC             glLinkProgram;
-static PFNGLGETPROGRAMIVPROC            glGetProgramiv;
-static PFNGLGETPROGRAMINFOLOGPROC       glGetProgramInfoLog;
-static PFNGLUSEPROGRAMPROC              glUseProgram;
-static PFNGLDELETESHADERPROC            glDeleteShader;
-static PFNGLVERTEXATTRIBPOINTERPROC     glVertexAttribPointer;
-static PFNGLENABLEVERTEXATTRIBARRAYPROC glEnableVertexAttribArray;
-static PFNGLGENVERTEXARRAYSPROC         glGenVertexArrays;
-static PFNGLBINDVERTEXARRAYPROC         glBindVertexArray;
-static PFNGLGETUNIFORMLOCATIONPROC      glGetUniformLocation;
-static PFNGLUNIFORM4FPROC               glUniform4f;
-static PFNGLUNIFORM2FPROC               glUniform2f;
-static PFNGLUNIFORM1IPROC               glUniform1i;
-
-// See: https://stackoverflow.com/a/589232
-
-static bool yo_backend_opengl_win32_check_ext(const char *extension_name)
-{
-    bool ret = false;
-
-    PFNWGLGETEXTENSIONSSTRINGEXTPROC wglGetExtensionsStringEXT = (PFNWGLGETEXTENSIONSSTRINGEXTPROC)wglGetProcAddress("wglGetExtensionsStringEXT");
-
-    const char *extension_string = wglGetExtensionsStringEXT();
-    if (strstr(extension_string, extension_name))
-    {
-        ret = true;
-    }
-
-    return ret;
-}
-
-static void *yo_backend_opengl_win32_load_function(char *name)
-{
-    void *p = (void *)wglGetProcAddress(name);
-
-    if (p == NULL)
-    {
-        HMODULE module = LoadLibraryA("opengl32.dll");
-        YO_ASSERT(module);
-
-        p = (void *)GetProcAddress(module, name);
-    }
-
-    return p;
-}
-
 #if 0
 static bool yo_backend_opengl_win32_load_shader_file(char *file_name, char **content, size_t *content_size)
 {
@@ -259,232 +194,164 @@ static bool yo_backend_opengl_win32_load_shader_file(char *file_name, char **con
 }
 #endif
 
-static void yo_backend_opengl_win32_startup(yo_backend_opengl_t *state, HWND window)
+static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
 {
     // TODO(rune): Error handling
-    yo_array_create(&state->vertex_array, 256, true);
-    yo_array_create(&state->index_array, 256, false);
+    yo_array_create(&backend->vertex_array, 256, true);
+    yo_array_create(&backend->index_array, 256, false);
 
-    HDC window_dc = GetDC(window);
 
-    PIXELFORMATDESCRIPTOR desired_pixel_format = { 0 };
-    desired_pixel_format.nSize = sizeof(desired_pixel_format);
-    desired_pixel_format.nVersion = 1;
-    desired_pixel_format.dwFlags = PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER;
-    desired_pixel_format.cColorBits = 32;
-    desired_pixel_format.cAlphaBits = 8;
-    desired_pixel_format.iLayerType = PFD_MAIN_PLANE;
-
-    uint32_t suggested_pixel_format_index = ChoosePixelFormat(window_dc, &desired_pixel_format);
-    PIXELFORMATDESCRIPTOR suggestedPixelFormat = { 0 };
-
-    DescribePixelFormat(window_dc, suggested_pixel_format_index, sizeof(suggestedPixelFormat), &suggestedPixelFormat);
-    SetPixelFormat(window_dc, suggested_pixel_format_index, &suggestedPixelFormat);
-
-    HGLRC glrc = wglCreateContext(window_dc);
-
-    if (wglMakeCurrent(window_dc, glrc))
+    //
+    // Compile vertex shader
+    //
     {
-        //
-        // Load OpenGL extensions
-        //
+        backend->vs = backend->glCreateShader(GL_VERTEX_SHADER);
+        backend->glShaderSource(backend->vs, 1, &yo_opengl_vs_source, NULL);
+        backend->glCompileShader(backend->vs);
+
+        int  success;
+        char info_log[512];
+        backend->glGetShaderiv(backend->vs, GL_COMPILE_STATUS, &success);
+
+        if (!success)
         {
-            glGenBuffers                = (PFNGLGENBUFFERSPROC)(yo_backend_opengl_win32_load_function("glGenBuffers"));
-            glBindBuffer                = (PFNGLBINDBUFFERPROC)(yo_backend_opengl_win32_load_function("glBindBuffer"));
-            glBufferData                = (PFNGLBUFFERDATAPROC)(yo_backend_opengl_win32_load_function("glBufferData"));
-            glCreateShader              = (PFNGLCREATESHADERPROC)(yo_backend_opengl_win32_load_function("glCreateShader"));
-            glShaderSource              = (PFNGLSHADERSOURCEPROC)(yo_backend_opengl_win32_load_function("glShaderSource"));
-            glCompileShader             = (PFNGLCOMPILESHADERPROC)(yo_backend_opengl_win32_load_function("glCompileShader"));
-            glGetShaderiv               = (PFNGLGETSHADERIVPROC)(yo_backend_opengl_win32_load_function("glGetShaderiv"));
-            glGetShaderInfoLog          = (PFNGLGETSHADERINFOLOGPROC)(yo_backend_opengl_win32_load_function("glGetShaderInfoLog"));
-            glCreateProgram             = (PFNGLCREATEPROGRAMPROC)(yo_backend_opengl_win32_load_function("glCreateProgram"));
-            glAttachShader              = (PFNGLATTACHSHADERPROC)(yo_backend_opengl_win32_load_function("glAttachShader"));
-            glGetProgramiv              = (PFNGLGETPROGRAMIVPROC)(yo_backend_opengl_win32_load_function("glGetProgramiv"));
-            glGetProgramInfoLog         = (PFNGLGETPROGRAMINFOLOGPROC)(yo_backend_opengl_win32_load_function("glGetProgramInfoLog"));
-            glUseProgram                = (PFNGLUSEPROGRAMPROC)(yo_backend_opengl_win32_load_function("glUseProgram"));
-            glDeleteShader              = (PFNGLDELETESHADERPROC)(yo_backend_opengl_win32_load_function("glDeleteShader"));
-            glVertexAttribPointer       = (PFNGLVERTEXATTRIBPOINTERPROC)(yo_backend_opengl_win32_load_function("glVertexAttribPointer"));
-            glEnableVertexAttribArray   = (PFNGLENABLEVERTEXATTRIBARRAYPROC)(yo_backend_opengl_win32_load_function("glEnableVertexAttribArray"));
-            glGenVertexArrays           = (PFNGLGENVERTEXARRAYSPROC)(yo_backend_opengl_win32_load_function("glGenVertexArrays"));
-            glBindVertexArray           = (PFNGLBINDVERTEXARRAYPROC)(yo_backend_opengl_win32_load_function("glBindVertexArray"));
-            glLinkProgram               = (PFNGLLINKPROGRAMPROC)(yo_backend_opengl_win32_load_function("glLinkProgram"));
-            glGetUniformLocation        = (PFNGLGETUNIFORMLOCATIONPROC)(yo_backend_opengl_win32_load_function("glGetUniformLocation"));
-            glUniform4f                 = (PFNGLUNIFORM4FPROC)(yo_backend_opengl_win32_load_function("glUniform4f"));
-            glUniform2f                 = (PFNGLUNIFORM2FPROC)(yo_backend_opengl_win32_load_function("glUniform2f"));
-            glUniform1i                 = (PFNGLUNIFORM1IPROC)(yo_backend_opengl_win32_load_function("glUniform1i"));
-        }
-
-        //
-        // Compile vertex shader
-        //
-        {
-            state->vs = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(state->vs, 1, &yo_opengl_vs_source, NULL);
-            glCompileShader(state->vs);
-
-            int  success;
-            char info_log[512];
-            glGetShaderiv(state->vs, GL_COMPILE_STATUS, &success);
-
-            if (!success)
-            {
-                glGetShaderInfoLog(state->vs, 512, NULL, info_log);
-                printf("Vertex shader compilation error %s", info_log);
-            }
-        }
-
-        //
-        // Compile fragment shader
-        //
-        {
-            state->fs = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(state->fs, 1, &yo_opengl_fs_source, NULL);
-            glCompileShader(state->fs);
-
-            int  success;
-            char info_log[512];
-            glGetShaderiv(state->fs, GL_COMPILE_STATUS, &success);
-
-            if (!success)
-            {
-                glGetShaderInfoLog(state->fs, 512, NULL, info_log);
-                printf("Fragment shader compilation error %s", info_log);
-            }
-        }
-
-        //
-        // Create program
-        //
-        {
-            state->program = glCreateProgram();
-            glAttachShader(state->program, state->vs);
-            glAttachShader(state->program, state->fs);
-            glLinkProgram(state->program);
-
-            int  success;
-            char info_log[512];
-            glGetProgramiv(state->program, GL_LINK_STATUS, &success);
-            if (!success)
-            {
-                glGetProgramInfoLog(state->program, 512, NULL, info_log);
-                printf("Fragment shader compilation error %s", info_log);
-            }
-
-            // NOTE(rune): Shader objects are no longer needed after they have been linked to the program objects.
-            glDeleteShader(state->vs);
-            glDeleteShader(state->fs);
-        }
-
-
-        //
-        // Create buffers
-        //
-        {
-            glGenVertexArrays(1, &state->VAO);
-            glGenBuffers(1, &state->VBO);
-            glGenBuffers(1, &state->EBO);
-
-            glBindVertexArray(state->VAO);
-
-            glBindBuffer(GL_ARRAY_BUFFER, state->VBO);
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, state->EBO);
-
-            // aRect[0]
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, rect_p0)));
-            glEnableVertexAttribArray(0);
-
-            // aRect[1]
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, rect_p1)));
-            glEnableVertexAttribArray(1);
-
-            // aCorner
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner)));
-            glEnableVertexAttribArray(2);
-
-            // aCornerColor
-            glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner_color)));
-            glEnableVertexAttribArray(3);
-
-            // aCornerColor
-            glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner_radius)));
-            glEnableVertexAttribArray(4);
-
-            // aTexCoord
-            glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, tex_coord)));
-            glEnableVertexAttribArray(5);
-
-            // aBorderThickness
-            glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, border_thickness)));
-            glEnableVertexAttribArray(6);
-
-            // aBorderColor
-            glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, border_color)));
-            glEnableVertexAttribArray(7);
-        }
-
-        //
-        // Blending
-        //
-        {
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glEnable(GL_BLEND);
-        }
-
-        //
-        // Z buffer
-        //
-        {
-            glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LEQUAL);
-        }
-
-        //
-        // V-Sync
-        //
-        {
-            if (yo_backend_opengl_win32_check_ext("WGL_EXT_swap_control"))
-            {
-                PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
-                wglSwapIntervalEXT(1);
-            }
+            backend->glGetShaderInfoLog(backend->vs, 512, NULL, info_log);
+            printf("Vertex shader compilation error %s", info_log);
         }
     }
-    else
+
+    //
+    // Compile fragment shader
+    //
     {
-        YO_ASSERT(false);
+        backend->fs = backend->glCreateShader(GL_FRAGMENT_SHADER);
+        backend->glShaderSource(backend->fs, 1, &yo_opengl_fs_source, NULL);
+        backend->glCompileShader(backend->fs);
+
+        int  success;
+        char info_log[512];
+        backend->glGetShaderiv(backend->fs, GL_COMPILE_STATUS, &success);
+
+        if (!success)
+        {
+            backend->glGetShaderInfoLog(backend->fs, 512, NULL, info_log);
+            printf("Fragment shader compilation error %s", info_log);
+        }
     }
 
-    ReleaseDC(window, window_dc);
+    //
+    // Create program
+    //
+    {
+        backend->program = backend->glCreateProgram();
+        backend->glAttachShader(backend->program, backend->vs);
+        backend->glAttachShader(backend->program, backend->fs);
+        backend->glLinkProgram(backend->program);
+
+        int  success;
+        char info_log[512];
+        backend->glGetProgramiv(backend->program, GL_LINK_STATUS, &success);
+        if (!success)
+        {
+            backend->glGetProgramInfoLog(backend->program, 512, NULL, info_log);
+            printf("Fragment shader compilation error %s", info_log);
+        }
+
+        // NOTE(rune): Shader objects are no longer needed after they have been linked to the program objects.
+        backend->glDeleteShader(backend->vs);
+        backend->glDeleteShader(backend->fs);
+    }
+
+
+    //
+    // Create buffers
+    //
+    {
+        backend->glGenVertexArrays(1, &backend->VAO);
+        backend->glGenBuffers(1, &backend->VBO);
+        backend->glGenBuffers(1, &backend->EBO);
+
+        backend->glBindVertexArray(backend->VAO);
+
+        backend->glBindBuffer(GL_ARRAY_BUFFER, backend->VBO);
+        backend->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, backend->EBO);
+
+        // aRect[0]
+        backend->glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, rect_p0)));
+        backend->glEnableVertexAttribArray(0);
+
+        // aRect[1]
+        backend->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, rect_p1)));
+        backend->glEnableVertexAttribArray(1);
+
+        // aCorner
+        backend->glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner)));
+        backend->glEnableVertexAttribArray(2);
+
+        // aCornerColor
+        backend->glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner_color)));
+        backend->glEnableVertexAttribArray(3);
+
+        // aCornerColor
+        backend->glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner_radius)));
+        backend->glEnableVertexAttribArray(4);
+
+        // aTexCoord
+        backend->glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, tex_coord)));
+        backend->glEnableVertexAttribArray(5);
+
+        // aBorderThickness
+        backend->glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, border_thickness)));
+        backend->glEnableVertexAttribArray(6);
+
+        // aBorderColor
+        backend->glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, border_color)));
+        backend->glEnableVertexAttribArray(7);
+    }
+
+    //
+    // Blending
+    //
+    {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_BLEND);
+    }
+
+    //
+    // Z buffer
+    //
+    {
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+    }
 }
 
-static void yo_backend_opengl_win32_shutdown(yo_backend_opengl_t *state, HWND window)
+static void yo_backend_opengl_shutdown(yo_backend_opengl_t *backend)
 {
-    YO_UNUSED(window);
-
-    yo_array_destroy(&state->vertex_array);
-    yo_array_destroy(&state->index_array);
+    yo_array_destroy(&backend->vertex_array);
+    yo_array_destroy(&backend->index_array);
 
     // TODO(rune): Properly un-initialize opengl
 }
 
-static bool yo_backend_opengl_vert_idx(yo_backend_opengl_t *state, size_t vert_count, size_t idx_count, yo_vert_t **vertices, yo_idx_t **indices)
+static bool yo_backend_opengl_vert_idx(yo_backend_opengl_t *backend, size_t vert_count, size_t idx_count, yo_vert_t **vertices, yo_idx_t **indices)
 {
     bool ok = true;
 
-    ok &= yo_array_reserve(&state->vertex_array, vert_count, false);
-    ok &= yo_array_reserve(&state->index_array, idx_count, false);
+    ok &= yo_array_reserve(&backend->vertex_array, vert_count, false);
+    ok &= yo_array_reserve(&backend->index_array, idx_count, false);
 
     if (ok)
     {
-        state->idx = (yo_idx_t)state->vertex_array.count;
-        *vertices = yo_array_add(&state->vertex_array, vert_count, false);
-        *indices = yo_array_add(&state->index_array, idx_count, false);
+        backend->idx = (yo_idx_t)backend->vertex_array.count;
+        *vertices = yo_array_add(&backend->vertex_array, vert_count, false);
+        *indices = yo_array_add(&backend->index_array, idx_count, false);
     }
 
     return ok;
 }
 
-static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_t *info)
+static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_render_info_t *info)
 {
     // DEBUG(rune):
     if (info->draw_cmds_count == 0)
@@ -492,8 +359,8 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
         __nop();
     }
 
-    yo_array_reset(&state->vertex_array, true);
-    yo_array_reset(&state->index_array, true);
+    yo_array_reset(&backend->vertex_array, true);
+    yo_array_reset(&backend->index_array, true);
 
     // TODO(rune): Currently we use the rounded aabb shader for everything, even simple triangles.
     // While this makes the implementation simpler, it is quite wasteful.
@@ -507,7 +374,7 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
             {
                 yo_vert_t *vertices = NULL;
                 yo_idx_t *indices = NULL;
-                if (!yo_backend_opengl_vert_idx(state, 4, 6, &vertices, &indices))
+                if (!yo_backend_opengl_vert_idx(backend, 4, 6, &vertices, &indices))
                 {
                     break;
                 }
@@ -584,13 +451,13 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
                 // Indices
                 //
 
-                indices[0] = state->idx + 0;
-                indices[1] = state->idx + 1;
-                indices[2] = state->idx + 2;
+                indices[0] = backend->idx + 0;
+                indices[1] = backend->idx + 1;
+                indices[2] = backend->idx + 2;
 
-                indices[3] = state->idx + 1;
-                indices[4] = state->idx + 2;
-                indices[5] = state->idx + 3;
+                indices[3] = backend->idx + 1;
+                indices[4] = backend->idx + 2;
+                indices[5] = backend->idx + 3;
 
             } break;
 
@@ -598,7 +465,7 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
             {
                 yo_vert_t *vertices = NULL;
                 yo_idx_t *indices = NULL;
-                if (!yo_backend_opengl_vert_idx(state, 3, 3, &vertices, &indices))
+                if (!yo_backend_opengl_vert_idx(backend, 3, 3, &vertices, &indices))
                 {
                     break;
                 }
@@ -617,9 +484,9 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
                 vertices[1].rect_p0 = yo_v2f(0, 0);
                 vertices[2].rect_p1 = yo_v2f(0, 0);
 
-                indices[0] = state->idx + 0;
-                indices[1] = state->idx + 1;
-                indices[2] = state->idx + 2;
+                indices[0] = backend->idx + 0;
+                indices[1] = backend->idx + 1;
+                indices[2] = backend->idx + 2;
 
             } break;
 
@@ -627,7 +494,7 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
             {
                 yo_vert_t *vertices = NULL;
                 yo_idx_t *indices = NULL;
-                if (!yo_backend_opengl_vert_idx(state, 4, 6, &vertices, &indices))
+                if (!yo_backend_opengl_vert_idx(backend, 4, 6, &vertices, &indices))
                 {
                     break;
                 }
@@ -650,13 +517,13 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
                 vertices[2].rect_p1 = yo_v2f(0, 0);
                 vertices[3].rect_p1 = yo_v2f(0, 0);
 
-                indices[0] = state->idx + 0;
-                indices[1] = state->idx + 1;
-                indices[2] = state->idx + 2;
+                indices[0] = backend->idx + 0;
+                indices[1] = backend->idx + 1;
+                indices[2] = backend->idx + 2;
 
-                indices[3] = state->idx + 1;
-                indices[4] = state->idx + 2;
-                indices[5] = state->idx + 3;
+                indices[3] = backend->idx + 1;
+                indices[4] = backend->idx + 2;
+                indices[5] = backend->idx + 3;
 
             } break;
 
@@ -671,11 +538,11 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
     // Upload vertex and index buffers
     //
 
-    glBindBuffer(GL_ARRAY_BUFFER, state->VBO);
-    glBufferData(GL_ARRAY_BUFFER, yo_array_size(&state->vertex_array), state->vertex_array.elems, GL_STREAM_DRAW);
+    backend->glBindBuffer(GL_ARRAY_BUFFER, backend->VBO);
+    backend->glBufferData(GL_ARRAY_BUFFER, yo_array_size(&backend->vertex_array), backend->vertex_array.elems, GL_STREAM_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, state->EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, yo_array_size(&state->index_array), state->index_array.elems, GL_STREAM_DRAW);
+    backend->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, backend->EBO);
+    backend->glBufferData(GL_ELEMENT_ARRAY_BUFFER, yo_array_size(&backend->index_array), backend->index_array.elems, GL_STREAM_DRAW);
 
     //
     // Upload texture
@@ -718,12 +585,12 @@ static void yo_backend_opengl_render(yo_backend_opengl_t *state, yo_render_info_
     glClear(GL_DEPTH_BUFFER_BIT);
     glClearDepth(1.0f);
 
-    int32_t resolution_uniform_location = glGetUniformLocation(state->program, "u_resolution");
+    int32_t resolution_uniform_location = backend->glGetUniformLocation(backend->program, "u_resolution");
 
-    glUseProgram(state->program);
-    glUniform2f(resolution_uniform_location, (float)(info->w), (float)(info->h));
+    backend->glUseProgram(backend->program);
+    backend->glUniform2f(resolution_uniform_location, (float)(info->w), (float)(info->h));
 
     glBindTexture(GL_TEXTURE_2D, 42);
-    glBindVertexArray(state->VAO);
-    glDrawElements(GL_TRIANGLES, (int32_t)(state->index_array.count), GL_UNSIGNED_INT, 0);
+    backend->glBindVertexArray(backend->VAO);
+    glDrawElements(GL_TRIANGLES, (int32_t)(backend->index_array.count), GL_UNSIGNED_INT, 0);
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-// Reusable components can be written plain functions, no classes/inheritance necessary.
 static void yo_demo_header(char *header)
 {
     yo_v_layout();
@@ -33,26 +32,26 @@ YO_API void yo_demo(void)
 {
     yo_palette_t pallette = yo_palette_dark();
 
-    // Holds all state which needs to persist across frames.
+    // Holds all user state which needs to persist across frames.
     static struct
     {
-        uint32_t i, r;
-        bool b;
-        float f, smooth;
-        char buffer[256];
+        uint32_t    button_counter;
+        uint32_t    radio_index;
+        bool        checkbox_value;
+        float       slider_value;
+        float       scroll_smooth_rate;
+        char        buffer[256];
     } state;
 
-
-    // Background box covering the whole window
     yo_box(0, 0);
     yo_new()->fill = pallette.background;
 
-    // Scroll area for the whole window
-    yo_begin_scroll_area_ex(yo_id("demo_scroller"), 20.f, state.smooth);
+    yo_begin_scroll_area_ex(yo_id("demo_scroller"), 20.f, state.scroll_smooth_rate);
 
-    // Stack items inside scroll area vertically
-    yo_v_layout();
+    yo_box(0, 0);
+    yo_new()->child_layout = YO_LAYOUT_VERTICAL;
     yo_new()->padding = yo_padding(10, 10, 10, 10);
+
     YO_CHILD_SCOPE()
     {
         //
@@ -60,15 +59,19 @@ YO_API void yo_demo(void)
         //
 
         {
+            // Reusable components can be written as plain functions, no classes/inheritance are necessary.
+            //
             yo_demo_header("Widget: yo_button()");
             yo_demo_desc("Simple button with a mouse hover animation.");
+
+
             yo_h_layout();
             YO_CHILD_SCOPE()
             {
-                if (yo_button("Increment").clicked) { state.i++; }
-                if (yo_button("Decrement").clicked) { state.i--; }
+                if (yo_button("Increment").clicked) { state.button_counter++; }
+                if (yo_button("Decrement").clicked) { state.button_counter--; }
                 yo_h_space(yo_px(20));
-                yo_format_text("Counter = %i", state.i);
+                yo_format_text("Counter = %i", state.button_counter);
                 yo_new()->v_align = YO_ALIGN_CENTER;
             }
 
@@ -90,10 +93,10 @@ YO_API void yo_demo(void)
             yo_demo_header("Widget: yo_checkbox()");
             yo_demo_desc("Toggleable checkbox with a label.");
 
-            yo_checkbox("Checkbox", &state.b);
+            yo_checkbox("Checkbox", &state.checkbox_value);
 
             yo_box(0, 0);
-            yo_new()->text       = state.b ? "(-: " : ":-(";
+            yo_new()->text       = state.checkbox_value ? "(-: " : ":-(";
             yo_new()->font_size  = 50;
             yo_new()->font_color = YO_BLACK;
             yo_new()->fill       = YO_YELLOW;
@@ -113,10 +116,10 @@ YO_API void yo_demo(void)
         {
             yo_demo_header("Widget: yo_radio()");
             yo_demo_desc("Radio buttons, that automatically make sure only one option is selected at a time.");
-            yo_radio("Option 1", 0, &state.r);
-            yo_radio("Option 2", 1, &state.r);
-            yo_radio("Option 3", 2, &state.r);
-            yo_format_text("Selected index %i", state.r);
+            yo_radio("Option 1", 0, &state.radio_index);
+            yo_radio("Option 2", 1, &state.radio_index);
+            yo_radio("Option 3", 2, &state.radio_index);
+            yo_format_text("Selected index %i", state.radio_index);
         }
 
         yo_v_space(yo_px(50));
@@ -128,13 +131,13 @@ YO_API void yo_demo(void)
         {
             yo_demo_header("Widget: yo_slider()");
             yo_demo_desc("Slider for selecting floating point values.");
-            yo_slider(yo_id("my_slider"), &state.f, 0.0f, 10.0f);
-            yo_format_text("Value: %f", state.f);
+            yo_slider(yo_id("my_slider"), &state.slider_value, 0.0f, 10.0f);
+            yo_format_text("Value: %f", state.slider_value);
 
             yo_demo_desc("Sliders can also be vertical.");
             yo_slider_style_t style = yo_default_slider_style();
             style.axis = YO_AXIS_Y;
-            yo_slider_ex(yo_id("my_vertical_slider"), &state.f, 0.0f, 10.0f, &style);
+            yo_slider_ex(yo_id("my_vertical_slider"), &state.slider_value, 0.0f, 10.0f, &style);
             yo_new()->v_dim = yo_px(100);
             yo_new()->h_align = YO_ALIGN_LEFT;
         }
@@ -178,10 +181,10 @@ YO_API void yo_demo(void)
             yo_demo_desc("Use yo_begin_scroll_area() and yo_end_scroll_area() to create scroll bars. ");
             yo_demo_desc("Supports smooth scrolling.");
 
-            if (state.smooth == 0.0f) state.smooth = 20.0f;
+            if (state.scroll_smooth_rate == 0.0f) state.scroll_smooth_rate = 20.0f;
 
-            yo_format_text("Smooth scroll rate: %f", state.smooth);
-            yo_slider(yo_id("smooth"), &state.smooth, 1.0f, 50.0f);
+            yo_format_text("Smooth scroll rate: %f", state.scroll_smooth_rate);
+            yo_slider(yo_id("smooth"), &state.scroll_smooth_rate, 1.0f, 50.0f);
         }
 
         yo_v_space(yo_px(50));

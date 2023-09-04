@@ -39,7 +39,9 @@
 //
 
 #define YO_PLATFORM_API __declspec(dllexport)
-#include "../yo/backends/yo_backend_opengl.h"
-#include "../yo/backends/yo_backend_opengl.c"
-#include "../yo/platforms/yo_platform_win32_opengl.h"
-#include "../yo/platforms/yo_platform_win32_opengl.c"
+#include "../yo/impl/yo_backend_opengl.h"
+#include "../yo/impl/yo_backend_opengl.c"
+#include "../yo/impl/yo_platform_win32.h"
+#include "../yo/impl/yo_platform_win32.c"
+#include "../yo/impl/yo_impl_win32_opengl.h"
+#include "../yo/impl/yo_impl_win32_opengl.c"
