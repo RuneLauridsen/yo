@@ -17,8 +17,11 @@
 //
 ////////////////////////////////////////////////////////////////
 
+#define YO_DEBUG_PRINT(...)             printf(__VA_ARGS__)
+#define YO_DEBUG_PRINT_WIN32(func)      YO_DEBUG_PRINT("DEBUG WIN32: " func " failed (%i)\n", GetLastError())
+#define YO_DEBUG_MARK()                 YO_DEBUG_PRINT("DEBUG MARK: %s:%i (%s)\n", __FILE__, __LINE__, __FUNCTION__)
 #define YO_UNUSED(...)                  (void)(__VA_ARGS__)
-#define YO_ASSERT(expression)           if(!(expression)) { __debugbreak(); }
+#define YO_ASSERT(expression)           assert(expression)
 #define YO_PRINTF_FORMAT_STRING         _Printf_format_string_
 #define yo_range32(it, min, max)        uint32_t it = (min); it <= (max); it++
 #define YO_DEFER_LOOP__(begin, end, i)  for(int _defer##i##_ = ((begin), 0); _defer##i##_ == 0; _defer##i##_ += 1, (end))

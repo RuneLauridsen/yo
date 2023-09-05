@@ -48,20 +48,25 @@ static void build_ui(void);
 
 int main()
 {
+    YO_DEBUG_MARK();
+
     yo_platform_win32_opengl_t platform = { 0 };
     yo_platform_win32_opengl_startup(&platform, 800, 600);
+
+    YO_DEBUG_MARK();
 
     while (platform.running)
     {
         yo_platform_win32_opengl_before_frame(&platform);
 
-        //build_ui();
         yo_demo();
 
         yo_platform_win32_opengl_after_frame(&platform);
     }
 
+    YO_DEBUG_MARK();
     yo_platform_win32_opengl_shutdown(&platform);
+    YO_DEBUG_MARK();
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)

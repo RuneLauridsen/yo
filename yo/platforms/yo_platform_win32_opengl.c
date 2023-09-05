@@ -38,18 +38,26 @@ YO_PLATFORM_API void yo_platform_win32_opengl_free(yo_platform_win32_opengl_t *p
 
 YO_PLATFORM_API void yo_platform_win32_opengl_startup(yo_platform_win32_opengl_t *platform, uint32_t window_width, uint32_t window_heigth)
 {
-    // TODO(rune): Error handling
+    YO_DEBUG_MARK();
 
+    // TODO(rune): Error handling
     global_platform = platform;
 
     // TODO(rune): We aren't actually DPI aware yet
-    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2))
+    {
+        YO_DEBUG_PRINT_WIN32("SetProcessDpiAwarenessContext");
+    }
+
+    YO_DEBUG_MARK();
 
     platform->tick_freq = 1000;
     platform->tick_count_start = GetTickCount64();
     platform->ctx = yo_create_context(NULL);
     platform->running = true;
     yo_select_context(platform->ctx);
+    YO_DEBUG_PRINT("Created yo_context_t\n");
+    YO_DEBUG_MARK();
 
     //
     // Window creation
@@ -58,11 +66,20 @@ YO_PLATFORM_API void yo_platform_win32_opengl_startup(yo_platform_win32_opengl_t
     WNDCLASSA window_class = { 0 };
     window_class.lpszClassName = "Yo Window Class";
     window_class.lpfnWndProc = yo_platform_win32_opengl_callback;
-    RegisterClassA(&window_class);
+    if (!RegisterClassA(&window_class))
+    {
+        YO_DEBUG_PRINT_WIN32("RegisterClassA");
+    }
+
+    YO_DEBUG_MARK();
 
     platform->render_info.w = window_width;
     platform->render_info.h = window_heigth;
     platform->hdc = CreateCompatibleDC(0);
+    if (!platform->hdc)
+    {
+        YO_DEBUG_PRINT_WIN32("CreateCompatibleDC");
+    }
 
     platform->window = CreateWindowExA(0,
                                        window_class.lpszClassName,
@@ -77,8 +94,14 @@ YO_PLATFORM_API void yo_platform_win32_opengl_startup(yo_platform_win32_opengl_t
                                        0,
                                        0);
 
+    if (!platform->window)
+    {
+        YO_DEBUG_PRINT_WIN32("CreateWindowExA");
+    }
 
+    YO_DEBUG_MARK();
     yo_backend_opengl_win32_startup(&platform->backend, platform->window);
+    YO_DEBUG_MARK();
 
     ShowWindow(platform->window, SW_SHOW);
 

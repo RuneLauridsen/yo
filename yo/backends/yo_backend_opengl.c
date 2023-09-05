@@ -202,6 +202,15 @@ static void *yo_backend_opengl_win32_load_function(char *name)
         p = (void *)GetProcAddress(module, name);
     }
 
+    if (!p)
+    {
+        YO_DEBUG_PRINT("Loaded OpenGL function %s\n", name);
+    }
+    else
+    {
+        YO_DEBUG_PRINT("Could not load OpenGL function %s\n", name);
+    }
+
     return p;
 }
 
@@ -261,6 +270,8 @@ static bool yo_backend_opengl_win32_load_shader_file(char *file_name, char **con
 
 static void yo_backend_opengl_win32_startup(yo_backend_opengl_t *state, HWND window)
 {
+    YO_DEBUG_MARK();
+
     // TODO(rune): Error handling
     yo_array_create(&state->vertex_array, 256, true);
     yo_array_create(&state->index_array, 256, false);
@@ -278,10 +289,21 @@ static void yo_backend_opengl_win32_startup(yo_backend_opengl_t *state, HWND win
     uint32_t suggested_pixel_format_index = ChoosePixelFormat(window_dc, &desired_pixel_format);
     PIXELFORMATDESCRIPTOR suggestedPixelFormat = { 0 };
 
-    DescribePixelFormat(window_dc, suggested_pixel_format_index, sizeof(suggestedPixelFormat), &suggestedPixelFormat);
-    SetPixelFormat(window_dc, suggested_pixel_format_index, &suggestedPixelFormat);
+    if (DescribePixelFormat(window_dc, suggested_pixel_format_index, sizeof(suggestedPixelFormat), &suggestedPixelFormat) == 0)
+    {
+        YO_DEBUG_PRINT_WIN32("DescribePixelFormat");
+    }
+
+    if (!SetPixelFormat(window_dc, suggested_pixel_format_index, &suggestedPixelFormat))
+    {
+        YO_DEBUG_PRINT_WIN32("SetPixelFormat");
+    }
 
     HGLRC glrc = wglCreateContext(window_dc);
+    if (!glrc)
+    {
+        YO_DEBUG_PRINT_WIN32("wglCreateContext");
+    }
 
     if (wglMakeCurrent(window_dc, glrc))
     {
@@ -451,10 +473,13 @@ static void yo_backend_opengl_win32_startup(yo_backend_opengl_t *state, HWND win
     }
     else
     {
+        YO_DEBUG_PRINT("wglMakeCurrent failed (%i)\n", GetLastError());
         YO_ASSERT(false);
     }
 
+    YO_DEBUG_MARK();
     ReleaseDC(window, window_dc);
+    YO_DEBUG_MARK();
 }
 
 static void yo_backend_opengl_win32_shutdown(yo_backend_opengl_t *state, HWND window)
