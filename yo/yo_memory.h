@@ -181,6 +181,7 @@ static void     yo_heap_free(void *p);
 #define yo_dlist_push_front(list, node)   YO_DLIST_PUSH_FRONT((list)->first, (list)->last, next, prev, node)
 #define yo_dlist_push_back(list, node)    YO_DLIST_PUSH_BACK ((list)->first, (list)->last, next, prev, node)
 #define yo_dlist_insert_after(list, node, after) YO_DLIST_INSERT   ((list)->first, (list)->last, next, prev, after, node)
+#define yo_dlist_insert_before(list, node, before) YO_DLIST_INSERT   ((list)->last, (list)->first, prev, next, before, node)
 #define yo_dlist_remove(list, node)       YO_DLIST_REMOVE    ((list)->first, (list)->last, next, prev, node)
 #define yo_dlist_add(list, node)          yo_dlist_push_back(list, node)
 #define yo_dlist_each(T, it, list)        T it = (list)->first; it; it = it->next

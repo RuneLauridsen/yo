@@ -25,9 +25,12 @@
     <ClInclude Include="impl\yo_backend_opengl.h" />
     <ClInclude Include="impl\yo_backend_opengl.c" />
     <ClInclude Include="colors.h" />
+    <ClInclude Include="impl\yo_impl_win32_gdi.h" />
     <ClInclude Include="impl\yo_platform_win32.h" />
     <ClInclude Include="impl\yo_impl_win32_opengl.h" />
     <ClInclude Include="impl\yo_platform_win32.c" />
+    <ClInclude Include="impl\yo_backend_gdi.h" />
+    <ClInclude Include="impl\yo_backend_gdi.c" />
     <ClInclude Include="yo_core.c" />
     <ClInclude Include="yo_atlas.c" />
     <ClInclude Include="yo_demo.h" />
@@ -36,6 +39,7 @@
     <ClInclude Include="yo_glyph.c" />
     <ClInclude Include="yo.h" />
     <ClInclude Include="yo.c" />
+    <ClInclude Include="impl\yo_impl_win32_gdi.c" />
     <ClInclude Include="yo_memory.c" />
     <ClInclude Include="impl\yo_impl_win32_opengl.c" />
     <ClInclude Include="yo_string.c" />

@@ -104,6 +104,18 @@
     <ClInclude Include="impl\yo_platform_win32.c">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="impl\yo_backend_gdi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\yo_backend_gdi.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\yo_impl_win32_gdi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="impl\yo_impl_win32_gdi.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

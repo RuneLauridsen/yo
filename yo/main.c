@@ -24,7 +24,6 @@
 #pragma comment ( lib, "opengl32.lib" )
 #pragma comment ( lib, "gdi32.lib" )
 
-
 //
 // yo
 //
@@ -32,8 +31,6 @@
 #define YO_API static
 #include "yo.h"
 #include "yo.c"
-#include "yo_memory.h" // NOTE(rune): OpenGL backend uses yo_array
-#include "yo_memory.c"
 
 //
 // Platform & backend
@@ -51,18 +48,77 @@ static void build_ui(void);
 
 int main()
 {
+#if 1
+    yo_arena_t _arena = { 0 }, *arena = &_arena;
+    yo_arena_create(arena, YO_MEGABYTES(256), true, 0);
+
+    yo_atlas_t a;
+    yo_atlas_init(&a, yo_v2i(128, 128), arena);
+    yo_init_glyph_atlas(&a);
+#endif
+
+    a.current_generation = 100;
+    yo_atlas_new_node(&a, yo_v2i(60, 20));
+    yo_atlas_new_node(&a, yo_v2i(80, 20));
+
+    yo_atlas_new_node(&a, yo_v2i(60, 20));
+
+    yo_atlas_new_node(&a, yo_v2i(60, 20));
+    yo_atlas_new_node(&a, yo_v2i(60, 20));
+
+    yo_atlas_shelf_evict(&a, a.shelf_list.first->next);
+    //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
+    //yo_atlas_shelf_evict(&a, a.shelf_list.first);
+
+    yo_atlas_new_node(&a, yo_v2i(20, 25));
+
+    //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
+
+
+    //
+    // Platform setup
+    //
+
     yo_impl_win32_opengl_t impl = { 0 };
     yo_impl_win32_opengl_startup(&impl, 800, 600);
 
+    //
+    // Main application loop
+    //
+
+    int i = 0;
+
     while (impl.platform.running)
     {
+        i++;
+
         yo_impl_win32_opengl_begin_frame(&impl);
 
-        //build_ui();
-        yo_demo();
+        //
+        // Background
+        //
+
+        yo_box(0, 0)->fill = yo_rgb(20, 20, 20);
+
+        //
+        // Debug output
+        //
+
+        yo_h_layout();
+        yo_new()->h_align = YO_ALIGN_CENTER;
+        YO_CHILD_SCOPE()
+        {
+            yo_debug_show_atlas_partitions_of(&a);
+        }
 
         yo_impl_win32_opengl_end_frame(&impl);
+
+        //Sleep(1000);
     }
+
+    //
+    // Platform cleanup
+    //
 
     yo_impl_win32_opengl_shutdown(&impl);
 }

@@ -422,7 +422,7 @@ static yo_measure_text_result_t yo_measure_text(yo_string_t text, uint32_t font_
     {
         char c = text.chars[i];
 
-        yo_atlas_node_t *glyph = yo_get_glyph(&yo_ctx->atlas, c, font_size, yo_ctx->frame_count);
+        yo_atlas_node_t *glyph = yo_get_glyph(&yo_ctx->atlas, c, font_size);
         if (glyph)
         {
             ret.rect.x += glyph->horizontal_advance;
@@ -959,7 +959,7 @@ static void yo_draw_text(char *text,
     char *c = text;
     for (; *c; c++)
     {
-        yo_atlas_node_t *glyph = yo_get_glyph(&yo_ctx->atlas, *c, font_size, yo_ctx->frame_count);
+        yo_atlas_node_t *glyph = yo_get_glyph(&yo_ctx->atlas, *c, font_size);
         if (glyph)
         {
             yo_v2f_t glyph_p0 = yo_v2f((p0.x + glyph->bearing_x),
@@ -1509,7 +1509,9 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
             *ret = context_on_stack;
 
             // TODO(rune): Better texture atlas allocation
-            yo_init_atlas(&ret->atlas, yo_v2i(512, 512), &ret->persist);
+            // DEBUG(rune):
+            // yo_init_atlas(&ret->atlas, yo_v2i(512, 512), &ret->persist);
+            yo_atlas_init(&ret->atlas, yo_v2i(128, 128), &ret->persist);
             yo_init_glyph_atlas(&ret->atlas);
 
             ret->this_frame = &ret->frame_states[0];
@@ -1713,7 +1715,7 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         {
             yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
 
-            yo_atlas_prune(&yo_ctx->atlas, 0, yo_safe_sub_u64(yo_ctx->frame_count, 1), yo_ctx->atlas.pending_prune, true);
+            // yo_atlas_prune(&yo_ctx->atlas, 0, yo_safe_sub_u64(yo_ctx->frame_count, 1), yo_ctx->atlas.pending_prune, true);
             yo_ctx->atlas.pending_prune = false;
 
             yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
@@ -2396,7 +2398,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
     yo_new()->fill       = yo_rgb(30, 30, 30);
     yo_begin_children();
 
-    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelves))
+    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelf_list))
     {
         yo_box(0, 0);
         yo_new()->v_align          = YO_ALIGN_TOP;
@@ -2406,7 +2408,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
         yo_new()->border.color     = YO_BLACK;
         yo_new()->border.thickness = 1;
 
-        for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->nodes))
+        for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->node_list))
         {
             yo_box(0, 0);
             yo_new()->h_align          = YO_ALIGN_LEFT;
@@ -2456,4 +2458,70 @@ YO_API void yo_debug_show_atlas_texture()
     yo_new()->h_dim  = yo_px((float)yo_ctx->atlas.dims.x);
     yo_new()->v_dim  = yo_px((float)yo_ctx->atlas.dims.y);
     yo_new()->fill   = yo_rgb(255, 255, 255);
+}
+
+// DEBUG(rune):
+static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
+{
+    float scale = 4.0f;
+
+    yo_box(0, 0);
+    yo_new()->h_dim      = yo_px((float)atlas->dims.x * scale);
+    yo_new()->v_dim      = yo_px((float)atlas->dims.y * scale);
+    yo_new()->fill       = yo_rgb(30, 30, 30);
+    yo_begin_children();
+
+    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelf_list))
+    {
+        yo_box(0, 0);
+        yo_new()->v_align          = YO_ALIGN_TOP;
+        yo_new()->v_dim            = yo_px((float)shelf->height * scale);
+        yo_new()->h_dim            = yo_px((float)atlas->dims.x * scale);
+        yo_new()->margin.top       = (float)shelf->base_y * scale;
+        yo_new()->fill             = yo_rgb(shelf->last_accessed_generation, 0, 0);
+        yo_new()->border.color     = YO_CYAN;
+        yo_new()->border.thickness = 1;
+
+        for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->node_list))
+        {
+            yo_box(0, 0);
+            yo_new()->h_align          = YO_ALIGN_LEFT;
+            yo_new()->v_align          = YO_ALIGN_TOP;
+            yo_new()->h_dim            = yo_px((float)yo_recti_width(node->rect) * scale);
+            yo_new()->v_dim            = yo_px((float)yo_recti_height(node->rect) * scale);
+            yo_new()->margin.left      = (float)node->rect.x * scale;
+            yo_new()->margin.top       = (float)node->rect.y * scale;
+            yo_new()->fill             = yo_rgb(0, node->last_accessed_generation, 0);
+            yo_new()->border.color     = YO_CYAN;
+            yo_new()->border.thickness = 1;
+        }
+    }
+
+    yo_end_children();
+
+#if 0
+    yo_svg_doc_t doc;
+    yo_svg_doc_create(&doc);
+    yo_svg_begin(&doc, atlas->dims);
+
+    yo_svg_set_fill(&doc, yo_rgb32(200, 200, 200));
+    yo_svg_set_stroke(&doc, 0, 0);
+    yo_svg_draw_rectangle(&doc, yo_v2i(0, 0), atlas->dims);
+
+    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelves))
+    {
+        for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->nodes))
+        {
+            yo_svg_set_fill(&doc, yo_rgb32(50, 50, 50));
+            yo_svg_set_stroke(&doc, yo_rgb32(0, 0, 0), 1);
+            yo_svg_draw_rectangle(&doc, yo_v2i(node->rect.x, node->rect.y), yo_v2i(node->rect.w, node->rect.h));
+        }
+    }
+
+    yo_end_children();
+
+    yo_svg_end(&doc);
+    yo_svg_write_file(&doc, "C:\\Users\\runel\\source\\repos\\yo\\svg\\temp.svg");
+    yo_svg_doc_destroy(&doc);
+#endif
 }

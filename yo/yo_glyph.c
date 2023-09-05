@@ -49,11 +49,11 @@ static uint64_t yo_get_glyph_key(uint32_t codepoint, uint32_t fontsize)
     return key;
 }
 
-static yo_atlas_node_t *yo_get_glyph(yo_atlas_t *atlas, uint32_t codepoint, uint32_t fontsize, uint64_t generation)
+static yo_atlas_node_t *yo_get_glyph(yo_atlas_t *atlas, uint32_t codepoint, uint32_t fontsize)
 {
     uint64_t key = yo_get_glyph_key(codepoint, fontsize);
 
-    yo_atlas_node_t *node = yo_atlas_get_node(atlas, key, generation);
+    yo_atlas_node_t *node = yo_atlas_get_node(atlas, key);
 
     if (node == NULL)
     {
@@ -70,7 +70,7 @@ static yo_atlas_node_t *yo_get_glyph(yo_atlas_t *atlas, uint32_t codepoint, uint
 
         int32_t stride = atlas->dims.x;
 
-        node = yo_atlas_partition(atlas, yo_v2i(w, h), generation);
+        node = yo_atlas_new_node(atlas, yo_v2i(w, h));
 
         if (node)
         {
@@ -84,9 +84,9 @@ static yo_atlas_node_t *yo_get_glyph(yo_atlas_t *atlas, uint32_t codepoint, uint
             int32_t scaledLeftBearing;
             stbtt_GetCodepointHMetrics(&g_font, codepoint, &scaledHorizontalAdvance, &scaledLeftBearing);
 
-            node->bearing_y =          y0;
-            node->bearing_x =          (int32_t)(scale * (float)scaledLeftBearing);
-            node->horizontal_advance = (int32_t)(scale * (float)scaledHorizontalAdvance);
+            node->bearing_y =          (float)y0;
+            node->bearing_x =          scale * scaledLeftBearing;
+            node->horizontal_advance = scale * scaledHorizontalAdvance;
 
             uint8_t *pixel = atlas->pixels + (node->rect.x + node->rect.y * stride);
             stbtt_MakeCodepointBitmap(&g_font, pixel, node->rect.w, node->rect.h, stride, scale, scale, codepoint);

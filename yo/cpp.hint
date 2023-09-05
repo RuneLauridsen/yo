@@ -9,3 +9,4 @@
 #define yo_array(T) yo_array_##T
 #define YO_ARRAY_FIELDS(T)  T *elems; size_t count, count_allocated, element_size
 #define YO_TYPEDEF_ARRAY(T) typedef struct { YO_ARRAY_FIELDS(T); } yo_array_##T
+#define YO_PLATFORM_API
