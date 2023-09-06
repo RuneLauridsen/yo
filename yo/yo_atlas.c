@@ -11,7 +11,7 @@ static yo_atlas_shelf_t *yo_atlas_alloc_shelf(yo_atlas_t *atlas)
     }
     else
     {
-        ret = yo_arena_push_struct(atlas->storage, yo_atlas_shelf_t, true);
+        ret = yo_arena_push_struct(&atlas->storage, yo_atlas_shelf_t, true);
     }
 
     return ret;
@@ -28,29 +28,47 @@ static yo_atlas_node_t *yo_atlas_alloc_node(yo_atlas_t *atlas)
     }
     else
     {
-        ret = yo_arena_push_struct(atlas->storage, yo_atlas_node_t, true);
+        ret = yo_arena_push_struct(&atlas->storage, yo_atlas_node_t, true);
     }
 
     return ret;
 }
 
-// TODO(rune): Own memory, yo_atlas_create(), yo_atlas_destroy()
-static void yo_atlas_init(yo_atlas_t *atlas, yo_v2i_t dims, yo_arena_t *arena)
+static bool yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t dims)
 {
     YO_ASSERT(yo_is_power_of_two(dims.x));
     YO_ASSERT(yo_is_power_of_two(dims.y));
 
     yo_zero_struct(atlas);
+
+    bool ok = true;
+
+    ok &= yo_arena_create(&atlas->storage, YO_KILOBYTES(64), false, YO_ARENA_TYPE_CHAIN_EXPONENTIAL);
+
     atlas->dims    = dims;
-    atlas->storage = arena;
-    atlas->pixels  = yo_arena_push_size(arena, dims.x * dims.y, false);
+    atlas->pixels  = yo_heap_alloc(dims.x * dims.y, true);
 
-    yo_atlas_shelf_t *main_shelf = yo_atlas_alloc_shelf(atlas);
-    yo_dlist_add(&atlas->shelf_list, main_shelf);
-    main_shelf->height = dims.y;
+    ok &= atlas->pixels != NULL;
 
-    YO_ASSERT(atlas->pixels); // TODO(rune): Error handling
-    YO_ASSERT(main_shelf);    // TODO(rune): Error handling
+    if (ok)
+    {
+        yo_atlas_shelf_t *root_shelf = yo_atlas_alloc_shelf(atlas);
+        root_shelf->height = dims.y;
+        yo_dlist_add(&atlas->shelf_list, root_shelf);
+    }
+    else
+    {
+        yo_atlas_destroy(atlas);
+    }
+
+    return ok;
+}
+
+static void yo_atlas_destroy(yo_atlas_t *atlas)
+{
+    yo_heap_free(atlas->pixels);
+    yo_arena_destroy(&atlas->storage);
+    yo_zero_struct(atlas);
 }
 
 static yo_atlas_node_t *yo_atlas_get_node(yo_atlas_t *atlas, uint64_t key)
@@ -277,51 +295,6 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
 
     return ret;
 }
-
-
-#if 0
-static void yo_atlas_prune(yo_atlas_t *atlas, uint64_t prune_generation_min, uint64_t prune_generation_max,
-                           bool nuke_shelves, bool merge_shelves)
-{
-    if (nuke_shelves)
-    {
-        for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelves))
-        {
-            if ((shelf->last_accessed_generation >= prune_generation_min) &&
-                (shelf->last_accessed_generation <= prune_generation_max))
-            {
-                if (shelf->nodes.first)
-                {
-                    yo_slist_queue_join(&atlas->node_freelist, &shelf->nodes);
-                }
-
-                shelf->used_x      = 0;
-                shelf->nodes.first = NULL;
-                shelf->nodes.last  = NULL;
-            }
-        }
-    }
-
-    if (merge_shelves)
-    {
-        for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelves))
-        {
-            if (shelf->next)
-            {
-                if ((!shelf->nodes.first) && (!shelf->next->nodes.first))
-                {
-                    shelf->base_y -= shelf->next->height;
-                    shelf->height += shelf->next->height;
-                    yo_shelf_t *to_remove = shelf->next;
-
-                    yo_dlist_remove(&atlas->shelves, to_remove);
-                    yo_slist_queue_push(&atlas->shelf_freelist, to_remove);
-                }
-            }
-        }
-    }
-}
-#endif
 
 static void yo_atlas_reset(yo_atlas_t *atlas)
 {

@@ -20,8 +20,8 @@
 
 // NOTE(rune): When true, mimir prints on every idk_track_xyz() call.
 #ifndef IDK_PRINT_ALLOCATIONS
-#endif
 #define IDK_PRINT_ALLOCATIONS 1
+#endif
 
 #ifndef IDK_CONSOLE_STACKTRACE_COLOR
 #define IDK_CONSOLE_STACKTRACE_COLOR "\033[90m"
@@ -78,22 +78,22 @@ static char *idk_strip_stracktrace(char *stacktrace)
 static void idk_print_single_tracked_allocation(char *action, idk_tracked_allocation_t *t)
 {
     IDK_PRINTF("=== %s ===\n"
-                 "Slot:                 0x%zx\n"
-                 "Address:              0x%p\n"
-                 "Size:                 0x%zx\n"
-                 "Realloc count:        %i\n"
-                 "Stacktrace alloc:   \n" IDK_CONSOLE_STACKTRACE_COLOR "%s" IDK_CONSOLE_RESET
-                 "Stacktrace realloc: \n" IDK_CONSOLE_STACKTRACE_COLOR "%s" IDK_CONSOLE_RESET
-                 "Stacktrace free:    \n" IDK_CONSOLE_STACKTRACE_COLOR "%s" IDK_CONSOLE_RESET
-                 "\n",
-                 action,
-                 t - idk_tracked_allocations,
-                 t->ptr,
-                 t->size,
-                 t->realloc_count,
-                 IDK_COALESCE(idk_strip_stracktrace(t->stacktrace_alloc), ""),
-                 IDK_COALESCE(idk_strip_stracktrace(t->stacktrace_realloc), ""),
-                 IDK_COALESCE(idk_strip_stracktrace(t->stacktrace_free), ""));
+               "Slot:                 0x%zx\n"
+               "Address:              0x%p\n"
+               "Size:                 0x%zx\n"
+               "Realloc count:        %i\n"
+               "Stacktrace alloc:   \n" IDK_CONSOLE_STACKTRACE_COLOR "%s" IDK_CONSOLE_RESET
+               "Stacktrace realloc: \n" IDK_CONSOLE_STACKTRACE_COLOR "%s" IDK_CONSOLE_RESET
+               "Stacktrace free:    \n" IDK_CONSOLE_STACKTRACE_COLOR "%s" IDK_CONSOLE_RESET
+               "\n",
+               action,
+               t - idk_tracked_allocations,
+               t->ptr,
+               t->size,
+               t->realloc_count,
+               IDK_COALESCE(idk_strip_stracktrace(t->stacktrace_alloc), ""),
+               IDK_COALESCE(idk_strip_stracktrace(t->stacktrace_realloc), ""),
+               IDK_COALESCE(idk_strip_stracktrace(t->stacktrace_free), ""));
 }
 
 static idk_tracked_allocation_t *idk_find_tracked_allocation(void *ptr)
@@ -186,10 +186,10 @@ static void idk_print_tracked_allocations(bool print_summary, bool print_individ
         }
 
         IDK_PRINTF("=== TRACKED ALLOCATIONS SUMMARY ===\n"
-                     "Total count: %zu\n"
-                     "Total size:  0x%zx\n\n",
-                     total_count,
-                     total_size);
+                   "Total count: %zu\n"
+                   "Total size:  0x%zx\n\n",
+                   total_count,
+                   total_size);
     }
 
     if (print_individual)

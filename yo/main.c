@@ -165,7 +165,8 @@ int main()
     //
 
     yo_impl_win32_opengl_shutdown(&impl);
-    #
+
+    idk_print_tracked_allocations(true, true);
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)

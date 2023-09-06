@@ -110,6 +110,7 @@ YO_PLATFORM_API void yo_impl_win32_opengl_startup(yo_impl_win32_opengl_t *impl, 
 
 YO_PLATFORM_API void yo_impl_win32_opengl_shutdown(yo_impl_win32_opengl_t *impl)
 {
+    yo_destroy_context(impl->platform.ctx);
     yo_platform_win32_shutdown(&impl->platform);
     yo_backend_opengl_shutdown(&impl->backend);
 }

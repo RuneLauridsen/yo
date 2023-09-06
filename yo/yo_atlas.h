@@ -38,20 +38,24 @@ struct yo_atlas_shelf
 typedef struct yo_atlas yo_atlas_t;
 struct yo_atlas
 {
+    // TODO(rune): Altas auto resizing
+
     uint8_t *pixels;
     yo_v2i_t dims;
     yo_dlist(yo_atlas_shelf_t) shelf_list;
 
     yo_slist(yo_atlas_shelf_t) shelf_freelist;
     yo_slist(yo_atlas_node_t)  node_freelist;
-    yo_arena_t *storage;
+
+    // NOTE(rune): Storage for yo_atlas_shelf_t and yo_atlas_node_t.
+    yo_arena_t storage;
 
     bool dirty;
-
     uint64_t current_generation;
 };
 
-static void             yo_atlas_init(yo_atlas_t *atlas, yo_v2i_t dims, yo_arena_t *arena);
+static bool             yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t initial_dims);
+static void             yo_atlas_destroy(yo_atlas_t *atlas);
 static yo_atlas_node_t *yo_atlas_get_node(yo_atlas_t *atlas, uint64_t key);
 static void             yo_atlas_get_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1);
 static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims);

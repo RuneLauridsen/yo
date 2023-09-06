@@ -10,3 +10,25 @@
 #define YO_ARRAY_FIELDS(T)  T *elems; size_t count, count_allocated, element_size
 #define YO_TYPEDEF_ARRAY(T) typedef struct { YO_ARRAY_FIELDS(T); } yo_array_##T
 #define YO_PLATFORM_API
+
+#define yo_slist(T)                       struct { T *first, *last; }
+#define yo_slist_queue_join(a,b)          YO_SLQUEUE_JOIN((a)->first, (a)->last, (b)->first, (b)->last,next)
+#define yo_slist_queue_push(list,n)       YO_SLQUEUE_PUSH((list)->first, (list)->last, next, n)
+#define yo_slist_queue_pop(list)          YO_SLQUEUE_POP((list)->first, (list)->last, next)
+#define yo_slist_each(T, it, list)        T it = (list); it; it = it->next
+
+#define yo_slist_stack_push(head, n)      YO_SLSTACK_PUSH(head, next, n)
+#define yo_slist_stack_pop(head)          YO_SLSTACK_POP(head, next)
+
+#define yo_dlist(T)                       struct { T *first, *last; }
+#define yo_dlist_push_front(list, node)   YO_DLIST_PUSH_FRONT((list)->first, (list)->last, next, prev, node)
+#define yo_dlist_push_back(list, node)    YO_DLIST_PUSH_BACK ((list)->first, (list)->last, next, prev, node)
+#define yo_dlist_insert_after(list, node, after) YO_DLIST_INSERT   ((list)->first, (list)->last, next, prev, after, node)
+#define yo_dlist_insert_before(list, node, before) YO_DLIST_INSERT   ((list)->last, (list)->first, prev, next, before, node)
+#define yo_dlist_remove(list, node)       YO_DLIST_REMOVE    ((list)->first, (list)->last, next, prev, node)
+#define yo_dlist_add(list, node)          yo_dlist_push_back(list, node)
+#define yo_dlist_each(T, it, list)        T it = (list)->first; it; it = it->next
+
+#define yo_dlist_stack_push(head, node)   YO_DLIST_STACK_PUSH(head, next, prev, node)
+#define yo_dlist_stack_pop(head)          YO_DLIST_STACK_POP(head, next, prev)
+#define yo_dlist_stack_remove(head, node) YO_DLIST_STACK_REMOVE(head, next, prev, node)

@@ -1369,10 +1369,10 @@ static void yo_debug_print_performance(void)
     yo_debug_print("\n === Memory usage ===  \n"
                    "Draw commands:   %-12llu \n"
                    "Frame arena:     %-12llu \n"
-                   "Font arena:      %-12llu \n",
+                   "Atlas arena:     %-12llu \n",
                    yo_array_size(&yo_ctx->draw_cmds),
                    yo_ctx->this_frame->arena.self.size_used - sizeof(yo_context_t),
-                   yo_ctx->atlas.storage->self.size_used);
+                   yo_ctx->atlas.storage.self.size_used);
 #endif
 
     struct yo_perf_timing_set frameTimings = yo_ctx->timings[yo_ctx->timings_index];
@@ -1498,6 +1498,7 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
     ok &= yo_array_create(&context_on_stack.popups, 4096, false);
     ok &= yo_array_create(&context_on_stack.popup_build_stack, 4096, false);
     ok &= yo_array_create(&context_on_stack.draw_cmds, 4096, false);
+    ok &= yo_atlas_create(&context_on_stack.atlas, yo_v2i(512, 512));
 
     yo_context_t *ret = NULL;
     if (ok)
@@ -1508,10 +1509,6 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
         {
             *ret = context_on_stack;
 
-            // TODO(rune): Better texture atlas allocation
-            // DEBUG(rune):
-            yo_atlas_init(&ret->atlas, yo_v2i(512, 512), &ret->persist);
-            //yo_atlas_init(&ret->atlas, yo_v2i(128, 128), &ret->persist);
             yo_init_glyph_atlas(&ret->atlas);
 
             ret->this_frame = &ret->frame_states[0];
@@ -1525,7 +1522,10 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
         }
     }
 
-    if (!ok) yo_destroy_context(&context_on_stack);
+    if (!ok)
+    {
+        yo_destroy_context(&context_on_stack);
+    }
 
     return ret;
 }
@@ -1536,6 +1536,7 @@ YO_API void yo_destroy_context(yo_context_t *context)
     {
         // WARNING(rune): Must free persistent storage last, since the context structure itself
         // is stored in persistent storage.
+        yo_atlas_destroy(&context->atlas);
         yo_array_destroy(&context->parent_stack);
         yo_array_destroy(&context->id_stack);
         yo_array_destroy(&context->popups);
