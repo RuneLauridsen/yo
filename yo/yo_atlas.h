@@ -12,7 +12,7 @@ struct yo_atlas_node
     struct
     {
         // NOTE(rune): Glyph metrics
-        float horizontal_advance;
+        float horizontal_advance; // TODO(rune): Rename advance_x
         float bearing_x;
         float bearing_y;
 

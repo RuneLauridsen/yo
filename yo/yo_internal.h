@@ -217,6 +217,7 @@ struct yo_context
 
     // Fonts
     yo_atlas_t  atlas;
+    yo_font_t   default_font;
 
     uint64_t    frame_count;
     yo_config_t config;

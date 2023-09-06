@@ -422,7 +422,7 @@ static yo_measure_text_result_t yo_measure_text(yo_string_t text, uint32_t font_
     {
         char c = text.chars[i];
 
-        yo_atlas_node_t *glyph = yo_get_glyph(&yo_ctx->atlas, c, font_size);
+        yo_atlas_node_t *glyph = yo_font_get_glyph(&yo_ctx->default_font, &yo_ctx->atlas, c, font_size, false);
         if (glyph)
         {
             ret.rect.x += glyph->horizontal_advance;
@@ -959,7 +959,7 @@ static void yo_draw_text(char *text,
     char *c = text;
     for (; *c; c++)
     {
-        yo_atlas_node_t *glyph = yo_get_glyph(&yo_ctx->atlas, *c, font_size);
+        yo_atlas_node_t *glyph = yo_font_get_glyph(&yo_ctx->default_font, &yo_ctx->atlas, *c, font_size, true);
         if (glyph)
         {
             yo_v2f_t glyph_p0 = yo_v2f((p0.x + glyph->bearing_x),
@@ -1499,6 +1499,7 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
     ok &= yo_array_create(&context_on_stack.popup_build_stack, 4096, false);
     ok &= yo_array_create(&context_on_stack.draw_cmds, 4096, false);
     ok &= yo_atlas_create(&context_on_stack.atlas, yo_v2i(512, 512));
+    ok &= yo_font_load_from_file(&context_on_stack.default_font, "C:\\Windows\\Fonts\\segoeui.ttf"); // TODO(rune): Platform specific
 
     yo_context_t *ret = NULL;
     if (ok)
@@ -1536,6 +1537,7 @@ YO_API void yo_destroy_context(yo_context_t *context)
     {
         // WARNING(rune): Must free persistent storage last, since the context structure itself
         // is stored in persistent storage.
+        yo_font_unload(&context->default_font);
         yo_atlas_destroy(&context->atlas);
         yo_array_destroy(&context->parent_stack);
         yo_array_destroy(&context->id_stack);
