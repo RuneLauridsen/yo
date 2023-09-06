@@ -136,7 +136,7 @@ YO_API  yo_box_t *yo_text(char *text)
 
 YO_API  yo_box_t *yo_format_text_v(char *format, va_list args)
 {
-    char *text     = yo_alloc_transient_string_v(format, args);
+    char *text     = yo_alloc_temp_string_v(format, args);
     yo_box_t *box  = yo_text(text);
     box->tag       = "TAG_FORMAT_TEXT";
     return box;
@@ -866,7 +866,7 @@ YO_API  void yo_end_scroll_area(void)
 
 YO_API  void yo_table_def(yo_table_t *table, uint32_t col_count, yo_table_falgs_t flags)
 {
-    table->cols      = yo_alloc_transient(col_count * sizeof(yo_table_col_t));
+    table->cols      = yo_alloc_temp(col_count * sizeof(yo_table_col_t));
     table->col_count = table->cols ? col_count : 0;
     table->col_idx   = 0;
     table->flags     = flags;
@@ -954,7 +954,7 @@ YO_API  void yo_table_cell_text(yo_table_t *table, char *text)
 
 YO_API  void yo_table_cell_format_text_v(yo_table_t *table, char *format, va_list args)
 {
-    char *text = yo_alloc_transient_string_v(format, args);
+    char *text = yo_alloc_temp_string_v(format, args);
     yo_table_cell_text(table, text);
     yo_new()->tag = "TAG_TABLE_CELL_FORMAT_TEXT";
 }

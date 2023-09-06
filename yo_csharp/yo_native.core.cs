@@ -10,7 +10,7 @@ public unsafe static partial class yo_native
 
         YO_ERROR_MEMORY_ALLOCATION_FAILED,
         YO_ERROR_OUT_OF_PERSITENT_MEMORY,
-        YO_ERROR_OUT_OF_TRANSIENT_MEMORY,
+        YO_ERROR_OUT_OF_TEMPORARY_MEMORY,
 
         YO_ERROR_PARENT_STACK_UNDERFLOW,    // Mismatched yo_begin_children/yo_end_children calls.
         YO_ERROR_STYLE_STACK_UNDERFLOW,     // Mismatched yo_PushStyle/yo_PopStyle calls
@@ -535,10 +535,10 @@ public unsafe static partial class yo_native
     //
     ////////////////////////////////////////////////////////////////
 
-    [DllImport("yo_dll.dll")] public static extern void* yo_alloc_transient(size_t size);
+    [DllImport("yo_dll.dll")] public static extern void* yo_alloc_temp(size_t size);
 
     // NOTE(rune): Temporary string allocations return a pointer to "" instead of NULL, if the allocation fails.
-    [DllImport("yo_dll.dll")] public static extern char* yo_alloc_transient_string(char* format, __arglist);
+    [DllImport("yo_dll.dll")] public static extern char* yo_alloc_temp_string(char* format, __arglist);
 
     ////////////////////////////////////////////////////////////////
     //

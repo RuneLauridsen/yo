@@ -48,7 +48,7 @@ enum yo_error
 
     YO_ERROR_MEMORY_ALLOCATION_FAILED,
     YO_ERROR_OUT_OF_PERSITENT_MEMORY,
-    YO_ERROR_OUT_OF_TRANSIENT_MEMORY,
+    YO_ERROR_OUT_OF_TEMPORARY_MEMORY,
 
     YO_ERROR_PARENT_STACK_UNDERFLOW,    // Mismatched yo_begin_children/yo_end_children calls.
     YO_ERROR_STYLE_STACK_UNDERFLOW,     // Mismatched yo_PushStyle/yo_PopStyle calls
@@ -627,11 +627,11 @@ YO_API void             yo_scaled_checkmark(yo_v4f_t color);
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void *           yo_alloc_transient(size_t size);
+YO_API void *           yo_alloc_temp(size_t size);
 
 // NOTE(rune): Temporary string allocations return a pointer to "" instead of NULL, if the allocation fails.
-YO_API char *           yo_alloc_transient_string(YO_PRINTF_FORMAT_STRING const char *format, ...);
-YO_API char *           yo_alloc_transient_string_v(YO_PRINTF_FORMAT_STRING const char *format, va_list args);
+YO_API char *           yo_alloc_temp_string(YO_PRINTF_FORMAT_STRING const char *format, ...);
+YO_API char *           yo_alloc_temp_string_v(YO_PRINTF_FORMAT_STRING const char *format, va_list args);
 
 ////////////////////////////////////////////////////////////////
 //

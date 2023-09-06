@@ -50,10 +50,10 @@
     <ClInclude Include="yo_atlas.c">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="yo_glyph.h">
+    <ClInclude Include="yo_font.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="yo_glyph.c">
+    <ClInclude Include="yo_font.c">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yo_svg.c">

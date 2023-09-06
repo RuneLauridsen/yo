@@ -31,8 +31,6 @@
 #define YO_API          __declspec(dllexport)
 #include "../yo/yo.h"
 #include "../yo/yo.c"
-#include "../yo/yo_memory.h" // NOTE(rune): OpenGL backend uses yo_array
-#include "../yo/yo_memory.c"
 
 //
 // Platform & backend

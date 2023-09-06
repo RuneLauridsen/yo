@@ -15,7 +15,7 @@ static char *error_message_table[YO_ERROR_COUNT] =
 {
     [YO_ERROR_NONE] = "",
     [YO_ERROR_OUT_OF_PERSITENT_MEMORY]  = "Out of persistent memory",
-    [YO_ERROR_OUT_OF_TRANSIENT_MEMORY]  = "Out of transient memory",
+    [YO_ERROR_OUT_OF_TEMPORARY_MEMORY]  = "Out of temporary memory",
     [YO_ERROR_PARENT_STACK_UNDERFLOW]   = "Mismatched yo_begin_children/yo_end_children",
     [YO_ERROR_STYLE_STACK_UNDERFLOW]    = "Style stack underflow",
     [YO_ERROR_ID_COLLISION]             = "Id collision"
@@ -2086,7 +2086,7 @@ YO_API yo_id_t yo_id_from_format_v(char *format, va_list args)
 
     YO_ARENA_TEMP_SCOPE(&yo_ctx->this_frame->arena)
     {
-        char *string = yo_alloc_transient_string_v(format, args);
+        char *string = yo_alloc_temp_string_v(format, args);
         ret          = yo_id_from_string(string);
     }
 
@@ -2295,34 +2295,34 @@ YO_API char *yo_get_error_message(void)
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void *yo_alloc_transient(size_t size)
+YO_API void *yo_alloc_temp(size_t size)
 {
     void *ret = yo_arena_push_size(&yo_ctx->this_frame->arena, size, false);
 
     if (!ret)
     {
-        yo_set_error(YO_ERROR_OUT_OF_TRANSIENT_MEMORY);
+        yo_set_error(YO_ERROR_OUT_OF_TEMPORARY_MEMORY);
     }
 
     return ret;
 }
 
-YO_API char *yo_alloc_transient_string(YO_PRINTF_FORMAT_STRING const char *format, ...)
+YO_API char *yo_alloc_temp_string(YO_PRINTF_FORMAT_STRING const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    char *ret = yo_alloc_transient_string_v(format, args);
+    char *ret = yo_alloc_temp_string_v(format, args);
     va_end(args);
 
     return ret;
 }
 
-YO_API char *yo_alloc_transient_string_v(YO_PRINTF_FORMAT_STRING const char *format, va_list args)
+YO_API char *yo_alloc_temp_string_v(YO_PRINTF_FORMAT_STRING const char *format, va_list args)
 {
     // TODO(rune): Custom printf functions
 
     size_t size  = vsnprintf(NULL, 0, format, args) + 1;
-    char *ret = yo_alloc_transient(size);
+    char *ret = yo_alloc_temp(size);
 
     if (ret)
     {
@@ -2364,7 +2364,7 @@ YO_API void yo_scaled_triangle(yo_v2f_t p0, yo_v2f_t p1, yo_v2f_t p2,
         }
         else
         {
-            yo_set_error(YO_ERROR_OUT_OF_TRANSIENT_MEMORY);
+            yo_set_error(YO_ERROR_OUT_OF_TEMPORARY_MEMORY);
         }
     }
 }
