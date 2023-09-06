@@ -24,14 +24,14 @@ struct yo_atlas_node
     };
 };
 
-typedef struct yo_shelf yo_shelf_t;
-struct yo_shelf
+typedef struct yo_atlas_shelf yo_atlas_shelf_t;
+struct yo_atlas_shelf
 {
     int32_t used_x;
     int32_t base_y;
     int32_t height;
     uint64_t last_accessed_generation;
-    yo_shelf_t *next, *prev;
+    yo_atlas_shelf_t *next, *prev;
     yo_dlist(yo_atlas_node_t) node_list;
 };
 
@@ -40,14 +40,13 @@ struct yo_atlas
 {
     uint8_t *pixels;
     yo_v2i_t dims;
-    yo_dlist(yo_shelf_t) shelf_list;
+    yo_dlist(yo_atlas_shelf_t) shelf_list;
 
-    yo_slist(yo_shelf_t)      shelf_freelist;
-    yo_slist(yo_atlas_node_t) node_freelist;
+    yo_slist(yo_atlas_shelf_t) shelf_freelist;
+    yo_slist(yo_atlas_node_t)  node_freelist;
     yo_arena_t *storage;
 
     bool dirty;
-    bool pending_prune;
 
     uint64_t current_generation;
 };

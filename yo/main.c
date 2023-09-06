@@ -48,14 +48,13 @@ static void build_ui(void);
 
 int main()
 {
-#if 1
+#if 0
     yo_arena_t _arena = { 0 }, *arena = &_arena;
     yo_arena_create(arena, YO_MEGABYTES(256), true, 0);
 
     yo_atlas_t a;
     yo_atlas_init(&a, yo_v2i(128, 128), arena);
     yo_init_glyph_atlas(&a);
-#endif
 
     a.current_generation = 100;
     yo_atlas_new_node(&a, yo_v2i(60, 20));
@@ -66,11 +65,40 @@ int main()
     yo_atlas_new_node(&a, yo_v2i(60, 20));
     yo_atlas_new_node(&a, yo_v2i(60, 20));
 
-    yo_atlas_shelf_evict(&a, a.shelf_list.first->next);
+    //yo_atlas_evict_shelf(&a, a.shelf_list.first->next);
     //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
     //yo_atlas_shelf_evict(&a, a.shelf_list.first);
 
     yo_atlas_new_node(&a, yo_v2i(20, 25));
+    yo_atlas_new_node(&a, yo_v2i(20, 25));
+    yo_atlas_new_node(&a, yo_v2i(20, 25));
+    yo_atlas_new_node(&a, yo_v2i(20, 25));
+    yo_atlas_new_node(&a, yo_v2i(20, 25));
+    yo_atlas_new_node(&a, yo_v2i(20, 25));
+    a.current_generation += 50;
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+    yo_atlas_new_node(&a, yo_v2i(20, 20));
+
+    yo_atlas_new_node(&a, yo_v2i(20, 40));
+
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(40, 40));
+    yo_atlas_new_node(&a, yo_v2i(18, 40));
+#endif
 
     //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
 
@@ -92,7 +120,11 @@ int main()
     {
         i++;
 
+
         yo_impl_win32_opengl_begin_frame(&impl);
+
+        build_ui();
+#if 0
 
         //
         // Background
@@ -104,16 +136,28 @@ int main()
         // Debug output
         //
 
-        yo_h_layout();
-        yo_new()->h_align = YO_ALIGN_CENTER;
+        yo_v_layout();
         YO_CHILD_SCOPE()
         {
-            yo_debug_show_atlas_partitions_of(&a);
+            yo_h_layout();
+            yo_new()->h_align = YO_ALIGN_LEFT;
+            yo_new()->v_dim = yo_px(50);
+            YO_CHILD_SCOPE()
+            {
+                uint32_t font_size = ((i / 4) % 20) + 20;
+                yo_text("abcdefghijklmnopqrstuvxyz");
+                yo_new()->font_size = font_size;
+            }
+
+            yo_debug_show_atlas_partitions();
+            yo_debug_show_atlas_texture();
         }
+#endif
 
         yo_impl_win32_opengl_end_frame(&impl);
 
         //Sleep(1000);
+
     }
 
     //
@@ -121,6 +165,7 @@ int main()
     //
 
     yo_impl_win32_opengl_shutdown(&impl);
+    #
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -144,7 +189,7 @@ void build_ui(void)
     }
 
 }
-#elif 1
+#elif 0
 void build_ui(void)
 {
     static uint32_t i = 0;
@@ -218,7 +263,7 @@ for (yo_range32(it, 0, 1000))
 yo_end_scroll_area();
 
 }
-#elif 0
+#elif 1
 void build_ui(void)
 {
     static float f = 0.0f;

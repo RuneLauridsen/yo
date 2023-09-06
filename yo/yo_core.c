@@ -1510,8 +1510,8 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
 
             // TODO(rune): Better texture atlas allocation
             // DEBUG(rune):
-            // yo_init_atlas(&ret->atlas, yo_v2i(512, 512), &ret->persist);
-            yo_atlas_init(&ret->atlas, yo_v2i(128, 128), &ret->persist);
+            yo_atlas_init(&ret->atlas, yo_v2i(512, 512), &ret->persist);
+            //yo_atlas_init(&ret->atlas, yo_v2i(128, 128), &ret->persist);
             yo_init_glyph_atlas(&ret->atlas);
 
             ret->this_frame = &ret->frame_states[0];
@@ -1593,9 +1593,10 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
 
     yo_memset(yo_ctx->this_frame->hash_table, 0, sizeof(yo_ctx->this_frame->hash_table));
 
-    yo_ctx->error        = YO_ERROR_NONE;
-    yo_ctx->root         = yo_push_box(YO_ID_ROOT, 0);
-    yo_ctx->latest_child = yo_ctx->root;
+    yo_ctx->error                    = YO_ERROR_NONE;
+    yo_ctx->root                     = yo_push_box(YO_ID_ROOT, 0);
+    yo_ctx->latest_child             = yo_ctx->root;
+    yo_ctx->atlas.current_generation = yo_ctx->frame_count;
 
     yo_ctx->this_frame->time        = time;
     yo_ctx->this_frame->delta       = 1.0f / 60.0f; // TODO(rune): Fix time
@@ -1714,10 +1715,6 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         //
         {
             yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
-
-            // yo_atlas_prune(&yo_ctx->atlas, 0, yo_safe_sub_u64(yo_ctx->frame_count, 1), yo_ctx->atlas.pending_prune, true);
-            yo_ctx->atlas.pending_prune = false;
-
             yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
         }
     }
@@ -2398,7 +2395,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
     yo_new()->fill       = yo_rgb(30, 30, 30);
     yo_begin_children();
 
-    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
     {
         yo_box(0, 0);
         yo_new()->v_align          = YO_ALIGN_TOP;
@@ -2471,7 +2468,7 @@ static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
     yo_new()->fill       = yo_rgb(30, 30, 30);
     yo_begin_children();
 
-    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
     {
         yo_box(0, 0);
         yo_new()->v_align          = YO_ALIGN_TOP;

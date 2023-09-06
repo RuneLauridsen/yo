@@ -1,8 +1,8 @@
 #pragma once
 
-static yo_shelf_t *yo_atlas_alloc_shelf(yo_atlas_t *atlas)
+static yo_atlas_shelf_t *yo_atlas_alloc_shelf(yo_atlas_t *atlas)
 {
-    yo_shelf_t *ret = atlas->shelf_freelist.first;
+    yo_atlas_shelf_t *ret = atlas->shelf_freelist.first;
     yo_slist_queue_pop(&atlas->shelf_freelist);
 
     if (ret)
@@ -11,7 +11,7 @@ static yo_shelf_t *yo_atlas_alloc_shelf(yo_atlas_t *atlas)
     }
     else
     {
-        ret = yo_arena_push_struct(atlas->storage, yo_shelf_t, true);
+        ret = yo_arena_push_struct(atlas->storage, yo_atlas_shelf_t, true);
     }
 
     return ret;
@@ -41,11 +41,11 @@ static void yo_atlas_init(yo_atlas_t *atlas, yo_v2i_t dims, yo_arena_t *arena)
     YO_ASSERT(yo_is_power_of_two(dims.y));
 
     yo_zero_struct(atlas);
-    atlas->dims   = dims;
-    atlas->storage  = arena;
-    atlas->pixels = yo_arena_push_size(arena, dims.x * dims.y, false);
+    atlas->dims    = dims;
+    atlas->storage = arena;
+    atlas->pixels  = yo_arena_push_size(arena, dims.x * dims.y, false);
 
-    yo_shelf_t *main_shelf = yo_atlas_alloc_shelf(atlas);
+    yo_atlas_shelf_t *main_shelf = yo_atlas_alloc_shelf(atlas);
     yo_dlist_add(&atlas->shelf_list, main_shelf);
     main_shelf->height = dims.y;
 
@@ -55,9 +55,11 @@ static void yo_atlas_init(yo_atlas_t *atlas, yo_v2i_t dims, yo_arena_t *arena)
 
 static yo_atlas_node_t *yo_atlas_get_node(yo_atlas_t *atlas, uint64_t key)
 {
+    // TODO(rune): Hashtable lookup?
+
     yo_atlas_node_t *ret = NULL;
 
-    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
     {
         for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->node_list))
         {
@@ -92,14 +94,14 @@ static void yo_atlas_get_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2
     }
 }
 
-static inline bool yo_atlas_shelf_can_fit(yo_atlas_t *atlas, yo_shelf_t *shelf, yo_v2i_t dims)
+static inline bool yo_atlas_shelf_can_fit(yo_atlas_t *atlas, yo_atlas_shelf_t *shelf, yo_v2i_t dims)
 {
     bool ret =((dims.y <= shelf->height) &&
                (dims.x <= atlas->dims.x - shelf->used_x));
     return ret;
 }
 
-static yo_shelf_t * yo_atlas_shelf_merge(yo_atlas_t *atlas, yo_shelf_t *a, yo_shelf_t *b)
+static yo_atlas_shelf_t * yo_atlas_shelf_merge(yo_atlas_t *atlas, yo_atlas_shelf_t *a, yo_atlas_shelf_t *b)
 {
     YO_ASSERT(a != b);
     YO_ASSERT(a->used_x == 0);
@@ -111,20 +113,20 @@ static yo_shelf_t * yo_atlas_shelf_merge(yo_atlas_t *atlas, yo_shelf_t *a, yo_sh
     YO_ASSERT(a->base_y != b->base_y);
 
     // NOTE(rune): Always dealloc topmost shelf.
-    yo_shelf_t *bot = a->base_y < b->base_y ? a : b;
-    yo_shelf_t *top = a->base_y < b->base_y ? b : a;
+    yo_atlas_shelf_t *bot = a->base_y < b->base_y ? a : b;
+    yo_atlas_shelf_t *top = a->base_y < b->base_y ? b : a;
 
     bot->height += top->height;
 
     yo_dlist_remove(&atlas->shelf_list, top);
     yo_slist_queue_push(&atlas->shelf_freelist, top);
 
-    return a;
+    return bot;
 }
 
-static yo_shelf_t *yo_atlas_shelf_split(yo_atlas_t *atlas, yo_shelf_t *split, int32_t y)
+static yo_atlas_shelf_t *yo_atlas_shelf_split(yo_atlas_t *atlas, yo_atlas_shelf_t *split, int32_t y)
 {
-    yo_shelf_t *ret = NULL;
+    yo_atlas_shelf_t *ret = NULL;
 
     if (split->height > y)
     {
@@ -150,28 +152,70 @@ static yo_shelf_t *yo_atlas_shelf_split(yo_atlas_t *atlas, yo_shelf_t *split, in
     return ret;
 }
 
-static void yo_atlas_shelf_evict(yo_atlas_t *atlas, yo_shelf_t *evict)
+static yo_atlas_shelf_t * yo_atlas_shelf_reset_and_merge(yo_atlas_t *atlas, yo_atlas_shelf_t *reset)
 {
-    evict->used_x = 0;
-    evict->last_accessed_generation = 0;
+    reset->used_x = 0;
+    reset->last_accessed_generation = 0;
 
-    if (evict->node_list.first)  yo_slist_queue_join(&atlas->node_freelist, &evict->node_list);
-    if (evict->next && evict->next->used_x == 0) evict = yo_atlas_shelf_merge(atlas, evict, evict->next);
-    if (evict->prev && evict->prev->used_x == 0) evict = yo_atlas_shelf_merge(atlas, evict, evict->prev);
+    if (reset->node_list.first)  yo_slist_queue_join(&atlas->node_freelist, &reset->node_list);
+    reset->node_list.first = NULL;
+    reset->node_list.last  = NULL;
 
-    evict->node_list.first = NULL;
-    evict->node_list.last  = NULL;
+    if (reset->next && reset->next->used_x == 0) reset = yo_atlas_shelf_merge(atlas, reset, reset->next);
+    if (reset->prev && reset->prev->used_x == 0) reset = yo_atlas_shelf_merge(atlas, reset, reset->prev);
+
+    return reset;
+}
+
+static yo_atlas_shelf_t *yo_atlas_prune_until_enough_y(yo_atlas_t *atlas, int32_t y)
+{
+    YO_UNUSED(atlas, y);
+
+    yo_atlas_shelf_t *ret = NULL;
+    yo_atlas_shelf_t *stale = NULL;
+    uint64_t stale_last_accessed_generation = 0;
+    do
+    {
+        // NOTE(rune): Find shelf with lowest last_accessed_generation.
+        // TODO(rune): Profile! If this turns out to be slow, we could keep a linked list of shelves,
+        // sorted by last_accessed_generation.
+        stale = NULL;
+        stale_last_accessed_generation = atlas->current_generation;
+        for (yo_dlist_each(yo_atlas_shelf_t *, it, &atlas->shelf_list))
+        {
+            // NOTE(rune): We assume that called has already checkout empty for space in empty shelves.
+            if (it->used_x > 0 && it->last_accessed_generation < stale_last_accessed_generation)
+            {
+                stale = it;
+                stale_last_accessed_generation = it->last_accessed_generation;
+            }
+        }
+
+        // NOTE(rune): Reset shelf with lowest last_accessed_generation
+        if (stale)
+        {
+            stale = yo_atlas_shelf_reset_and_merge(atlas, stale);
+
+            if (stale->height >= y)
+            {
+                ret = yo_atlas_shelf_split(atlas, stale, y);
+            }
+        }
+
+    } while (stale && !ret);
+
+    return ret;
 }
 
 static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
 {
-    yo_atlas_node_t *ret            = NULL;
-    yo_shelf_t *best_shelf_nonempty = NULL;
-    yo_shelf_t *best_shelf_empty    = NULL;
-    yo_v2i_t rounded_dims           = yo_v2i(dims.x, dims.y - dims.y % 8 + 8);
+    yo_atlas_node_t  *ret                 = NULL;
+    yo_atlas_shelf_t *best_shelf_nonempty = NULL;
+    yo_atlas_shelf_t *best_shelf_empty    = NULL;
+    yo_v2i_t rounded_dims                 = yo_v2i(dims.x, dims.y - dims.y % 8 + 8);
 
     // NOTE(rune): Find the shelves where we waste the least amount of y-space.
-    for (yo_dlist_each(yo_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
     {
         int32_t wasted = shelf->height - rounded_dims.y;
         bool fits = yo_atlas_shelf_can_fit(atlas, shelf, rounded_dims);
@@ -184,7 +228,7 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
             }
         }
 
-        if(fits && !shelf->used_x)
+        if (fits && !shelf->used_x)
         {
             if (best_shelf_empty == NULL || wasted < best_shelf_empty->height - rounded_dims.y)
             {
@@ -193,7 +237,7 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
         }
     }
 
-    yo_shelf_t *best_shelf = NULL;
+    yo_atlas_shelf_t *best_shelf = NULL;
 
     // NOTE(rune): If it fits in an existing shelf that is currently nonempty, just continue to use that shelf,
     // otherwise we begin a new shelf, by splitting the shelf with least wasted y space.
@@ -203,9 +247,13 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
     {
         best_shelf = best_shelf_nonempty;
     }
-    else
+    else if (best_shelf_empty)
     {
         best_shelf = yo_atlas_shelf_split(atlas, best_shelf_empty, rounded_dims.y);
+    }
+    else
+    {
+        best_shelf = yo_atlas_prune_until_enough_y(atlas, rounded_dims.y);
     }
 
     if (best_shelf)
@@ -219,7 +267,7 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
             ret->rect.w = dims.x;
             ret->rect.h = dims.y;
 
-            ret->last_accessed_generation      = atlas->current_generation;
+            ret->last_accessed_generation        = atlas->current_generation;
             best_shelf->last_accessed_generation = atlas->current_generation;
 
             best_shelf->used_x += dims.x;
