@@ -26,7 +26,7 @@ struct yo_atlas_shelf
 {
     int32_t base_y;
     int32_t used_x;
-    int32_t height;
+    int32_t dim_y;
     uint64_t last_accessed_generation;
     yo_atlas_shelf_t *next, *prev;
     yo_dlist(yo_atlas_node_t) node_list;
@@ -53,7 +53,7 @@ struct yo_atlas
 
 static bool             yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t initial_dims);
 static void             yo_atlas_destroy(yo_atlas_t *atlas);
-static yo_atlas_node_t *yo_atlas_find_node(yo_atlas_t *atlas, uint64_t key);
-static void             yo_atlas_get_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1);
-static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims);
+static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key);
+static void             yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1);
+static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims);
 static void             yo_atlas_reset(yo_atlas_t *atlas);

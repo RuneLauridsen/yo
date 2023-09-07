@@ -53,7 +53,7 @@ static bool yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t dims)
     if (ok)
     {
         yo_atlas_shelf_t *root_shelf = yo_atlas_alloc_shelf(atlas);
-        root_shelf->height = dims.y;
+        root_shelf->dim_y = dims.y;
         yo_dlist_add(&atlas->shelf_list, root_shelf);
     }
     else
@@ -71,7 +71,7 @@ static void yo_atlas_destroy(yo_atlas_t *atlas)
     yo_zero_struct(atlas);
 }
 
-static yo_atlas_node_t *yo_atlas_find_node(yo_atlas_t *atlas, uint64_t key)
+static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
 {
     // TODO(rune): Hashtable lookup?
 
@@ -94,7 +94,7 @@ static yo_atlas_node_t *yo_atlas_find_node(yo_atlas_t *atlas, uint64_t key)
     return ret;
 }
 
-static void yo_atlas_get_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1)
+static void yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1)
 {
     if (node)
     {
@@ -114,7 +114,7 @@ static void yo_atlas_get_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2
 
 static inline bool yo_atlas_shelf_can_fit(yo_atlas_t *atlas, yo_atlas_shelf_t *shelf, yo_v2i_t dims)
 {
-    bool ret =((dims.y <= shelf->height) &&
+    bool ret =((dims.y <= shelf->dim_y) &&
                (dims.x <= atlas->dims.x - shelf->used_x));
     return ret;
 }
@@ -134,7 +134,7 @@ static yo_atlas_shelf_t * yo_atlas_shelf_merge(yo_atlas_t *atlas, yo_atlas_shelf
     yo_atlas_shelf_t *bot = a->base_y < b->base_y ? a : b;
     yo_atlas_shelf_t *top = a->base_y < b->base_y ? b : a;
 
-    bot->height += top->height;
+    bot->dim_y += top->dim_y;
 
     yo_dlist_remove(&atlas->shelf_list, top);
     yo_slist_queue_push(&atlas->shelf_freelist, top);
@@ -146,19 +146,19 @@ static yo_atlas_shelf_t *yo_atlas_shelf_split(yo_atlas_t *atlas, yo_atlas_shelf_
 {
     yo_atlas_shelf_t *ret = NULL;
 
-    if (split->height > y)
+    if (split->dim_y > y)
     {
         ret = yo_atlas_alloc_shelf(atlas);
 
-        ret->height = y;
+        ret->dim_y = y;
         ret->base_y = split->base_y;
 
         split->base_y += y;
-        split->height -= y;
+        split->dim_y -= y;
 
         yo_dlist_insert_before(&atlas->shelf_list, ret, split);
     }
-    else if (split->height == y)
+    else if (split->dim_y == y)
     {
         ret = split; // NOTE(rune): No need to split.
     }
@@ -214,7 +214,7 @@ static yo_atlas_shelf_t *yo_atlas_prune_until_enough_y(yo_atlas_t *atlas, int32_
         {
             stale = yo_atlas_shelf_reset_and_merge(atlas, stale);
 
-            if (stale->height >= y)
+            if (stale->dim_y >= y)
             {
                 ret = yo_atlas_shelf_split(atlas, stale, y);
             }
@@ -225,7 +225,7 @@ static yo_atlas_shelf_t *yo_atlas_prune_until_enough_y(yo_atlas_t *atlas, int32_
     return ret;
 }
 
-static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
+static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims)
 {
     yo_atlas_node_t  *ret                 = NULL;
     yo_atlas_shelf_t *best_shelf_nonempty = NULL;
@@ -235,12 +235,12 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
     // NOTE(rune): Find the shelves where we waste the least amount of y-space.
     for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
     {
-        int32_t wasted = shelf->height - rounded_dims.y;
+        int32_t wasted = shelf->dim_y - rounded_dims.y;
         bool fits = yo_atlas_shelf_can_fit(atlas, shelf, rounded_dims);
 
         if (fits && shelf->used_x)
         {
-            if (best_shelf_nonempty == NULL || wasted < best_shelf_nonempty->height - rounded_dims.y)
+            if (best_shelf_nonempty == NULL || wasted < best_shelf_nonempty->dim_y - rounded_dims.y)
             {
                 best_shelf_nonempty = shelf;
             }
@@ -248,7 +248,7 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
 
         if (fits && !shelf->used_x)
         {
-            if (best_shelf_empty == NULL || wasted < best_shelf_empty->height - rounded_dims.y)
+            if (best_shelf_empty == NULL || wasted < best_shelf_empty->dim_y - rounded_dims.y)
             {
                 best_shelf_empty = shelf;
             }

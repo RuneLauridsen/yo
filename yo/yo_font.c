@@ -163,7 +163,7 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
         // TODO(rune): Store font_size as uint16_t?
         uint64_t key = yo_font_get_glyph_key(font, code_point, (uint16_t)font_size);
 
-        ret = yo_atlas_find_node(atlas, key);
+        ret = yo_atlas_node_find(atlas, key);
         if (!ret)
         {
             //
@@ -180,7 +180,7 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
             // Allocate atlas region
             //
 
-            ret = yo_atlas_new_node(atlas, yo_v2i(w, h));
+            ret = yo_atlas_node_new(atlas, yo_v2i(w, h));
 
             if (ret)
             {
@@ -223,10 +223,4 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
     }
 
     return ret;
-}
-
-// TODO(rune): Remove
-static void yo_get_glyph_uv(yo_atlas_t *atlas, yo_atlas_node_t *glyph, yo_v2f_t *uv0, yo_v2f_t *uv1)
-{
-    yo_atlas_get_node_uv(atlas, glyph, uv0, uv1);
 }

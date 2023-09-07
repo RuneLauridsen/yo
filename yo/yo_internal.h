@@ -64,7 +64,7 @@ struct yo_perf_timing
 typedef struct yo_measure_text_result yo_measure_text_result_t;
 struct yo_measure_text_result
 {
-    yo_v2f_t rect; // TODO(rune): Rename to dim
+    yo_v2f_t dim;
 
     int32_t ascent;
     int32_t descent;

@@ -427,8 +427,8 @@ static yo_measure_text_result_t yo_measure_text(yo_string_t text, yo_font_id_t f
         yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, c, font_size, false);
         if (glyph)
         {
-            ret.rect.x += glyph->advance_x;
-            ret.rect.y = (float)(font_metrics.ascent - font_metrics.descent);
+            ret.dim.x += glyph->advance_x;
+            ret.dim.y = (float)(font_metrics.ascent - font_metrics.descent);
 
             ret.ascent   = (int32_t)font_metrics.ascent;
             ret.descent  = (int32_t)font_metrics.descent;
@@ -451,8 +451,8 @@ static void yo_measure_content_recurse(yo_internal_box_t *box)
     if (box->text)
     {
         box->measured_text = yo_measure_text(yo_string((char *)(box->text)), box->font, box->font_size);
-        box->content_size.w = box->measured_text.rect.x + (uint32_t)(box->border.thickness * 2);
-        box->content_size.h = box->measured_text.rect.y + (uint32_t)(box->border.thickness * 2);
+        box->content_size.w = box->measured_text.dim.x + (uint32_t)(box->border.thickness * 2);
+        box->content_size.h = box->measured_text.dim.y + (uint32_t)(box->border.thickness * 2);
     }
     else
     {
@@ -984,7 +984,7 @@ static void yo_draw_text(char *text,
 
             yo_v2f_t uv0;
             yo_v2f_t uv1;
-            yo_get_glyph_uv(&yo_ctx->atlas, glyph, &uv0, &uv1);
+            yo_atlas_node_uv(&yo_ctx->atlas, glyph, &uv0, &uv1);
 
             yo_draw_aabb_t draw =
             {
@@ -2405,7 +2405,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
     {
         yo_box(0, 0);
         yo_new()->v_align          = YO_ALIGN_TOP;
-        yo_new()->v_dim            = yo_px((float)shelf->height);
+        yo_new()->v_dim            = yo_px((float)shelf->dim_y);
         yo_new()->margin.top       = (float)shelf->base_y;
         yo_new()->fill             = shelf->used_x ? yo_rgb(250, 230, 150) : yo_rgb(250, 200, 100);
         yo_new()->border.color     = YO_BLACK;
@@ -2478,7 +2478,7 @@ static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
     {
         yo_box(0, 0);
         yo_new()->v_align          = YO_ALIGN_TOP;
-        yo_new()->v_dim            = yo_px((float)shelf->height * scale);
+        yo_new()->v_dim            = yo_px((float)shelf->dim_y * scale);
         yo_new()->h_dim            = yo_px((float)atlas->dims.x * scale);
         yo_new()->margin.top       = (float)shelf->base_y * scale;
         yo_new()->fill             = yo_rgb(shelf->last_accessed_generation, 0, 0);

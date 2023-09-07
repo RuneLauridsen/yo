@@ -52,6 +52,3 @@ static yo_font_id_t         yo_font_load(void *data);
 static void                 yo_font_unload(yo_font_id_t font);
 static yo_font_metrics_t    yo_font_metrics(yo_font_id_t font, uint32_t font_size);
 static yo_atlas_node_t *    yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, uint32_t code_point, uint32_t font_size, bool rasterize);
-
-// TODO(rune): Remove
-static void                 yo_get_glyph_uv(yo_atlas_t *atlas, yo_atlas_node_t *glyph, yo_v2f_t *uv0, yo_v2f_t *uv1);
