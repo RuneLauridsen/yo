@@ -240,6 +240,7 @@ static yo_internal_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
 
     box->flags      = flags;
     box->placement  = yo_default_placement();
+    box->font       = yo_ctx->default_font;
     box->font_color = yo_v4f(1.0f, 0.0f, 0.0f, 0.0f);
     box->font_size  = 20;
     box->anim_rate  = 10.0f;
@@ -414,7 +415,7 @@ static void yo_anim_box(yo_internal_box_t *box)
 //
 ////////////////////////////////////////////////////////////////
 
-static yo_measure_text_result_t yo_measure_text(yo_string_t text, uint32_t font_size)
+static yo_measure_text_result_t yo_measure_text(yo_string_t text, yo_font_id_t font, uint32_t font_size)
 {
     yo_measure_text_result_t ret = { 0 };
 
@@ -422,7 +423,7 @@ static yo_measure_text_result_t yo_measure_text(yo_string_t text, uint32_t font_
     {
         char c = text.chars[i];
 
-        yo_atlas_node_t *glyph = yo_font_get_glyph(&yo_ctx->default_font, &yo_ctx->atlas, c, font_size, false);
+        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, c, font_size, false);
         if (glyph)
         {
             ret.rect.x += glyph->horizontal_advance;
@@ -449,7 +450,7 @@ static void yo_measure_content_recurse(yo_internal_box_t *box)
 
     if (box->text)
     {
-        box->measured_text = yo_measure_text(yo_string((char *)(box->text)), box->font_size);
+        box->measured_text = yo_measure_text(yo_string((char *)(box->text)), box->font, box->font_size);
         box->content_size.w = box->measured_text.rect.x + (uint32_t)(box->border.thickness * 2);
         box->content_size.h = box->measured_text.rect.y + (uint32_t)(box->border.thickness * 2);
     }
@@ -933,7 +934,7 @@ static void yo_draw_aabb(yo_draw_aabb_t draw)
 static void yo_draw_text(char *text,
                          yo_v2f_t p0, yo_v2f_t p1,
                          yo_v2f_t clip_p0, yo_v2f_t clip_p1,
-                         uint32_t font_size, yo_v4f_t font_color,
+                         yo_font_id_t font, uint32_t font_size, yo_v4f_t font_color,
                          yo_measure_text_result_t measured_text,
                          yo_text_field_state_t *text_field_state)
 {
@@ -959,7 +960,7 @@ static void yo_draw_text(char *text,
     char *c = text;
     for (; *c; c++)
     {
-        yo_atlas_node_t *glyph = yo_font_get_glyph(&yo_ctx->default_font, &yo_ctx->atlas, *c, font_size, true);
+        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, *c, font_size, true);
         if (glyph)
         {
             yo_v2f_t glyph_p0 = yo_v2f((p0.x + glyph->bearing_x),
@@ -1166,6 +1167,7 @@ static void yo_render_recurse(yo_internal_box_t *box, yo_render_info_t *render_i
 
             yo_draw_text((char *)box->text,
                          p0, p1, clip_p0, clip_p1,
+                         box->font,
                          box->font_size,
                          box->font_color,
                          box->measured_text,
@@ -1499,7 +1501,6 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
     ok &= yo_array_create(&context_on_stack.popup_build_stack, 4096, false);
     ok &= yo_array_create(&context_on_stack.draw_cmds, 4096, false);
     ok &= yo_atlas_create(&context_on_stack.atlas, yo_v2i(512, 512));
-    ok &= yo_font_load_from_file(&context_on_stack.default_font, "C:\\Windows\\Fonts\\segoeui.ttf"); // TODO(rune): Platform specific
 
     yo_context_t *ret = NULL;
     if (ok)
@@ -1510,10 +1511,13 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
         {
             *ret = context_on_stack;
 
-            yo_init_glyph_atlas(&ret->atlas);
-
             ret->this_frame = &ret->frame_states[0];
             ret->prev_frame = &ret->frame_states[1];
+
+            // TODO(rune): Platform specific
+            // TODO(rune): Memory leak
+            yo_file_content_t default_font_file = yo_load_file_content("C:\\Windows\\Fonts\\segoeui.ttf");
+            ret->default_font = yo_font_load(default_font_file.data);
 
             ok = true;
         }
@@ -1537,7 +1541,6 @@ YO_API void yo_destroy_context(yo_context_t *context)
     {
         // WARNING(rune): Must free persistent storage last, since the context structure itself
         // is stored in persistent storage.
-        yo_font_unload(&context->default_font);
         yo_atlas_destroy(&context->atlas);
         yo_array_destroy(&context->parent_stack);
         yo_array_destroy(&context->id_stack);

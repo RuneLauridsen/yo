@@ -461,6 +461,7 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
         check_square->padding     = yo_padding(2, 2, 2, 2);
         check_square->border      = yo_border(1, yo_rgb(128, 128, 128), 2);
         check_square->fill        = yo_rgb(64, 64, 64);
+        check_square->anim        = YO_ANIM_FILL;
 
         yo_signal_t signal = yo_get_signal(check_square);
         if (signal.clicked)
@@ -471,7 +472,7 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
 
         if (signal.hovered)
         {
-            check_square->fill = yo_rgb(80, 80, 80);
+            check_square->fill = yo_rgb(100, 100, 100);
         }
 
         if (*is_checked)

@@ -71,7 +71,7 @@ static void yo_atlas_destroy(yo_atlas_t *atlas)
     yo_zero_struct(atlas);
 }
 
-static yo_atlas_node_t *yo_atlas_get_node(yo_atlas_t *atlas, uint64_t key)
+static yo_atlas_node_t *yo_atlas_find_node(yo_atlas_t *atlas, uint64_t key)
 {
     // TODO(rune): Hashtable lookup?
 

@@ -11,10 +11,7 @@
 // Internal headers
 //
 
-#include "yo_memory.h"
 #include "yo_string.h"
-#include "yo_atlas.h"
-#include "yo_font.h"
 #include "yo_svg.h"
 #include "yo_internal.h"
 

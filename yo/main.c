@@ -102,6 +102,8 @@ int main()
 
     //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
 
+    yo_file_content_t alger_file = yo_load_file_content("C:\\Windows\\Fonts\\ALGER.TTF");
+    yo_font_id_t alger = yo_font_load(alger_file.data);
 
     //
     // Platform setup
@@ -123,7 +125,18 @@ int main()
 
         yo_impl_win32_opengl_begin_frame(&impl);
 
+
+
         build_ui();
+
+        yo_box(0, 0);
+        yo_new()->text = "aaaaaaa";
+        yo_new()->font = alger;
+        yo_new()->font_size = 20;
+        yo_new()->font_color = YO_RED;
+        yo_new()->v_align = YO_ALIGN_TOP;
+
+
 #if 0
 
         //

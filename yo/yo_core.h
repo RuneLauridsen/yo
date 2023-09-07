@@ -463,12 +463,13 @@ struct yo_box
     char *tag;
     char *text;
 
-    yo_layout_t child_layout;
-    yo_border_t border;
-    yo_v4f_t    fill;
-    uint32_t    font_size;
-    yo_v4f_t    font_color;
-    bool        on_top;
+    yo_layout_t  child_layout;
+    yo_border_t  border;
+    yo_v4f_t     fill;
+    yo_font_id_t font;
+    uint32_t     font_size;
+    yo_v4f_t     font_color;
+    bool         on_top;
 
     union { struct yo_placement placement; struct yo_placement; };
 

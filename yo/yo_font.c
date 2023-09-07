@@ -1,5 +1,61 @@
 #pragma once
 
+#ifndef YO_FONT_SLOT_COUNT
+#define YO_FONT_SLOT_COUNT 128 // NOTE(rune): Must be less than UINT16_MAX
+#endif
+
+static yo_font_slot_t yo_font_slots[YO_FONT_SLOT_COUNT];
+
+static yo_font_id_t yo_font_id_none()
+{
+    yo_font_id_t ret = { 0 };
+    return ret;
+}
+
+static yo_font_slot_t *yo_font_slot_from_id(yo_font_id_t id)
+{
+    yo_font_slot_t *ret = NULL;
+
+    if ((id.slot >= 1) && (id.slot <= YO_FONT_SLOT_COUNT))
+    {
+        yo_font_slot_t *slot = &yo_font_slots[id.slot - 1];
+        if ((slot->id.generation == id.generation) && (slot->occupied))
+        {
+            ret = slot;
+        }
+    }
+
+    return ret;
+}
+
+static yo_font_slot_t *yo_font_alloc_slot()
+{
+    yo_font_slot_t *ret = NULL;
+
+    for (uint16_t i = 1; i <= YO_FONT_SLOT_COUNT; i++)
+    {
+        yo_font_slot_t *slot = &yo_font_slots[i - 1];
+        if (!slot->occupied)
+        {
+            slot->id.slot = i;
+            slot->id.generation++;
+            slot->occupied = true;
+            ret = slot;
+            break;
+        }
+    }
+
+    return ret;
+}
+
+static void yo_font_free_slot(yo_font_slot_t *slot)
+{
+    if (slot)
+    {
+        slot->occupied = false;
+    }
+}
+
 // TODO(rune): File system layer?
 static yo_file_content_t yo_load_file_content(char *file_name)
 {
@@ -14,8 +70,7 @@ static yo_file_content_t yo_load_file_content(char *file_name)
 
     if (data)
     {
-        fread(data, 1, size, file);
-
+        size = fread(data, 1, size, file);
         ret.data = data;
         ret.size = size;
     }
@@ -30,149 +85,122 @@ static void yo_unload_file_content(yo_file_content_t file_content)
     yo_heap_free(file_content.data);
 }
 
-static bool yo_font_load(yo_font_t *font, void *data)
+static yo_font_id_t yo_font_load(void *data)
 {
-    bool ret = false;
+    yo_font_id_t ret     = yo_font_id_none();
+    yo_font_slot_t *slot = NULL;
+    bool ok = false;
 
-    if (stbtt_InitFont(&font->font_info, data, 0))
+    if (data)
     {
-        stbtt_GetFontVMetrics(&font->font_info,
-                              &font->ascent,
-                              &font->descent,
-                              &font->line_gap);
-
-        ret = true;
-    }
-
-    return ret;
-}
-
-static bool yo_font_load_from_file(yo_font_t *font, char *file_name)
-{
-    bool ret = false;
-
-    font->file_content = yo_load_file_content(file_name);
-    if (font->file_content.data)
-    {
-        if (yo_font_load(font, font->file_content.data))
+        slot = yo_font_alloc_slot();
+        if (slot)
         {
-            ret = true;
+            if (stbtt_InitFont(&slot->font_info, data, 0))
+            {
+                stbtt_GetFontVMetrics(&slot->font_info,
+                                      &slot->ascent,
+                                      &slot->descent,
+                                      &slot->line_gap);
+
+                ret = slot->id;
+                ok = true;
+            }
         }
     }
 
+    if (!ok)
+    {
+        yo_font_free_slot(slot);
+    }
+
     return ret;
 }
 
-static void yo_font_unload(yo_font_t *font)
+static void yo_font_unload(yo_font_id_t id)
 {
-    if (font->file_content.data)
-    {
-        yo_unload_file_content(font->file_content);
-    }
+    yo_font_slot_t *slot = yo_font_slot_from_id(id);
+    yo_font_free_slot(slot);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// TODO(rune): Multiple fonts
-static void yo_init_font()
+static uint64_t yo_font_get_glyph_key(yo_font_id_t font, uint32_t codepoint, uint16_t fontsize)
 {
-}
-
-static void yo_uninit_font()
-{
-}
-
-static void yo_init_glyph_atlas(yo_atlas_t *atlas)
-{
-    YO_UNUSED(atlas);
-}
-
-static uint64_t yo_font_get_glyph_key(uint32_t codepoint, uint32_t fontsize)
-{
-    uint64_t key = (uint64_t)(codepoint) | ((uint64_t)(fontsize) << 32);
+    uint64_t key = (((uint64_t)(codepoint) << 0)  |
+                    ((uint64_t)(fontsize)  << 32) |
+                    ((uint64_t)(font.slot) << 48));
     return key;
 }
 
-static yo_atlas_node_t *yo_font_get_glyph(yo_font_t *font, yo_atlas_t *atlas, uint32_t code_point, uint32_t font_size, bool rasterize)
+static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, uint32_t code_point, uint32_t font_size, bool rasterize)
 {
-    uint64_t key = yo_font_get_glyph_key(code_point, font_size);
-
-    yo_atlas_node_t *node = yo_atlas_get_node(atlas, key);
-
-    if (!node)
+    yo_atlas_node_t *ret = NULL;
+    yo_font_slot_t *slot = yo_font_slot_from_id(font);
+    if (slot)
     {
-        //
-        // Get code point rasterized dims
-        //
+        // TODO(rune): Store font_size as uint16_t?
+        uint64_t key = yo_font_get_glyph_key(font, code_point, (uint16_t)font_size);
 
-        float scale = (float)(font_size) / (float)(font->ascent);
-
-        int32_t x0, y0, x1, y1;
-        stbtt_GetCodepointBitmapBox(&font->font_info, code_point, scale, scale, &x0, &y0, &x1, &y1);
-
-        int32_t w = x1 - x0;
-        int32_t h = y1 - y0;
-
-        //
-        // Allocate atlas region
-        //
-
-        node = yo_atlas_new_node(atlas, yo_v2i(w, h));
-
-        if (node)
+        ret = yo_atlas_find_node(atlas, key);
+        if (!ret)
         {
-            node->key       = key;
-
-            node->ascent    = font->ascent   * scale; // TODO(rune): Remove
-            node->descent   = font->descent  * scale; // TODO(rune): Remove
-            node->line_gap  = font->line_gap * scale; // TODO(rune): Remove
-
             //
-            // Store code point metrics
+            // Get code point rasterized dims
             //
 
-            int32_t scaled_advance_h;
-            int32_t scaled_bearing_x;
-            stbtt_GetCodepointHMetrics(&font->font_info, code_point, &scaled_advance_h, &scaled_bearing_x);
+            float scale = (float)(font_size) / (float)(slot->ascent);
 
-            node->bearing_y =          (float)y0;
-            node->bearing_x =          scale * scaled_bearing_x;
-            node->horizontal_advance = scale * scaled_advance_h;
+            int32_t x0, y0, x1, y1;
+            stbtt_GetCodepointBitmapBox(&slot->font_info, code_point, scale, scale, &x0, &y0, &x1, &y1);
+
+            int32_t w = x1 - x0;
+            int32_t h = y1 - y0;
 
             //
-            // Rasterize
+            // Allocate atlas region
             //
 
-            if (rasterize || 1) // TODO(rune): Optional rasterize
+            ret = yo_atlas_new_node(atlas, yo_v2i(w, h));
+
+            if (ret)
             {
-                int32_t stride = atlas->dims.x;
-                uint8_t *pixel = atlas->pixels + (node->rect.x + node->rect.y * stride);
-                stbtt_MakeCodepointBitmap(&font->font_info, pixel, node->rect.w, node->rect.h, stride, scale, scale, code_point);
-                atlas->dirty = true;
+                ret->key       = key;
+
+                ret->ascent    = slot->ascent   * scale; // TODO(rune): Remove
+                ret->descent   = slot->descent  * scale; // TODO(rune): Remove
+                ret->line_gap  = slot->line_gap * scale; // TODO(rune): Remove
+
+                //
+                // Store code point metrics
+                //
+
+                int32_t scaled_advance_h;
+                int32_t scaled_bearing_x;
+                stbtt_GetCodepointHMetrics(&slot->font_info, code_point, &scaled_advance_h, &scaled_bearing_x);
+
+                ret->bearing_y =          (float)y0;
+                ret->bearing_x =          scale * scaled_bearing_x;
+                ret->horizontal_advance = scale * scaled_advance_h;
+
+                //
+                // Rasterize
+                //
+
+                if (rasterize)
+                {
+                    int32_t stride = atlas->dims.x;
+                    uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);
+                    stbtt_MakeCodepointBitmap(&slot->font_info, pixel, ret->rect.w, ret->rect.h, stride, scale, scale, code_point);
+                    atlas->dirty = true;
+                }
             }
-        }
-        else
-        {
-            __nop(); // NOTE(rune): Not enough space in glyph atlas
+            else
+            {
+                __nop(); // NOTE(rune): Not enough space in glyph atlas
+            }
         }
     }
 
-    return node;
+    return ret;
 }
 
 // TODO(rune): Remove
