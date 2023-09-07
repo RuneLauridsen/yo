@@ -8,19 +8,13 @@ struct yo_atlas_node
     uint64_t last_accessed_generation;
     yo_atlas_node_t *next, *prev;
 
+    // NOTE(rune): Glyph metrics
     // TODO(rune): Can the metrics be stored elsewhere? Not all texture atlases are for glyphs.
     struct
     {
-        // NOTE(rune): Glyph metrics
-        float horizontal_advance; // TODO(rune): Rename advance_x
+        float advance_x;
         float bearing_x;
         float bearing_y;
-
-        // NOTE(rune): Font metrics
-        // TODO(rune): Font metrics shouldn't be stored per glyph, but should be per font instead
-        float line_gap;
-        float ascent;
-        float descent;
     };
 };
 

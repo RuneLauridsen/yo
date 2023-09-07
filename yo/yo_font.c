@@ -98,10 +98,16 @@ static yo_font_id_t yo_font_load(void *data)
         {
             if (stbtt_InitFont(&slot->font_info, data, 0))
             {
+                int32_t ascent = 0, descent = 0, line_gap = 0;
+
                 stbtt_GetFontVMetrics(&slot->font_info,
-                                      &slot->ascent,
-                                      &slot->descent,
-                                      &slot->line_gap);
+                                      &ascent,
+                                      &descent,
+                                      &line_gap);
+
+                slot->metrics.ascent   = (float)ascent;
+                slot->metrics.descent  = (float)descent;
+                slot->metrics.line_gap = (float)line_gap;
 
                 ret = slot->id;
                 ok = true;
@@ -117,16 +123,31 @@ static yo_font_id_t yo_font_load(void *data)
     return ret;
 }
 
-static void yo_font_unload(yo_font_id_t id)
+static void yo_font_unload(yo_font_id_t font)
 {
-    yo_font_slot_t *slot = yo_font_slot_from_id(id);
+    yo_font_slot_t *slot = yo_font_slot_from_id(font);
     yo_font_free_slot(slot);
 }
 
-static uint64_t yo_font_get_glyph_key(yo_font_id_t font, uint32_t codepoint, uint16_t fontsize)
+static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size)
 {
-    uint64_t key = (((uint64_t)(codepoint) << 0)  |
-                    ((uint64_t)(fontsize)  << 32) |
+    yo_font_metrics_t ret = { 0 };
+    yo_font_slot_t *slot = yo_font_slot_from_id(font);
+    if (slot)
+    {
+        float scale  = (float)(font_size) / (float)(slot->metrics.ascent);
+
+        ret.ascent   = slot->metrics.ascent   * scale;
+        ret.descent  = slot->metrics.descent  * scale;
+        ret.line_gap = slot->metrics.line_gap * scale;
+    }
+    return ret;
+}
+
+static uint64_t yo_font_get_glyph_key(yo_font_id_t font, uint32_t code_point, uint16_t font_size)
+{
+    uint64_t key = (((uint64_t)(code_point) << 0)  |
+                    ((uint64_t)(font_size)  << 32) |
                     ((uint64_t)(font.slot) << 48));
     return key;
 }
@@ -147,7 +168,7 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
             // Get code point rasterized dims
             //
 
-            float scale = (float)(font_size) / (float)(slot->ascent);
+            float scale = (float)(font_size) / (float)(slot->metrics.ascent);
 
             int32_t x0, y0, x1, y1;
             stbtt_GetCodepointBitmapBox(&slot->font_info, code_point, scale, scale, &x0, &y0, &x1, &y1);
@@ -165,10 +186,6 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
             {
                 ret->key       = key;
 
-                ret->ascent    = slot->ascent   * scale; // TODO(rune): Remove
-                ret->descent   = slot->descent  * scale; // TODO(rune): Remove
-                ret->line_gap  = slot->line_gap * scale; // TODO(rune): Remove
-
                 //
                 // Store code point metrics
                 //
@@ -179,13 +196,13 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
 
                 ret->bearing_y =          (float)y0;
                 ret->bearing_x =          scale * scaled_bearing_x;
-                ret->horizontal_advance = scale * scaled_advance_h;
+                ret->advance_x = scale * scaled_advance_h;
 
                 //
                 // Rasterize
                 //
 
-                if (rasterize)
+                if (rasterize || 1)
                 {
                     int32_t stride = atlas->dims.x;
                     uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);

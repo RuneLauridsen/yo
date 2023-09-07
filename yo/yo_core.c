@@ -418,6 +418,7 @@ static void yo_anim_box(yo_internal_box_t *box)
 static yo_measure_text_result_t yo_measure_text(yo_string_t text, yo_font_id_t font, uint32_t font_size)
 {
     yo_measure_text_result_t ret = { 0 };
+    yo_font_metrics_t font_metrics = yo_font_metrics(font, font_size);
 
     for (uint32_t i = 0; i < text.length; i++)
     {
@@ -426,13 +427,12 @@ static yo_measure_text_result_t yo_measure_text(yo_string_t text, yo_font_id_t f
         yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, c, font_size, false);
         if (glyph)
         {
-            ret.rect.x += glyph->horizontal_advance;
-            ret.rect.y = glyph->ascent - glyph->descent;
+            ret.rect.x += glyph->advance_x;
+            ret.rect.y = (float)(font_metrics.ascent - font_metrics.descent);
 
-            // TODO(rune): Kinda hacky, should be stored per font instead
-            ret.ascent   = (int32_t)(glyph->ascent);
-            ret.descent  = (int32_t)(glyph->descent);
-            ret.line_gap = (int32_t)(glyph->line_gap);
+            ret.ascent   = (int32_t)font_metrics.ascent;
+            ret.descent  = (int32_t)font_metrics.descent;
+            ret.line_gap = (int32_t)font_metrics.line_gap;
         }
         else
         {
@@ -978,7 +978,7 @@ static void yo_draw_text(char *text,
             if (text_field_state)
             {
                 if (index == highlight_begin)          highlight_x0 = p0.x;
-                if (index == highlight_end - 1)        highlight_x1 = p0.x + glyph->horizontal_advance;
+                if (index == highlight_end - 1)        highlight_x1 = p0.x + glyph->advance_x;
                 if (index == text_field_state->cursor) cursor_x     = p0.x;
             }
 
@@ -1010,7 +1010,7 @@ static void yo_draw_text(char *text,
 
             yo_draw_aabb(draw);
 
-            p0.x += glyph->horizontal_advance;
+            p0.x += glyph->advance_x;
         }
         else
         {
