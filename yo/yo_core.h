@@ -18,7 +18,11 @@
 ////////////////////////////////////////////////////////////////
 
 #define YO_UNUSED(...)                  (void)(__VA_ARGS__)
+#if 1
 #define YO_ASSERT(expression)           assert(expression)
+#else
+#define YO_ASSERT(expression)           if(!(expression)) { __debugbreak(); }
+#endif
 #define YO_PRINTF_FORMAT_STRING         _Printf_format_string_
 #define yo_range32(it, min, max)        uint32_t it = (min); it <= (max); it++
 #define YO_DEFER_LOOP__(begin, end, i)  for(int _defer##i##_ = ((begin), 0); _defer##i##_ == 0; _defer##i##_ += 1, (end))

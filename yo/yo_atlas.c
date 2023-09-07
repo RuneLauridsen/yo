@@ -53,7 +53,7 @@ static bool yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t dims)
     if (ok)
     {
         yo_atlas_shelf_t *root_shelf = yo_atlas_alloc_shelf(atlas);
-        root_shelf->dim_y = dims.y;
+        root_shelf->dim_y = atlas->dims.y;
         yo_dlist_add(&atlas->shelf_list, root_shelf);
     }
     else
@@ -297,6 +297,18 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims)
 
 static void yo_atlas_reset(yo_atlas_t *atlas)
 {
-    YO_UNUSED(atlas);
-    // yo_atlas_prune(atlas, 0, UINT64_MAX, true, false);
+    for (yo_dlist_each(yo_atlas_shelf_t *, it, &atlas->shelf_list))
+    {
+        if (it->node_list.first)  yo_slist_queue_join(&atlas->node_freelist, &it->node_list);
+    }
+
+    yo_slist_queue_join(&atlas->shelf_freelist, &atlas->shelf_list);
+
+    atlas->shelf_list.first = NULL;
+    atlas->shelf_list.last  = NULL;
+
+    yo_atlas_shelf_t *root_shelf = yo_atlas_alloc_shelf(atlas);
+    root_shelf->dim_y = atlas->dims.y;
+    yo_dlist_add(&atlas->shelf_list, root_shelf);
+
 }
