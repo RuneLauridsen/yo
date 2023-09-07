@@ -289,7 +289,6 @@ static yo_atlas_node_t *yo_atlas_new_node(yo_atlas_t *atlas, yo_v2i_t dims)
             best_shelf->last_accessed_generation = atlas->current_generation;
 
             best_shelf->used_x += dims.x;
-
         }
     }
 

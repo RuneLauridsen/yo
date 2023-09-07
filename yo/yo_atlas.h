@@ -16,13 +16,16 @@ struct yo_atlas_node
         float bearing_x;
         float bearing_y;
     };
+
+    bool rasterized;
+    uint8_t _unused[3];
 };
 
 typedef struct yo_atlas_shelf yo_atlas_shelf_t;
 struct yo_atlas_shelf
 {
-    int32_t used_x;
     int32_t base_y;
+    int32_t used_x;
     int32_t height;
     uint64_t last_accessed_generation;
     yo_atlas_shelf_t *next, *prev;

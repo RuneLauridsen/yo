@@ -98,8 +98,7 @@ static yo_font_id_t yo_font_load(void *data)
         {
             if (stbtt_InitFont(&slot->font_info, data, 0))
             {
-                int32_t ascent = 0, descent = 0, line_gap = 0;
-
+                int32_t ascent, descent, line_gap;
                 stbtt_GetFontVMetrics(&slot->font_info,
                                       &ascent,
                                       &descent,
@@ -156,8 +155,11 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
 {
     yo_atlas_node_t *ret = NULL;
     yo_font_slot_t *slot = yo_font_slot_from_id(font);
+
     if (slot)
     {
+        float scale = (float)(font_size) / (float)(slot->metrics.ascent);
+
         // TODO(rune): Store font_size as uint16_t?
         uint64_t key = yo_font_get_glyph_key(font, code_point, (uint16_t)font_size);
 
@@ -167,8 +169,6 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
             //
             // Get code point rasterized dims
             //
-
-            float scale = (float)(font_size) / (float)(slot->metrics.ascent);
 
             int32_t x0, y0, x1, y1;
             stbtt_GetCodepointBitmapBox(&slot->font_info, code_point, scale, scale, &x0, &y0, &x1, &y1);
@@ -197,22 +197,27 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
                 ret->bearing_y =          (float)y0;
                 ret->bearing_x =          scale * scaled_bearing_x;
                 ret->advance_x = scale * scaled_advance_h;
-
-                //
-                // Rasterize
-                //
-
-                if (rasterize || 1)
-                {
-                    int32_t stride = atlas->dims.x;
-                    uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);
-                    stbtt_MakeCodepointBitmap(&slot->font_info, pixel, ret->rect.w, ret->rect.h, stride, scale, scale, code_point);
-                    atlas->dirty = true;
-                }
             }
             else
             {
                 __nop(); // NOTE(rune): Not enough space in glyph atlas
+            }
+        }
+
+        //
+        // Rasterize
+        //
+
+        if (ret)
+        {
+            // TODO(rune): We could just make rasterization a seperate function, e.g. with at yo_font_rasterize_pending() function.
+            if (rasterize && !ret->rasterized)
+            {
+                int32_t stride = atlas->dims.x;
+                uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);
+                stbtt_MakeCodepointBitmap(&slot->font_info, pixel, ret->rect.w, ret->rect.h, stride, scale, scale, code_point);
+                ret->rasterized = true;
+                atlas->dirty    = true;
             }
         }
     }
