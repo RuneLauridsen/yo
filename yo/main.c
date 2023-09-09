@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
 
 //
 // Windows & OpenGL
@@ -103,7 +104,7 @@ int main()
     //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
 
     yo_file_content_t alger_file = yo_load_file_content("C:\\Windows\\Fonts\\ALGER.TTF");
-    yo_font_id_t alger = yo_font_load(alger_file.data);
+    yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.size);
 
     //
     // Platform setup

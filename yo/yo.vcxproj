@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="yo_font_backend_stb.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="impl\yo_backend_opengl.h" />
@@ -40,6 +41,7 @@
     <ClInclude Include="yo.h" />
     <ClInclude Include="yo.c" />
     <ClInclude Include="impl\yo_impl_win32_gdi.c" />
+    <ClInclude Include="yo_font_backend.h" />
     <ClInclude Include="yo_memory.c" />
     <ClInclude Include="impl\yo_impl_win32_opengl.c" />
     <ClInclude Include="yo_string.c" />

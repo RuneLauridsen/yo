@@ -14,6 +14,7 @@
 #include "yo_string.h"
 #include "yo_svg.h"
 #include "yo_internal.h"
+#include "yo_font_backend.h"
 
 //
 // Implementation

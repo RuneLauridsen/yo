@@ -1517,7 +1517,7 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
             // TODO(rune): Platform specific
             // TODO(rune): Memory leak
             yo_file_content_t default_font_file = yo_load_file_content("C:\\Windows\\Fonts\\segoeui.ttf");
-            ret->default_font = yo_font_load(default_font_file.data);
+            ret->default_font = yo_font_load(default_font_file.data, default_font_file.size);
 
             ok = true;
         }
