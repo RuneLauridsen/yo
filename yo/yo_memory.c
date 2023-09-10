@@ -131,14 +131,14 @@ static bool yo_arena_create(yo_arena_t *arena, size_t size, bool init_to_zero, y
 
 static void yo_arena_destroy(yo_arena_t *arena)
 {
-    yo_arena_block *block = &arena->self;
+    yo_arena_block_t *block = &arena->self;
 
     while (block)
     {
         // NOTE(rune): We need to store to next pointer locally on the stack, since chained arena blocks
         // are stored inside themselves, and their next pointers would therefore be invalid, after the
         // chain blocks's memory is freed. See: yo_alloc_arena_block.
-        yo_arena_block *next = next = block->next;
+        yo_arena_block_t *next = next = block->next;
         yo_heap_free(block->base);
         block = next;
     }
@@ -150,18 +150,18 @@ static void yo_arena_reset(yo_arena_t *arena)
     arena->chain_head = NULL;
 }
 
-static bool yo_fits_in_arena_block(yo_arena_block *block, size_t size)
+static bool yo_fits_in_arena_block(yo_arena_block_t *block, size_t size)
 {
     bool ret = block->size_allocated >= block->size_used + size;
     return ret;
 }
 
-static yo_arena_block *yo_alloc_arena_block(yo_arena_t *arena)
+static yo_arena_block_t *yo_alloc_arena_block(yo_arena_t *arena)
 {
-    yo_arena_block *current = &arena->self;
+    yo_arena_block_t *current = &arena->self;
     if (arena->chain_head) current = arena->chain_head;
 
-    yo_arena_block *ret = current->next;
+    yo_arena_block_t *ret = current->next;
     if (!ret)
     {
         size_t new_size = current->size_allocated;
@@ -193,7 +193,7 @@ static yo_arena_block *yo_alloc_arena_block(yo_arena_t *arena)
 
 static void *yo_arena_push_size(yo_arena_t *arena, size_t size, bool init_to_zero)
 {
-    yo_arena_block *block = &arena->self;
+    yo_arena_block_t *block = &arena->self;
 
     if (arena->type != YO_ARENA_TYPE_NO_CHAIN)
     {
@@ -201,7 +201,7 @@ static void *yo_arena_push_size(yo_arena_t *arena, size_t size, bool init_to_zer
 
         if (!yo_fits_in_arena_block(block, size))
         {
-            yo_arena_block *new =  yo_alloc_arena_block(arena);
+            yo_arena_block_t *new =  yo_alloc_arena_block(arena);
             if (new)
             {
                 block = new;
@@ -255,7 +255,7 @@ static void yo_arena_end_temp(yo_arena_t *arena)
         if (temp->depth == arena->temp_depth)
         {
             yo_slist_stack_pop(arena->temp_stack_head);
-            yo_arena_block *restore_to_block = YO_COALESCE(temp->chain_head, &arena->self);
+            yo_arena_block_t *restore_to_block = YO_COALESCE(temp->chain_head, &arena->self);
             restore_to_block->size_used = (uint8_t *)temp - restore_to_block->base;
             arena->chain_head = temp->chain_head;
         }

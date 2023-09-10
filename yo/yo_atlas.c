@@ -34,10 +34,10 @@ static yo_atlas_node_t *yo_atlas_alloc_node(yo_atlas_t *atlas)
     return ret;
 }
 
-static bool yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t dims)
+static bool yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t dim)
 {
-    YO_ASSERT(yo_is_power_of_two(dims.x));
-    YO_ASSERT(yo_is_power_of_two(dims.y));
+    YO_ASSERT(yo_is_power_of_two(dim.x));
+    YO_ASSERT(yo_is_power_of_two(dim.y));
 
     yo_zero_struct(atlas);
 
@@ -45,15 +45,15 @@ static bool yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t dims)
 
     ok &= yo_arena_create(&atlas->storage, YO_KILOBYTES(64), false, YO_ARENA_TYPE_CHAIN_EXPONENTIAL);
 
-    atlas->dims    = dims;
-    atlas->pixels  = yo_heap_alloc(dims.x * dims.y, true);
+    atlas->dim    = dim;
+    atlas->pixels  = yo_heap_alloc(dim.x * dim.y, true);
 
     ok &= atlas->pixels != NULL;
 
     if (ok)
     {
         yo_atlas_shelf_t *root_shelf = yo_atlas_alloc_shelf(atlas);
-        root_shelf->dim_y = atlas->dims.y;
+        root_shelf->dim_y = atlas->dim.y;
         yo_dlist_add(&atlas->shelf_list, root_shelf);
     }
     else
@@ -73,7 +73,8 @@ static void yo_atlas_destroy(yo_atlas_t *atlas)
 
 static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
 {
-    // TODO(rune): Hashtable lookup?
+#if 1
+    // TODO(rune): Profile! Hashtable lookup?
 
     yo_atlas_node_t *ret = NULL;
 
@@ -92,16 +93,20 @@ static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
     }
 
     return ret;
+#else
+    YO_UNUSED(key);
+    return atlas->shelf_list.first->node_list.first;
+#endif
 }
 
 static void yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1)
 {
     if (node)
     {
-        uv0->x = (float)(node->rect.x) / (float)(atlas->dims.x);
-        uv0->y = (float)(node->rect.y) / (float)(atlas->dims.y);
-        uv1->x = (float)(node->rect.x + node->rect.w) / (float)(atlas->dims.x);
-        uv1->y = (float)(node->rect.y + node->rect.h) / (float)(atlas->dims.y);
+        uv0->x = (float)(node->rect.x) / (float)(atlas->dim.x);
+        uv0->y = (float)(node->rect.y) / (float)(atlas->dim.y);
+        uv1->x = (float)(node->rect.x + node->rect.w) / (float)(atlas->dim.x);
+        uv1->y = (float)(node->rect.y + node->rect.h) / (float)(atlas->dim.y);
     }
     else
     {
@@ -112,10 +117,10 @@ static void yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t 
     }
 }
 
-static inline bool yo_atlas_shelf_can_fit(yo_atlas_t *atlas, yo_atlas_shelf_t *shelf, yo_v2i_t dims)
+static inline bool yo_atlas_shelf_can_fit(yo_atlas_t *atlas, yo_atlas_shelf_t *shelf, yo_v2i_t dim)
 {
-    bool ret =((dims.y <= shelf->dim_y) &&
-               (dims.x <= atlas->dims.x - shelf->used_x));
+    bool ret =((dim.y <= shelf->dim_y) &&
+               (dim.x <= atlas->dim.x - shelf->used_x));
     return ret;
 }
 
@@ -225,22 +230,22 @@ static yo_atlas_shelf_t *yo_atlas_prune_until_enough_y(yo_atlas_t *atlas, int32_
     return ret;
 }
 
-static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims)
+static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim)
 {
     yo_atlas_node_t  *ret                 = NULL;
     yo_atlas_shelf_t *best_shelf_nonempty = NULL;
     yo_atlas_shelf_t *best_shelf_empty    = NULL;
-    yo_v2i_t rounded_dims                 = yo_v2i(dims.x, dims.y - dims.y % 8 + 8);
+    yo_v2i_t rounded_dim                  = yo_v2i(dim.x, dim.y - dim.y % 8 + 8);
 
     // NOTE(rune): Find the shelves where we waste the least amount of y-space.
     for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
     {
-        int32_t wasted = shelf->dim_y - rounded_dims.y;
-        bool fits = yo_atlas_shelf_can_fit(atlas, shelf, rounded_dims);
+        int32_t wasted = shelf->dim_y - rounded_dim.y;
+        bool fits = yo_atlas_shelf_can_fit(atlas, shelf, rounded_dim);
 
         if (fits && shelf->used_x)
         {
-            if (best_shelf_nonempty == NULL || wasted < best_shelf_nonempty->dim_y - rounded_dims.y)
+            if (best_shelf_nonempty == NULL || wasted < best_shelf_nonempty->dim_y - rounded_dim.y)
             {
                 best_shelf_nonempty = shelf;
             }
@@ -248,7 +253,7 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims)
 
         if (fits && !shelf->used_x)
         {
-            if (best_shelf_empty == NULL || wasted < best_shelf_empty->dim_y - rounded_dims.y)
+            if (best_shelf_empty == NULL || wasted < best_shelf_empty->dim_y - rounded_dim.y)
             {
                 best_shelf_empty = shelf;
             }
@@ -267,11 +272,11 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims)
     }
     else if (best_shelf_empty)
     {
-        best_shelf = yo_atlas_shelf_split(atlas, best_shelf_empty, rounded_dims.y);
+        best_shelf = yo_atlas_shelf_split(atlas, best_shelf_empty, rounded_dim.y);
     }
     else
     {
-        best_shelf = yo_atlas_prune_until_enough_y(atlas, rounded_dims.y);
+        best_shelf = yo_atlas_prune_until_enough_y(atlas, rounded_dim.y);
     }
 
     if (best_shelf)
@@ -282,13 +287,13 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims)
             yo_dlist_add(&best_shelf->node_list, ret);
             ret->rect.x = best_shelf->used_x;
             ret->rect.y = best_shelf->base_y;
-            ret->rect.w = dims.x;
-            ret->rect.h = dims.y;
+            ret->rect.w = dim.x;
+            ret->rect.h = dim.y;
 
             ret->last_accessed_generation        = atlas->current_generation;
             best_shelf->last_accessed_generation = atlas->current_generation;
 
-            best_shelf->used_x += dims.x;
+            best_shelf->used_x += dim.x;
         }
     }
 
@@ -308,7 +313,7 @@ static void yo_atlas_reset(yo_atlas_t *atlas)
     atlas->shelf_list.last  = NULL;
 
     yo_atlas_shelf_t *root_shelf = yo_atlas_alloc_shelf(atlas);
-    root_shelf->dim_y = atlas->dims.y;
+    root_shelf->dim_y = atlas->dim.y;
     yo_dlist_add(&atlas->shelf_list, root_shelf);
 
 }

@@ -203,7 +203,7 @@ static yo_atlas_node_t *yo_font_get_glyph(yo_font_id_t font, yo_atlas_t *atlas, 
             // TODO(rune): We could just make rasterization a separate function, e.g. with at yo_font_rasterize_pending() function.
             if (rasterize && !ret->rasterized)
             {
-                int32_t stride = atlas->dims.x;
+                int32_t stride = atlas->dim.x;
                 uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);
 
                 yo_font_backend_rasterize(&slot->backend_info, codepoint, scale, pixel, yo_v2i(ret->rect.w, ret->rect.h), stride);

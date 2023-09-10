@@ -27,10 +27,10 @@ static void yo_svg_printf(yo_svg_doc_t *doc, YO_PRINTF_FORMAT_STRING char *forma
     va_end(args);
 }
 
-static void yo_svg_begin(yo_svg_doc_t *doc, yo_v2i_t dims)
+static void yo_svg_begin(yo_svg_doc_t *doc, yo_v2i_t dim)
 {
     yo_array_reset(&doc->out, true);
-    yo_svg_printf(doc, "<svg width=\"%i\" height=\"%i\" xmlns=\"http://www.w3.org/2000/svg\">\n", dims.x, dims.y);
+    yo_svg_printf(doc, "<svg width=\"%i\" height=\"%i\" xmlns=\"http://www.w3.org/2000/svg\">\n", dim.x, dim.y);
     yo_svg_set_fill(doc, yo_rgb32(230, 230, 230));
     yo_svg_set_stroke(doc, yo_rgb32(200, 200, 200), 1);
 }
@@ -74,10 +74,10 @@ static void yo_svg_set_stroke(yo_svg_doc_t *doc, uint32_t stroke, uint32_t strok
     doc->stroke_width = stroke_width;
 }
 
-static void yo_svg_draw_rectangle(yo_svg_doc_t *doc, yo_v2i_t p, yo_v2i_t dims)
+static void yo_svg_draw_rectangle(yo_svg_doc_t *doc, yo_v2i_t p, yo_v2i_t dim)
 {
     yo_svg_printf(doc, "<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" fill=\"#%06x\" stroke=\"#%06x\" stroke-width=\"%i\"/>\n",
-                  p.x, p.y, dims.w, dims.h, doc->fill, doc->stroke, doc->stroke_width);
+                  p.x, p.y, dim.w, dim.h, doc->fill, doc->stroke, doc->stroke_width);
 }
 
 static void yo_svg_draw_circle(yo_svg_doc_t *doc, yo_v2i_t c, int32_t r)

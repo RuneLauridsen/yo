@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 
 //
 // Windows & OpenGL
@@ -32,6 +33,9 @@
 #define YO_API static
 #include "yo.h"
 #include "yo.c"
+#include "yo_memory.h"
+#include "yo_memory.c"
+
 
 //
 // Platform & backend
@@ -103,8 +107,8 @@ int main()
 
     //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
 
-    yo_file_content_t alger_file = yo_load_file_content("C:\\Windows\\Fonts\\ALGER.TTF");
-    yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.size);
+    // yo_file_content_t alger_file = yo_load_file_content("C:\\Windows\\Fonts\\ALGER.TTF");
+    // yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.size);
 
     //
     // Platform setup
@@ -126,16 +130,15 @@ int main()
 
         yo_impl_win32_opengl_begin_frame(&impl);
 
+        yo_demo();
+        // build_ui();
 
-
-        build_ui();
-
-        yo_box(0, 0);
-        yo_new()->text = "aaaaaaa";
-        yo_new()->font = alger;
-        yo_new()->font_size = 20;
-        yo_new()->font_color = YO_RED;
-        yo_new()->v_align = YO_ALIGN_TOP;
+        // yo_box(0, 0);
+        // yo_new()->text = "aaaaaaa";
+        // yo_new()->font = alger;
+        // yo_new()->font_size = 20;
+        // yo_new()->font_color = YO_RED;
+        // yo_new()->v_align = YO_ALIGN_TOP;
 
 
 #if 0
@@ -180,7 +183,7 @@ int main()
 
     yo_impl_win32_opengl_shutdown(&impl);
 
-    idk_print_tracked_allocations(true, true);
+    // idk_print_tracked_allocations(true, true);
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -283,9 +286,9 @@ void build_ui(void)
 {
     static float f = 0.0f;
 
-    yo_v_layout();
-    yo_new()->tag = "AAA";
-    yo_new()->fill = yo_rgb(20, 20, 20);
+    yo_layout_v();
+    yo_set_tag("AAA");
+    yo_set_fill(yo_rgb(20, 20, 20));
 
     YO_CHILD_SCOPE()
     {
@@ -294,16 +297,16 @@ void build_ui(void)
         static char text_field_buffer[256] = { 'a', 'b', 'c' };
         yo_text_field(yo_id("txtf"), text_field_buffer, sizeof(text_field_buffer));
 
-        yo_container(yo_id_from_string("a"));
-        yo_new()->margin     = yo_margin_all(10);
-        yo_new()->fill = yo_rgb(40, 0, 0);
+        yo_box(yo_id("a"), 0);
+        yo_set_margin(10, 10, 10, 10);
+        yo_set_fill(yo_rgb(40, 0, 0));
         yo_begin_children();
         yo_slider(yo_id("slider"), &f, 1.0f, 10.0f);
     }
 
-    yo_container(0);
-    yo_new()->v_dim = yo_px(200);
-    yo_new()->fill = YO_ORANGE;
+    yo_box(0, 0);
+    yo_set_dim_v(yo_px(200));
+    yo_set_fill(YO_ORANGE);
     YO_CHILD_SCOPE()
     {
         yo_slider_style_t style = yo_default_slider_style();
@@ -313,7 +316,7 @@ void build_ui(void)
 
 
     yo_format_text("The value is %f", f);
-    yo_new()->font_size = (uint32_t)(f * 8) + 10;
+    yo_set_font_size((uint32_t)(f * 8) + 10);
 
     yo_text("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
@@ -343,19 +346,19 @@ void build_ui(void)
 
         yo_table_begin_row(&table);
         yo_table_cell_text(&table, rows_values[row_idx].name);
-        yo_new()->fill = YO_GREEN;
+        yo_set_fill(YO_GREEN);
         yo_table_cell_text(&table, "fixed");
-        yo_new()->fill = YO_CYAN;
+        yo_set_fill(YO_CYAN);
         yo_table_cell_format_text(&table, "val: %f", f);
-        yo_new()->fill = YO_BLUE;
+        yo_set_fill(YO_BLUE);
         yo_table_cell_checkbox(&table, rows_values[row_idx].name2, &b);
-        yo_new()->fill = YO_MAGENTA;
+        yo_set_fill(YO_MAGENTA);
         yo_table_end_row(&table);
     }
     yo_table_end(&table);
 
-    yo_h_layout();
-    yo_new()->h_align = YO_ALIGN_CENTER;
+    yo_layout_h();
+    yo_set_align_h(YO_ALIGN_CENTER);
     YO_CHILD_SCOPE()
     {
         yo_debug_show_atlas_partitions();

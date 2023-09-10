@@ -37,7 +37,7 @@ static void yo_platform_win32_startup(yo_platform_win32_t *platform, uint32_t wi
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     platform->tick_freq = 1000;
-    platform->tick_count_start = GetTickCount64();
+    platform->tick_start = GetTickCount64();
     platform->ctx = yo_create_context(NULL);
     platform->running = true;
     yo_select_context(platform->ctx);
@@ -163,7 +163,7 @@ static void yo_platform_win32_begin_frame(yo_platform_win32_t *platform)
     // Wall-clock
     //
 
-    platform->tick_current =  GetTickCount64() - platform->tick_count_start;
+    platform->tick_current =  GetTickCount64() - platform->tick_start;
 
     ShowWindow(platform->window, SW_SHOW);
 

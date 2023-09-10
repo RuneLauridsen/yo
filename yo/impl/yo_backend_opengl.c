@@ -334,7 +334,7 @@ static void yo_backend_opengl_shutdown(yo_backend_opengl_t *backend)
     // TODO(rune): Properly un-initialize opengl
 }
 
-static bool yo_backend_opengl_vert_idx(yo_backend_opengl_t *backend, size_t vert_count, size_t idx_count, yo_vert_t **vertices, yo_idx_t **indices)
+static bool yo_backend_opengl_reserve_vert_idx(yo_backend_opengl_t *backend, size_t vert_count, size_t idx_count, yo_vert_t **vertices, yo_idx_t **indices)
 {
     bool ok = true;
 
@@ -374,7 +374,7 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
             {
                 yo_vert_t *vertices = NULL;
                 yo_idx_t *indices = NULL;
-                if (!yo_backend_opengl_vert_idx(backend, 4, 6, &vertices, &indices))
+                if (!yo_backend_opengl_reserve_vert_idx(backend, 4, 6, &vertices, &indices))
                 {
                     break;
                 }
@@ -390,8 +390,8 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
                 {
                     // NOTE(rune): Adjust UV coords if clipped
 
-                    YO_ASSERT(clipped_p0.x <= clipped_p1.x);
-                    YO_ASSERT(clipped_p0.y <= clipped_p1.y);
+                    assert(clipped_p0.x <= clipped_p1.x);
+                    assert(clipped_p0.y <= clipped_p1.y);
 
                     yo_v2f_t cof0 = yo_v2f((float)(clipped_p0.x - cmd->aabb.p0.x) / (float)(cmd->aabb.p1.x - cmd->aabb.p0.x),
                                            (float)(clipped_p0.y - cmd->aabb.p0.y) / (float)(cmd->aabb.p1.y - cmd->aabb.p0.y));
@@ -464,8 +464,8 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
             case YO_DRAW_CMD_TRI:
             {
                 yo_vert_t *vertices = NULL;
-                yo_idx_t *indices = NULL;
-                if (!yo_backend_opengl_vert_idx(backend, 3, 3, &vertices, &indices))
+                yo_idx_t  *indices  = NULL;
+                if (!yo_backend_opengl_reserve_vert_idx(backend, 3, 3, &vertices, &indices))
                 {
                     break;
                 }
@@ -493,8 +493,8 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
             case YO_DRAW_CMD_QUAD:
             {
                 yo_vert_t *vertices = NULL;
-                yo_idx_t *indices = NULL;
-                if (!yo_backend_opengl_vert_idx(backend, 4, 6, &vertices, &indices))
+                yo_idx_t  *indices  = NULL;
+                if (!yo_backend_opengl_reserve_vert_idx(backend, 4, 6, &vertices, &indices))
                 {
                     break;
                 }
@@ -556,8 +556,8 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
         glTexImage2D(GL_TEXTURE_2D,
                      0,
                      GL_RED,
-                     info->tex.dims.x,
-                     info->tex.dims.y,
+                     info->tex.dim.x,
+                     info->tex.dim.y,
                      0,
                      GL_RED,
                      GL_UNSIGNED_BYTE,

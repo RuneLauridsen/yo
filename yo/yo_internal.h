@@ -105,48 +105,87 @@ struct yo_scaled_element
     };
 };
 
-typedef struct yo_box_internal yo_internal_box_t;
-struct yo_box_internal
+typedef struct yo_box yo_box_t;
+struct yo_box
 {
-    // WARNING(rune):
-    // Must be first field in yo_box_internal_t, so that we can safely cast from (yo_box_t *) to (yo_box_internal_t *).
-    union { struct yo_box base; struct yo_box; };
+    // NOTE(rune): Transient state setup by builder on every frame. Not copied from previous frame.
+    struct
+    {
+        char           *tag;
+        char           *text;
+        yo_layout_t     child_layout;
+        yo_border_t     border;
+        yo_v4f_t        fill;
+        yo_font_id_t    font;
+        uint32_t        font_size;
+        yo_v4f_t        font_color;
+        bool            on_top;
+        yo_anim_flags_t anim;
+        float           anim_rate;
+        yo_sides_f32_t  margin;
+        yo_sides_f32_t  padding;
+        yo_v2f_t        scroll_offset;
 
+        union
+        {
+            struct { yo_length_t dim_h, dim_v; };
+            struct { yo_length_t dim_a[2]; };
+        };
+        union
+        {
+            struct { yo_align_t align_h, align_v; };
+            struct { yo_align_t align_a[2]; };
+        };
+
+        union
+        {
+            struct { yo_overflow_t overflow_h, overflow_v; };
+            struct { yo_overflow_t overflow_a[2]; };
+        };
+    };
+
+    // NOTE(rune): Used to identify box across frames.
     yo_id_t id;
+
+    // NOTE(rune): Determines the box's input behaviour, rendering and more.
     yo_box_flags_t flags;
 
     // NOTE(rune): Hierarchy
-    yo_internal_box_t *parent;
-    yo_internal_box_t *next;
-    yo_slist(yo_internal_box_t) children;
+    yo_box_t *parent;
+    yo_box_t *next;
+    yo_slist(yo_box_t) children;
 
     // NOTE(rune): Scaled draw commands, whose sizes are calculated after the measure + arrange pass.
     yo_scaled_element_t *scaled_elements;
 
     // NOTE(rune): Hashtable
-    yo_internal_box_t *next_hash;
+    yo_box_t *next_hash;
 
     // NOTE(rune): Calculated during measure pass
-    union
+    struct
     {
-        struct
-        {
-            float w;
-            float h;
-        };
-        struct
-        {
-            float h_dim;
-            float v_dim;
-        };
-        float axis[2];
-    } content_size; // TODO(rune): Use yo_v2f_t
-    yo_measure_text_result_t measured_text;
+        yo_v2f_t content_size;
+        yo_measure_text_result_t measured_text;
+    };
 
     // NOTE(rune): Calculated during arrange pass
-    bool arranged;
-    yo_rectf_t arranged_rect; // NOTE(rune): Relative to parent top-left
-    yo_rectf_t screen_rect;   // NOTE(rune): Relative to screen top-left
+    struct
+    {
+        bool arranged;
+        yo_rectf_t arranged_rect; // NOTE(rune): Relative to parent top-left
+        yo_rectf_t screen_rect;   // NOTE(rune): Relative to screen top-left
+    };
+
+    // NOTE(rune): Persistent userdata. Copied from previous frame.
+    struct
+    {
+        // TODO(rune): Can we store text_field_state like normal userdata?
+        // Renderer needs to know about text_field_state to draw cursor+selection.
+        yo_text_field_state_t text_field_state;
+
+        void  *userdata;
+        size_t userdata_size;
+    };
 };
 
 typedef struct yo_popup yo_popup_t;
@@ -166,7 +205,7 @@ typedef struct yo_frame yo_frame_t;
 struct yo_frame
 {
     yo_arena_t arena;
-    yo_internal_box_t *hash_table[YO_BOX_CACHE_COUNT]; // TODO(rune): Dynamic hash table size
+    yo_box_t *hash_table[YO_BOX_CACHE_COUNT]; // TODO(rune): Dynamic hash table size
     yo_id_t active_id;
     yo_id_t hot_id;
     bool played_anim;
@@ -185,7 +224,7 @@ struct yo_frame
     bool lazy;
 };
 
-typedef yo_internal_box_t *yo_internal_box_ptr_t;
+typedef yo_box_t *yo_internal_box_ptr_t;
 
 YO_TYPEDEF_ARRAY(yo_internal_box_ptr_t);
 YO_TYPEDEF_ARRAY(yo_popup_t);
@@ -206,8 +245,8 @@ struct yo_context
     yo_frame_t *prev_frame;
 
     // Data for building current frame hierarchy
-    yo_internal_box_t *root;
-    yo_internal_box_t *latest_child;
+    yo_box_t *root;
+    yo_box_t *latest_child;
     yo_array(yo_internal_box_ptr_t) parent_stack;
     yo_array(yo_id_t)  id_stack;
 

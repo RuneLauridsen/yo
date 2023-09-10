@@ -38,7 +38,7 @@ struct yo_atlas
     // TODO(rune): Atlas auto resizing
 
     uint8_t *pixels;
-    yo_v2i_t dims;
+    yo_v2i_t dim;
     yo_dlist(yo_atlas_shelf_t) shelf_list;
 
     yo_slist(yo_atlas_shelf_t) shelf_freelist;
@@ -51,9 +51,9 @@ struct yo_atlas
     uint64_t current_generation;
 };
 
-static bool             yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t initial_dims);
+static bool             yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t initial_dim);
 static void             yo_atlas_destroy(yo_atlas_t *atlas);
 static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key);
 static void             yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1);
-static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dims);
+static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim);
 static void             yo_atlas_reset(yo_atlas_t *atlas);

@@ -2,30 +2,30 @@
 
 static void yo_demo_header(char *header)
 {
-    yo_v_layout();
+    yo_layout_v();
     YO_CHILD_SCOPE()
     {
         const yo_v4f_t LINE_COLOR =  yo_rgb(70, 70, 70);
 
         yo_fill(LINE_COLOR);
-        yo_new()->v_dim = yo_px(2);
+        yo_set_dim_v(yo_px(2));
 
         yo_text(header);
-        yo_new()->padding = yo_padding_hv(10, 5);
-        yo_new()->font_size = 30;
-        yo_new()->font_color = yo_rgb(100, 230, 250);
+        yo_set_padding_hv(10, 5);
+        yo_set_font_size(30);
+        yo_set_font_color(yo_rgb(100, 230, 250));
 
         yo_fill(LINE_COLOR);
-        yo_new()->v_dim = yo_px(2);
+        yo_set_dim_v(yo_px(2));
     }
 }
 
 static void yo_demo_desc(char *desc)
 {
     yo_text(desc);
-    yo_new()->font_size = 18;
-    yo_new()->font_color = yo_rgb(180, 180, 180);
-    yo_new()->padding = yo_padding_hv(10, 5);
+    yo_set_font_size(18);
+    yo_set_font_color(yo_rgb(180, 180, 180));
+    yo_set_padding_hv(10, 5);
 }
 
 YO_API void yo_demo(void)
@@ -44,13 +44,13 @@ YO_API void yo_demo(void)
     } state;
 
     yo_box(0, 0);
-    yo_new()->fill = pallette.background;
+    yo_set_fill(pallette.background);
 
     yo_begin_scroll_area_ex(yo_id("demo_scroller"), 20.f, state.scroll_smooth_rate);
 
     yo_box(0, 0);
-    yo_new()->child_layout = YO_LAYOUT_VERTICAL;
-    yo_new()->padding = yo_padding(10, 10, 10, 10);
+    yo_set_layout(YO_LAYOUT_VERTICAL);
+    yo_set_padding(10, 10, 10, 10);
 
     YO_CHILD_SCOPE()
     {
@@ -64,26 +64,25 @@ YO_API void yo_demo(void)
             yo_demo_header("Widget: yo_button()");
             yo_demo_desc("Simple button with a mouse hover animation.");
 
-
-            yo_h_layout();
+            yo_layout_h();
             YO_CHILD_SCOPE()
             {
                 if (yo_button("Increment").clicked) { state.button_counter++; }
                 if (yo_button("Decrement").clicked) { state.button_counter--; }
-                yo_h_space(yo_px(20));
+                yo_space_h(yo_px(20));
                 yo_format_text("Counter = %i", state.button_counter);
-                yo_new()->v_align = YO_ALIGN_CENTER;
+                yo_set_align_v(YO_ALIGN_CENTER);
             }
 
-            yo_v_space(yo_px(20));
+            yo_space_v(yo_px(20));
 
-            yo_button("Blue");     yo_new()->fill = YO_BLUE;    yo_new()->font_color = YO_CYAN;     yo_new()->border = yo_border(2, YO_BLACK, 10);
-            yo_button("Yellow");   yo_new()->fill = YO_YELLOW;  yo_new()->font_color = YO_ORANGE;   yo_new()->border = yo_border(2, YO_BLACK, 0);
-            yo_button("Red");      yo_new()->fill = YO_RED;     yo_new()->font_color = YO_MAGENTA;  yo_new()->border = yo_border(2, YO_BLACK, 15);
+            yo_button("Blue");     yo_set_fill(YO_BLUE);    yo_set_font_color(YO_CYAN);     yo_set_border(2, YO_BLACK, 10);
+            yo_button("Yellow");   yo_set_fill(YO_YELLOW);  yo_set_font_color(YO_ORANGE);   yo_set_border(2, YO_BLACK, 0);
+            yo_button("Red");      yo_set_fill(YO_RED);     yo_set_font_color(YO_MAGENTA);  yo_set_border(2, YO_BLACK, 15);
 
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
         //
         // Section: yo_checkbox()
@@ -96,18 +95,18 @@ YO_API void yo_demo(void)
             yo_checkbox("Checkbox", &state.checkbox_value);
 
             yo_box(0, 0);
-            yo_new()->text       = state.checkbox_value ? "(-: " : ":-(";
-            yo_new()->font_size  = 50;
-            yo_new()->font_color = YO_BLACK;
-            yo_new()->fill       = YO_YELLOW;
-            yo_new()->h_align    = YO_ALIGN_LEFT;
-            yo_new()->h_dim      = yo_px(50);
-            yo_new()->v_dim      = yo_px(50);
-            yo_new()->border     = yo_border(0, YO_TRANSPARENT, 10);
+            yo_set_text(state.checkbox_value ? "(-: " : ":-(");
+            yo_set_font_size(50);
+            yo_set_font_color(YO_BLACK);
+            yo_set_fill(YO_YELLOW);
+            yo_set_align_h(YO_ALIGN_LEFT);
+            yo_set_dim_h(yo_px(50));
+            yo_set_dim_v(yo_px(50));
+            yo_set_border(0, YO_TRANSPARENT, 10);
 
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
         //
         // Section: yo_radio()
@@ -122,7 +121,7 @@ YO_API void yo_demo(void)
             yo_format_text("Selected index %i", state.radio_index);
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
         //
         // Section: yo_slider()
@@ -138,11 +137,11 @@ YO_API void yo_demo(void)
             yo_slider_style_t style = yo_default_slider_style();
             style.axis = YO_AXIS_Y;
             yo_slider_ex(yo_id("my_vertical_slider"), &state.slider_value, 0.0f, 10.0f, &style);
-            yo_new()->v_dim = yo_px(100);
-            yo_new()->h_align = YO_ALIGN_LEFT;
+            yo_set_dim_v(yo_px(100));
+            yo_set_align_h(YO_ALIGN_LEFT);
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
         //
         // Section yo_text_field()
@@ -156,7 +155,7 @@ YO_API void yo_demo(void)
             yo_text_field(yo_id("my_text_field"), state.buffer, sizeof(state.buffer));
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
         //
         // Section yo_bullet_item
@@ -170,7 +169,7 @@ YO_API void yo_demo(void)
             yo_bullet_item("opqrstu");
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
         //
         // Section: Scrolling
@@ -187,7 +186,7 @@ YO_API void yo_demo(void)
             yo_slider(yo_id("smooth"), &state.scroll_smooth_rate, 1.0f, 50.0f);
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
         //
         // Section: Tables
@@ -215,7 +214,7 @@ YO_API void yo_demo(void)
             yo_table_end(&table);
         }
 
-        yo_v_space(yo_px(50));
+        yo_space_v(yo_px(50));
 
     }
 

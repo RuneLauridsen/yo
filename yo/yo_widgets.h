@@ -49,11 +49,12 @@ YO_API yo_box_t *yo_circle(yo_id_t id, float diameter, yo_v4f_t fill, uint32_t b
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API yo_box_t *yo_h_space(yo_length_t amount);
-YO_API yo_box_t *yo_v_space(yo_length_t amount);
-YO_API yo_box_t *yo_h_layout(void);
-YO_API yo_box_t *yo_v_layout(void);
-YO_API yo_box_t *yo_container(yo_id_t id);
+YO_API void yo_space_a(yo_length_t amount, yo_axis_t axis);
+YO_API void yo_space_h(yo_length_t amount);
+YO_API void yo_space_v(yo_length_t amount);
+YO_API void yo_layout_a(yo_axis_t axis);
+YO_API void yo_layout_h(void);
+YO_API void yo_layout_v(void);
 
 ////////////////////////////////////////////////////////////////
 //
@@ -75,15 +76,7 @@ YO_API yo_box_t *yo_format_text_v(char *format, va_list args);
 //
 ////////////////////////////////////////////////////////////////
 
-typedef struct yo_text_field yo_text_field_t;
-struct yo_text_field
-{
-    bool text_changed;
-    bool state_changed;
-    yo_box_t *box;
-};
-
-YO_API yo_text_field_t yo_text_field(yo_id_t id, char *buffer, size_t buffer_size);
+YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size);
 
 ////////////////////////////////////////////////////////////////
 //

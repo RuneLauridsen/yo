@@ -11,10 +11,10 @@
 YO_API  yo_box_t *yo_rectangle(yo_v4f_t fill, yo_length_t width, yo_length_t height, yo_id_t id)
 {
     yo_box_t *box   = yo_box(id, 0);
-    box->tag        = "TAG_RECTANGLE";
-    box->fill      = fill;
-    box->h_dim      = width;
-    box->v_dim     = height;
+    yo_set_tag("TAG_RECTANGLE");
+    yo_set_fill(fill);
+    yo_set_dim_h(width);
+    yo_set_dim_v(height);
     return box;
 }
 
@@ -29,10 +29,10 @@ YO_API  yo_box_t *yo_circle(yo_id_t id, float diameter, yo_v4f_t fill, uint32_t 
     if (flags & YO_CIRCLE_BORDER_ADDS_DIAMETER) { diameter += border_thickness * 2; }
 
     yo_box_t *box   = yo_box(id, 0);
-    box->border     = yo_border((float)(border_thickness), border_color, (float)(diameter / 2));
-    box->h_dim      = yo_px(diameter);
-    box->v_dim      = yo_px(diameter);
-    box->fill = fill;
+    yo_set_border((float)(border_thickness), border_color, (float)(diameter / 2));
+    yo_set_dim_h(yo_px(diameter));
+    yo_set_dim_v(yo_px(diameter));
+    yo_set_fill(fill);
     return box;
 }
 
@@ -45,76 +45,56 @@ YO_API  yo_box_t *yo_circle(yo_id_t id, float diameter, yo_v4f_t fill, uint32_t 
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API  yo_box_t *yo_h_space(yo_length_t amount)
+YO_API void yo_space_h(yo_length_t amount)
 {
-    yo_box_t *box = yo_box(0, 0);
-    box->v_dim    = yo_rel(1.0f);
-    box->h_dim    = amount;
-    return box;
+    yo_box(0, 0);
+    yo_set_dim_v(yo_rel(1.0f));
+    yo_set_dim_h(amount);
 }
 
-YO_API  yo_box_t *yo_v_space(yo_length_t amount)
+YO_API void yo_space_v(yo_length_t amount)
 {
-    yo_box_t *box = yo_box(0, 0);
-    box->v_dim    = amount;
-    box->h_dim    = yo_rel(1.0f);
-    return box;
+    yo_box(0, 0);
+    yo_set_dim_v(amount);
+    yo_set_dim_h(yo_rel(1.0f));
 }
 
-YO_API  yo_box_t *yo_h_layout(void)
+YO_API void yo_layout_h(void)
 {
-    yo_box_t *box      = yo_box(0, 0);
-    box->tag           = "TAG_HORIZONTAL_LAYOUT";
-    box->child_layout  = YO_LAYOUT_HORIZONTAL;
-    return box;
+    yo_box(0, 0);
+    yo_set_tag("TAG_HORIZONTAL_LAYOUT");
+    yo_set_layout(YO_LAYOUT_HORIZONTAL);
 }
 
-YO_API  yo_box_t *yo_v_layout(void)
+YO_API void yo_layout_v(void)
 {
-    yo_box_t *box     = yo_box(0, 0);
-    box->tag          = "TAG_VERTICAL_LAYOUT";
-    box->child_layout = YO_LAYOUT_VERTICAL;
-    return box;
+    yo_box(0, 0);
+    yo_set_tag("TAG_VERTICAL_LAYOUT");
+    yo_set_layout(YO_LAYOUT_VERTICAL);
 }
 
-YO_API  yo_box_t *yo_container(yo_id_t id)
+YO_API void yo_layout_a(yo_axis_t axis)
 {
-    yo_box_t *box     = yo_box(id, 0);
-    box->tag          = "TAG_CONTAINER";
-    box->child_layout = YO_LAYTOUT_NONE;
-    return box;
-}
-
-YO_API  yo_box_t *yo_axis_layout(yo_axis_t axis)
-{
-    yo_box_t *ret = NULL;
-
     if (axis == YO_AXIS_X)
     {
-        ret = yo_h_layout();
+        yo_layout_h();
     }
     else
     {
-        ret = yo_v_layout();
+        yo_layout_v();
     }
-
-    return ret;
 }
 
-YO_API  yo_box_t *yo_axis_space(yo_axis_t axis, yo_length_t length)
+YO_API void yo_space_a(yo_length_t length, yo_axis_t axis)
 {
-    yo_box_t *ret = NULL;
-
     if (axis == YO_AXIS_X)
     {
-        ret = yo_h_space(length);
+        yo_space_h(length);
     }
     else
     {
-        ret = yo_v_space(length);
+        yo_space_v(length);
     }
-
-    return ret;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -128,9 +108,9 @@ YO_API  yo_box_t *yo_axis_space(yo_axis_t axis, yo_length_t length)
 YO_API  yo_box_t *yo_text(char *text)
 {
     yo_box_t *box         = yo_box(0, 0);
-    box->tag              = "TAG_TEXT";
-    box->text             = text;
-    box->font_color       = YO_WHITE; // TODO(rune): Dark/light mode
+    yo_set_tag("TAG_TEXT");
+    yo_set_text(text);
+    yo_set_font_color(YO_WHITE); // TODO(rune): Dark/light mode
     return box;
 }
 
@@ -138,7 +118,7 @@ YO_API  yo_box_t *yo_format_text_v(char *format, va_list args)
 {
     char *text     = yo_alloc_temp_string_v(format, args);
     yo_box_t *box  = yo_text(text);
-    box->tag       = "TAG_FORMAT_TEXT";
+    yo_set_tag("TAG_FORMAT_TEXT");
     return box;
 }
 
@@ -200,31 +180,27 @@ YO_API  bool yo_is_word_char(char c)
 }
 
 // TODO(rune): Cleanup
-YO_API  yo_text_field_t yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
+YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
 {
-    yo_text_field_state_t prev_state = { 0 };
-    yo_text_field_t ret = { 0 };
+    yo_box_t *box = yo_box(id,
+                           YO_BOX_ACTIVATE_ON_CLICK |
+                           YO_BOX_DRAW_TEXT_CURSOR);
 
-    ret.box = yo_box(id,
-                     YO_BOX_ACTIVATE_ON_CLICK |
-                     YO_BOX_DRAW_TEXT_CURSOR);
+    yo_set_text(buffer);
+    yo_set_padding(5, 5, 5, 5);
+    yo_set_font_color(yo_rgb(220, 220, 220));
+    yo_set_fill(yo_rgb(56, 56, 56));
+    yo_set_border(1, yo_rgb(66, 66, 66), 0);
+    yo_set_tag("TAG_TEXT_FIELD");
 
-    ret.box->text              = buffer;
-    ret.box->padding           = yo_padding(5, 5, 5, 5);
-    ret.box->font_color        = yo_rgb(220, 220, 220);
-    ret.box->fill              = yo_rgb(56, 56, 56);
-    ret.box->border            = yo_border(1, yo_rgb(66, 66, 66), 0);
-    ret.box->tag               = "TAG_TEXT_FIELD";
+    yo_text_field_state_t *state = yo_get_text_field_state();
 
-    yo_text_field_state_t *state = &ret.box->text_field_state;
-    prev_state = *state;
-
-    yo_signal_t box_signal = yo_get_signal(ret.box);
+    yo_signal_t box_signal = yo_get_signal(box);
 
     if (box_signal.is_active)
     {
-        ret.box->border.color = yo_rgb(153, 153, 153);
-        ret.box->fill         = yo_rgb(31, 31, 31);
+        yo_set_border_color(yo_rgb(153, 153, 153));
+        yo_set_fill(yo_rgb(31, 31, 31));
 
         if (box_signal.keycode)
         {
@@ -348,8 +324,6 @@ YO_API  yo_text_field_t yo_text_field(yo_id_t id, char *buffer, size_t buffer_si
                         state->marker = state->cursor;
                     }
                 }
-
-                ret.text_changed = true;
             }
 
             //
@@ -380,8 +354,6 @@ YO_API  yo_text_field_t yo_text_field(yo_id_t id, char *buffer, size_t buffer_si
 
                     state->cursor = (uint32_t)selection_begin;
                     state->marker = state->cursor;
-
-                    ret.text_changed = true;
                 }
             }
 
@@ -389,15 +361,6 @@ YO_API  yo_text_field_t yo_text_field(yo_id_t id, char *buffer, size_t buffer_si
             state->marker = YO_CLAMP(state->marker, 0, buffer_strlen);
         }
     }
-
-    ret.box->text_field_state = *state;
-
-    if (memcmp(state, &prev_state, sizeof(yo_text_field_state_t)) != 0)
-    {
-        ret.state_changed = true;
-    }
-
-    return ret;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -414,22 +377,21 @@ YO_API  yo_signal_t yo_button(char *text)
 
     yo_box_t *box             = yo_box(yo_id_from_string(text),
                                        YO_BOX_HOT_ON_HOVER);
-    box->text                 = text;
-    box->tag                  = "TAG_BUTTON";
-    box->fill                 = style.fill;
-    box->font_size            = style.font_size;
-    box->font_color           = style.font_color;
-    box->border               = style.border;
-    box->padding              = yo_padding_hv(style.h_padding, style.v_padding);
-    box->h_align              = YO_ALIGN_LEFT;
-    box->anim                 = YO_ANIM_FILL;
-    box->anim_rate            = 20.0f;
+    yo_set_text(text);
+    yo_set_tag("TAG_BUTTON");
+    yo_set_fill(style.fill);
+    yo_set_font_size(style.font_size);
+    yo_set_font_color(style.font_color);
+    yo_set_border_s(style.border);
+    yo_set_padding_hv(style.h_padding, style.v_padding);
+    yo_set_align_h(YO_ALIGN_LEFT);
+    yo_set_anim(YO_ANIM_FILL, 20.0f);
 
     yo_signal_t signal = yo_get_signal(box);
     if (signal.is_hot)
     {
-        box->fill = style.hot.fill;
-        box->border = style.hot.border;
+        yo_set_fill(style.hot.fill);
+        yo_set_border_s(style.hot.border);
     }
 
     return signal;
@@ -451,17 +413,17 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
 
     bool was_clicked = false;
 
-    yo_h_layout();
+    yo_layout_h();
     YO_CHILD_SCOPE()
     {
         yo_box_t *check_square    = yo_box(yo_id_from_string(label), 0);
-        check_square->tag         = "TAG_CHECK_SQUARE";
-        check_square->h_dim       = yo_px(20);
-        check_square->v_dim       = yo_px(20);
-        check_square->padding     = yo_padding(2, 2, 2, 2);
-        check_square->border      = yo_border(1, yo_rgb(128, 128, 128), 2);
-        check_square->fill        = yo_rgb(64, 64, 64);
-        check_square->anim        = YO_ANIM_FILL;
+        yo_set_tag("TAG_CHECK_SQUARE");
+        yo_set_dim_h(yo_px(20));
+        yo_set_dim_v(yo_px(20));
+        yo_set_padding(2, 2, 2, 2);
+        yo_set_border(1, yo_rgb(128, 128, 128), 2);
+        yo_set_fill(yo_rgb(64, 64, 64));
+        yo_set_anim(YO_ANIM_FILL, 20.0f);
 
         yo_signal_t signal = yo_get_signal(check_square);
         if (signal.clicked)
@@ -472,7 +434,7 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
 
         if (signal.hovered)
         {
-            check_square->fill = yo_rgb(100, 100, 100);
+            yo_set_fill(yo_rgb(100, 100, 100));
         }
 
         if (*is_checked)
@@ -480,10 +442,10 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
             yo_scaled_checkmark(yo_rgb(200, 200, 200));
         }
 
-        yo_h_space(yo_px(5));
+        yo_space_h(yo_px(5));
 
-        yo_box_t *text_box = yo_text(label);
-        text_box->v_align = YO_ALIGN_CENTER;
+        yo_text(label);
+        yo_set_align_v(YO_ALIGN_CENTER);
     }
 
     return was_clicked;
@@ -501,31 +463,28 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
 {
     bool was_clicked = false;
 
-    yo_h_layout();
+    yo_layout_h();
     yo_begin_children();
     {
         yo_box_t *circle_container = yo_box(yo_id_from_string(label), 0);
-        circle_container->h_dim    = yo_px(24);
-        circle_container->v_dim    = yo_px(24);
-        yo_signal_t signal         = yo_get_signal(circle_container);
+        yo_set_dim_h(yo_px(24));
+        yo_set_dim_v(yo_px(24));
+        yo_signal_t signal = yo_get_signal(circle_container);
 
         yo_begin_children();
         {
-            yo_box_t *circle;
-
             if (signal.hovered)
             {
-                circle = yo_circle(yo_id("circle"), 16, yo_rgb(100, 100, 100), 2, yo_rgb(172, 172, 172), YO_CIRCLE_BORDER_ADDS_DIAMETER);
+                yo_circle(yo_id("circle"), 16, yo_rgb(100, 100, 100), 2, yo_rgb(172, 172, 172), YO_CIRCLE_BORDER_ADDS_DIAMETER);
             }
             else
             {
-                circle = yo_circle(yo_id("circle"), 16, yo_rgb(64, 64, 64), 0, yo_v4f(0, 0, 0, 0), 0);
+                yo_circle(yo_id("circle"), 16, yo_rgb(64, 64, 64), 0, yo_v4f(0, 0, 0, 0), 0);
             }
 
-            circle->v_align  = YO_ALIGN_CENTER;
-            circle->h_align  = YO_ALIGN_CENTER;
-            circle->anim = YO_ANIM_FILL|YO_ANIM_BORDER;
-            circle->anim_rate = 20.0f;
+            yo_set_align_v(YO_ALIGN_CENTER);
+            yo_set_align_h(YO_ALIGN_CENTER);
+            yo_set_anim(YO_ANIM_FILL|YO_ANIM_BORDER, 20.0f);
 
 
             if (signal.clicked)
@@ -542,8 +501,8 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
         }
         yo_end_children();
 
-        yo_box_t *text = yo_text(label);
-        text->v_align = YO_ALIGN_CENTER;
+        yo_text(label);
+        yo_set_align_v(YO_ALIGN_CENTER);
     }
     yo_end_children();
 
@@ -560,14 +519,12 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
 
 YO_API void yo_bullet_item(char *label)
 {
-    yo_h_layout();
+    yo_layout_h();
     YO_CHILD_SCOPE()
     {
         yo_circle(0, 7, yo_rgb(200, 200, 200), 0, YO_TRANSPARENT, 0);
-        yo_new()->v_align      = YO_ALIGN_CENTER;
-        yo_new()->margin.top   = 7;
-        yo_new()->margin.right = 6;
-        yo_new()->margin.left  = 10;
+        yo_set_align_v(YO_ALIGN_CENTER);
+        yo_set_margin(10, 7, 6, 0);
 
         yo_text(label);
     }
@@ -593,7 +550,7 @@ YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_a
     if (signal.is_active && yo_query_mouse_button(YO_MOUSE_BUTTON_LEFT))
     {
         float fx = (float)(signal.mouse_pos.axis[axis]);
-        float fw = (float)(screen_rect.a_dim[axis]);
+        float fw = (float)(screen_rect.dim_a[axis]);
 
         float offset = (fx - thumb_dim / 2) / (fw - thumb_dim);
         *value = yo_lerp(min, max, offset);
@@ -616,7 +573,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
     if (!value) value = &dummy_value;
 
     yo_box_t *bounding_box = yo_box(id, YO_BOX_ACTIVATE_ON_HOLD);
-    bounding_box->tag      = "TAG_SLIDER_MAIN";
+    yo_set_tag("TAG_SLIDER_MAIN");
     yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, THUMB_DIM, bounding_box);
     YO_CHILD_SCOPE()
     {
@@ -625,29 +582,28 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
         // Slider line
         //
         {
-            yo_box_t *line                          = yo_box(0, 0);
-            line->fill                              = yo_rgb(64, 64, 64);
-            line->border                            = yo_border(0, yo_v4f(0, 0, 0, 0), 2);
-            line->a_dim[style->axis]                = yo_rel(1.0f);
-            line->a_dim[!style->axis]               = yo_px(10);
-            line->margin.axis[style->axis].forward  = 2;
-            line->margin.axis[style->axis].backward = 2;
+            yo_box(0, 0);
+            yo_set_fill(yo_rgb(64, 64, 64));
+            yo_set_border(0, yo_v4f(0, 0, 0, 0), 2);
+            yo_set_dim_a(yo_rel(1.0f), style->axis);
+            yo_set_dim_a(yo_px(10), !style->axis);
+            yo_set_margin_a(2, 2, style->axis);
         }
 
         //
         // Slider circle
         //
         {
-            yo_axis_layout(style->axis);
+            yo_layout_a(style->axis);
             YO_CHILD_SCOPE()
             {
-                yo_axis_space(style->axis, yo_rel((*value - min) / (max - min)));
+                yo_space_a(yo_rel((*value - min) / (max - min)), style->axis);
 
                 yo_box_t   *circle_container        = yo_box(yo_id_from_string("slider circle"), 0);
                 yo_signal_t circle_container_signal = yo_get_signal(circle_container);
 
-                circle_container->h_dim = yo_px(style->thumb_container_h_dim);
-                circle_container->v_dim = yo_px(style->thumb_container_v_dim);
+                yo_set_dim_h(yo_px(style->thumb_container_h_dim));
+                yo_set_dim_v(yo_px(style->thumb_container_v_dim));
 
                 bool thumb_hot    = circle_container_signal.hovered;
                 bool thumb_active = signal.is_active;
@@ -658,14 +614,14 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
                     if (thumb_hot)    thumb_style = &style->thumb_hot;
                     if (thumb_active) thumb_style = &style->thumb_active;
 
-                    yo_box_t *thumb = yo_box(0, 0);
-                    thumb->border   = thumb_style->border;
-                    thumb->fill     = thumb_style->fill;
-                    thumb->h_dim    = yo_px(thumb_style->h_dim);
-                    thumb->v_dim    = yo_px(thumb_style->v_dim);
+                    yo_box(0, 0);
+                    yo_set_border_s(thumb_style->border);
+                    yo_set_fill(thumb_style->fill);
+                    yo_set_dim_h(yo_px(thumb_style->h_dim));
+                    yo_set_dim_v(yo_px(thumb_style->v_dim));
                 }
 
-                yo_axis_space(style->axis, yo_rel(1.0f - (*value - min) / (max - min)));
+                yo_space_a(yo_rel(1.0f - (*value - min) / (max - min)), style->axis);
             }
         }
     }
@@ -686,28 +642,28 @@ YO_API  void yo_slider_with_label(char *label, float *value, float min, float ma
 
 YO_API  void yo_menu_separator(void)
 {
-    yo_v_space(yo_px(5));
+    yo_space_v(yo_px(5));
     yo_rectangle(yo_rgb(64, 64, 64), yo_rel(1.0f), yo_px(1), 0);
-    yo_v_space(yo_px(5));
+    yo_space_v(yo_px(5));
 }
 
 YO_API  yo_signal_t yo_menu_item(char *label)
 {
     yo_box_t *box = yo_box(yo_id_from_string(label), 0);
-    box->text = label;
-    box->h_dim = yo_rel(1.0f);
-    box->text                   = label;
-    box->tag                    = "TAG_BUTTON";
-    box->font_color             = yo_rgb(230, 230, 230);
-    box->padding                = yo_padding(5, 5, 5, 5);
-    box->fill                   = yo_rgb(48, 48, 48);
-    box->border                 = yo_border(1, yo_rgb(48, 48, 48), 0); // NOTE(rune): Dummy border, to keep same layout when items is hovered
+    yo_set_text(label);
+    yo_set_dim_h(yo_rel(1.0f));
+    yo_set_text(label);
+    yo_set_tag("TAG_BUTTON");
+    yo_set_font_color(yo_rgb(230, 230, 230));
+    yo_set_padding(5, 5, 5, 5);
+    yo_set_fill(yo_rgb(48, 48, 48));
+    yo_set_border(1, yo_rgb(48, 48, 48), 0); // NOTE(rune): Dummy border, to keep same layout when items is hovered
 
     yo_signal_t signal = yo_get_signal(box);
     if (signal.hovered)
     {
-        box->fill         = yo_rgb(64, 64, 64);
-        box->border.color = yo_rgb(110, 110, 110);
+        yo_set_fill(yo_rgb(64, 64, 64));
+        yo_set_border_color(yo_rgb(110, 110, 110));
     }
 
     return signal;
@@ -718,8 +674,8 @@ YO_API  bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
     bool ret = false;
 
     yo_id_t id = yo_id_from_string(label);
-    yo_container(id);
-    yo_new()->child_layout = YO_LAYOUT_HORIZONTAL;
+    yo_box(id, 0);
+    yo_set_layout(YO_LAYOUT_HORIZONTAL);
     yo_begin_children();
     {
         if (yo_menu_item(label).hovered)
@@ -735,15 +691,15 @@ YO_API  bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
         ret = true;
 
         yo_begin_children();
-        yo_h_layout();
-        yo_new()->h_overflow = YO_OVERFLOW_SPILL;
-        yo_new()->v_overflow   = YO_OVERFLOW_SPILL;
+        yo_layout_h();
+        yo_set_overflow_h(YO_OVERFLOW_SPILL);
+        yo_set_overflow_v(YO_OVERFLOW_SPILL);
         yo_begin_children();
 
-        yo_v_layout();
-        yo_new()->fill       = bg;
-        yo_new()->border     = yo_border(1, yo_rgb(64, 64, 64), 0);
-        yo_new()->padding    = yo_padding(5, 5, 5, 0);
+        yo_layout_v();
+        yo_set_fill(bg);
+        yo_set_border(1, yo_rgb(64, 64, 64), 0);
+        yo_set_padding(5, 5, 5, 0);
         yo_begin_children();
     }
 
@@ -781,8 +737,8 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
 {
     // TODO(rune): Horizontal scrolling
 
-    yo_box_t *area =  yo_container(id);
-    area->child_layout = YO_LAYOUT_HORIZONTAL;
+    yo_box_t *area = yo_box(id, 0);
+    yo_set_layout(YO_LAYOUT_HORIZONTAL);
 
     bool mouse_hover = yo_get_signal(area).hovered;
     float scroll_delta_y = 0.0f;
@@ -799,21 +755,24 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         // Content container
         //
 
-        yo_box_t *content_container     = yo_container(yo_id("scroll_container"));
-        content_container->child_layout = YO_LAYOUT_VERTICAL;
-        content_container->tag          = "scroll_container";
-        content_container->h_dim        = yo_rel(1.0f);
-        content_container->v_overflow   = YO_OVERFLOW_SCROLL;
-        content_container->anim         = YO_ANIM_SCROLL;
-        content_container->anim_rate    = anim_rate;
-        content_container->target_scroll_offset.y += scroll_delta_y;
+        yo_box_t *content_container     = yo_box(yo_id("scroll_container"), 0);
+        yo_set_layout(YO_LAYOUT_VERTICAL);
+        yo_set_tag("scroll_container");
+        yo_set_dim_h(yo_rel(1.0f));
+        yo_set_overflow_v(YO_OVERFLOW_SCROLL);
+        yo_set_anim(YO_ANIM_SCROLL, anim_rate);
+
+        yo_v2f_t *target_scroll_offset = yo_get_userdata(sizeof(yo_v2f_t));
+        target_scroll_offset->y += scroll_delta_y;
+
+        yo_set_scroll(*target_scroll_offset);
 
         //
         // Scroll bar
         //
 
-        yo_container(0);
-        yo_new()->v_dim = yo_rel(1.0f);
+        yo_box(0, 0);
+        yo_set_dim_v(yo_rel(1.0f));
         YO_CHILD_SCOPE()
         {
             yo_slider_style_t slider_style = yo_default_slider_style();
@@ -837,13 +796,13 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
             slider_style.thumb_active     = thumb_style_hot;
             slider_style.thumb_hot        = thumb_style_hot;
 
-            float content_dim_y = yo_get_content_dim(content_container).y;
+            float content_dim_y  = yo_get_content_dim(content_container).y;
             float content_area_y = yo_get_arranged_rect(content_container).h;
 
             float slider_min = 0.0f;
             float slider_max = YO_MAX(content_dim_y - content_area_y, 0.0f);
 
-            yo_slider_ex(yo_id("vert slider"), &content_container->target_scroll_offset.y, slider_min, slider_max, &slider_style);
+            yo_slider_ex(yo_id("vert slider"), &target_scroll_offset->y, slider_min, slider_max, &slider_style);
         }
 
         yo_begin_children_of(content_container);
@@ -894,7 +853,7 @@ YO_API  void yo_table_headers(yo_table_t *table);
 
 YO_API  void yo_table_begin(yo_table_t *table)
 {
-    yo_v_layout();
+    yo_layout_v();
     yo_begin_children();
 
     if (!(table->flags & YO_TABLE_FLAG_NO_HEADERS))
@@ -914,7 +873,7 @@ YO_API  void yo_table_begin_row(yo_table_t *table)
 {
     table->col_idx = 0;
 
-    yo_h_layout();
+    yo_layout_h();
     yo_begin_children();
 }
 
@@ -929,14 +888,14 @@ YO_API  void yo_table_cell(yo_table_t *table)
 {
     if (table->col_idx < table->col_count)
     {
-        yo_box_t *box = yo_box(0, 0);
-        box->border   = yo_border(1, yo_rgb(128, 128, 128), 0);
-        box->fill     = yo_rgb(20, 20, 20);
-        box->h_dim    = table->cols[table->col_idx].width;
+        yo_box(0, 0);
+        yo_set_border(1, yo_rgb(128, 128, 128), 0);
+        yo_set_fill(yo_rgb(20, 20, 20));
+        yo_set_dim_h(table->cols[table->col_idx].width);
 
-        if (box->h_dim.is_rel)
+        if (table->cols[table->col_idx].width.is_rel)
         {
-            box->h_overflow = YO_OVERFLOW_CLIP;
+            yo_set_overflow_h(YO_OVERFLOW_CLIP);
         }
     }
 
@@ -949,7 +908,7 @@ YO_API  void yo_table_cell_text(yo_table_t *table, char *text)
     YO_CHILD_SCOPE()
     {
         yo_text(text);
-        yo_new()->tag = "TAG_TABLE_CELL_TEXT";
+        yo_set_tag("TAG_TABLE_CELL_TEXT");
     }
 }
 
@@ -957,7 +916,7 @@ YO_API  void yo_table_cell_format_text_v(yo_table_t *table, char *format, va_lis
 {
     char *text = yo_alloc_temp_string_v(format, args);
     yo_table_cell_text(table, text);
-    yo_new()->tag = "TAG_TABLE_CELL_FORMAT_TEXT";
+    yo_set_tag("TAG_TABLE_CELL_FORMAT_TEXT");
 }
 
 YO_API  void yo_table_cell_format_text(yo_table_t *table, char *format, ...)
@@ -974,14 +933,14 @@ YO_API  void yo_table_cell_checkbox(yo_table_t *table, char *label, bool *is_che
     YO_CHILD_SCOPE()
     {
         yo_checkbox(label, is_checked);
-        yo_new()->tag = "TAG_TABLE_CELL_CHECKBOX";
+        yo_set_tag("TAG_TABLE_CELL_CHECKBOX");
     }
 }
 
 YO_API  void yo_table_cell_header(yo_table_t *table, char *text)
 {
     yo_table_cell_text(table, text);
-    yo_new()->fill = yo_rgb(64, 64, 64);
+    yo_set_fill(yo_rgb(64, 64, 64));
 }
 
 YO_API  void yo_table_headers(yo_table_t *table)

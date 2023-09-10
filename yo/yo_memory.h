@@ -206,26 +206,26 @@ enum
     YO_ARENA_TYPE_CHAIN_EXPONENTIAL
 };
 
-typedef struct yo_arena_block yo_arena_block;
+typedef struct yo_arena_block yo_arena_block_t;
 struct yo_arena_block
 {
     uint8_t *base;
     size_t   size_used;
     size_t   size_allocated;
-    yo_arena_block *next;
-    yo_arena_block *prev;
+    yo_arena_block_t *next;
+    yo_arena_block_t *prev;
 };
 
 // NOTE(rune): Stores a snapshot of the arena's state, so that it can be restored with yo_arena_end_temp.
 typedef struct yo_arena_temp yo_arena_temp_t;
 struct yo_arena_temp
 {
-    yo_arena_block  *chain_head;
+    yo_arena_block_t  *chain_head;
     yo_arena_temp_t *next;
 
-    // NOTE(rune): In case the there wasn't enough space to allocate a yo_arena_temp_t in
-    // yo_arena_begin_temp, we still force the user to call yo_end_temp, and use arena.temp_depth
-    // to determine if we are popping the right yo_arena_temp_t.
+    // NOTE(rune): In case there wasn't enough space to allocate a yo_arena_temp_t in
+    // yo_arena_begin_temp, we still force the user to call yo_end_temp, and use
+    // arena.temp_depth to determine if we are popping the right yo_arena_temp_t.
     uint32_t depth;
 };
 
@@ -234,12 +234,12 @@ struct yo_arena
 {
     // NOTE(rune): We store the first chain_link by value, to avoid double-indirection in
     // the typical YO_ARENA_TYPE_NO_CHAIN case.
-    yo_arena_block self;
+    yo_arena_block_t self;
 
     // WARNING(rune): Since arena_t is allowed to be copied by value, we can't store a pointer
     // to arena.self in chain list. This makes to arena_push_size implementation slightly more
     // complex, since its means that, if chain_head is NULL, the current chain link is arena.self.
-    yo_arena_block *chain_head;
+    yo_arena_block_t *chain_head;
 
     yo_arena_temp_t *temp_stack_head;
     uint32_t         temp_depth;

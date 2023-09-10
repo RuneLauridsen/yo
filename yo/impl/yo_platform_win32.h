@@ -16,7 +16,7 @@ struct yo_platform_win32
     HDC                  dc;
     yo_context_t        *ctx;              // TODO(rune): Move yo_context_t out of platform layer, and into user code instead.
     yo_render_info_t     render_info;
-    uint64_t             tick_count_start; // TODO(rune): tick_start
+    uint64_t             tick_start;
     uint64_t             tick_current;
     uint64_t             tick_freq;
     HCURSOR              cursor;

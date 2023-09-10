@@ -18,7 +18,7 @@
 ////////////////////////////////////////////////////////////////
 
 #define YO_UNUSED(...)                  (void)(__VA_ARGS__)
-#if 1
+#if 0
 #define YO_ASSERT(expression)           assert(expression)
 #else
 #define YO_ASSERT(expression)           if(!(expression)) { __debugbreak(); }
@@ -392,7 +392,7 @@ struct yo_render_info
     struct
     {
         uint32_t id;
-        yo_v2i_t dims;
+        yo_v2i_t dim;
         void    *pixels;
         bool     dirty;
     } tex;
@@ -436,23 +436,6 @@ struct yo_text_field_state
     uint32_t marker;
 };
 
-typedef struct yo_placement yo_placement_t;
-struct yo_placement
-{
-    union
-    {
-        struct { yo_length_t h_dim, v_dim; };
-        struct { yo_length_t a_dim[2]; };
-    };
-    union
-    {
-        struct { yo_align_t h_align, v_align; };
-        struct { yo_align_t a_align[2]; };
-    };
-    yo_sides_f32_t margin;
-    yo_sides_f32_t padding;
-};
-
 typedef struct yo_border yo_border_t;
 struct yo_border
 {
@@ -461,43 +444,8 @@ struct yo_border
     yo_v4f_t         color;
 };
 
-typedef struct yo_box yo_box_t;
-struct yo_box
-{
-    char *tag;
-    char *text;
 
-    yo_layout_t  child_layout;
-    yo_border_t  border;
-    yo_v4f_t     fill;
-    yo_font_id_t font;
-    uint32_t     font_size;
-    yo_v4f_t     font_color;
-    bool         on_top;
-
-    union { struct yo_placement placement; struct yo_placement; };
-
-    union
-    {
-        struct { yo_overflow_t h_overflow, v_overflow; };
-        struct { yo_overflow_t a_overflow[2]; };
-    };
-
-    yo_v2f_t target_scroll_offset;
-    yo_v2f_t scroll_offset;
-
-    // NOTE(rune): Controls which properties are animated.
-    yo_anim_flags_t anim;
-
-    // NOTE(rune): All animations play at the same rate. If you want different animation rates,
-    // for different properties, you need to split them up into multiple boxes.
-    float anim_rate;
-
-    // TODO(rune): We could just make size of the persistent state user defined, which would allow the
-    // user code could store anything across frame.
-    yo_text_field_state_t text_field_state;
-};
-
+typedef struct yo_box     yo_box_t;
 typedef struct yo_context yo_context_t;
 
 ////////////////////////////////////////////////////////////////
@@ -582,11 +530,50 @@ YO_API yo_signal_t      yo_get_signal(yo_box_t *box);
 YO_API yo_recti_t       yo_get_screen_rect(yo_box_t *box);
 YO_API yo_rectf_t       yo_get_arranged_rect(yo_box_t *box);
 YO_API yo_v2f_t         yo_get_content_dim(yo_box_t *box);
-#if 0
-YO_API void             yo_make_hot(yo_box_t *box);
-YO_API void             yo_make_active(yo_box_t *box);
-#endif
-YO_API yo_box_t *       yo_new(void);
+YO_API void             yo_set_tag(char *tag);
+YO_API void             yo_set_text(char *text);
+YO_API void             yo_set_layout(yo_layout_t layout);
+YO_API void             yo_set_fill(yo_v4f_t fill);
+YO_API void             yo_set_border_s(yo_border_t border);
+YO_API void             yo_set_border(float thickness, yo_v4f_t color, float radius);
+YO_API void             yo_set_border_thickness(float thickness);
+YO_API void             yo_set_border_color(yo_v4f_t color);
+YO_API void             yo_set_border_radius(float radius);
+YO_API void             yo_set_font(yo_font_id_t font, uint32_t size, yo_v4f_t color);
+YO_API void             yo_set_font_face(yo_font_id_t font);
+YO_API void             yo_set_font_size(uint32_t size);
+YO_API void             yo_set_font_color(yo_v4f_t color);
+YO_API void             yo_set_on_top(bool on_top);
+YO_API void             yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis);
+YO_API void             yo_set_overflow_h(yo_overflow_t overflow);
+YO_API void             yo_set_overflow_v(yo_overflow_t overflow);
+YO_API void             yo_set_align_a(yo_align_t align, yo_axis_t axis);
+YO_API void             yo_set_align_h(yo_align_t align);
+YO_API void             yo_set_align_v(yo_align_t align);
+YO_API void             yo_set_dim_a(yo_length_t length, yo_axis_t axis);
+YO_API void             yo_set_dim_h(yo_length_t length);
+YO_API void             yo_set_dim_v(yo_length_t length);
+YO_API void             yo_set_margin(float left, float top, float right, float bottom);
+YO_API void             yo_set_margin_hv(float h, float v);
+YO_API void             yo_set_margin_a(float forward, float backward, yo_axis_t axis);
+YO_API void             yo_set_margin_left(float left);
+YO_API void             yo_set_margin_top(float top);
+YO_API void             yo_set_margin_right(float right);
+YO_API void             yo_set_margin_bottom(float bottom);
+YO_API void             yo_set_padding(float left, float top, float right, float bottom);
+YO_API void             yo_set_padding_hv(float h, float v);
+YO_API void             yo_set_anim(yo_anim_flags_t flags, float rate);
+YO_API void             yo_set_anim_flags(yo_anim_flags_t flags);
+YO_API void             yo_set_anim_rate(float rate);
+YO_API void             yo_set_scroll(yo_v2f_t offset);
+YO_API void             yo_set_scroll_a(float offset, yo_axis_t axis);
+YO_API void             yo_set_scroll_h(float offset);
+YO_API void             yo_set_scroll_v(float offset);
+
+// TODO(rune): Can we store text_field_state like normal userdata?
+// Renderer needs to know about text_field_state to draw cursor+selection.
+YO_API yo_text_field_state_t *  yo_get_text_field_state(void);
+YO_API void *                   yo_get_userdata(size_t size);
 
 ////////////////////////////////////////////////////////////////
 //
@@ -611,7 +598,7 @@ YO_API void             yo_end_children(void);
 // WARNING(rune): Not finished
 YO_API void             yo_open_popup(yo_id_t id, yo_popup_flags_t flags);
 YO_API bool             yo_begin_popup(yo_id_t id);
-YO_API void             yo_end_popup();
+YO_API void             yo_end_popup(void);
 
 ////////////////////////////////////////////////////////////////
 //
@@ -721,6 +708,18 @@ static yo_length_t yo_rel(float rel)
 //
 //
 ////////////////////////////////////////////////////////////////
+
+static inline yo_corners_f32_t yo_corners(float top_left, float top_right, float bottom_left, float bottom_right)
+{
+    yo_corners_f32_t ret =
+    {
+        .top_left      = top_left,
+        .top_right     = top_right,
+        .bottom_left   = bottom_left,
+        .bottom_right  = bottom_right,
+    };
+    return ret;
+}
 
 static inline yo_sides_f32_t yo_margin(float left, float top, float right, float bottom)
 {

@@ -89,9 +89,6 @@
     <ClInclude Include="yo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="yo.c">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="yo_core.c">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -120,6 +117,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yo_font_backend.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo.c">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
