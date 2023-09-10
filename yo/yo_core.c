@@ -235,10 +235,10 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
 
     box->flags      = flags;
     box->anim_rate  = 10.0f;
-    box->dim_h.min  = 0.0f,
-    box->dim_v.min  = 0.0f,
-    box->dim_h.max  = YO_FLOAT32_MAX,
-    box->dim_v.max  = YO_FLOAT32_MAX,
+    box->dim_h.min  = 0.0f;
+    box->dim_v.min  = 0.0f;
+    box->dim_h.max  = YO_FLOAT32_MAX;
+    box->dim_v.max  = YO_FLOAT32_MAX;
     box->font       = yo_ctx->default_font;
     box->font_color = yo_v4f(1.0f, 0.0f, 0.0f, 0.0f);
     box->font_size  = 20;
@@ -416,11 +416,11 @@ static yo_measure_text_result_t yo_measure_text(yo_string_t text, yo_font_id_t f
     yo_measure_text_result_t ret = { 0 };
     yo_font_metrics_t font_metrics = yo_font_metrics(font, font_size);
 
-    for (uint32_t i = 0; i < text.length; i++)
+    for (uint32_t codepoint = yo_utf8_codepoint_advance(&text);
+         codepoint;
+         codepoint = yo_utf8_codepoint_advance(&text))
     {
-        char c = text.chars[i];
-
-        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, c, font_size, false);
+        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, codepoint, font_size, false);
         if (glyph)
         {
             ret.dim.x += glyph->advance_x;
@@ -446,7 +446,7 @@ static void yo_measure_content_recurse(yo_box_t *box)
 
     if (box->text)
     {
-        box->measured_text = yo_measure_text(yo_string((char *)(box->text)), box->font, box->font_size);
+        box->measured_text = yo_measure_text(yo_from_cstring(box->text), box->font, box->font_size);
         box->content_size.x = box->measured_text.dim.x + (uint32_t)(box->border.thickness * 2);
         box->content_size.y = box->measured_text.dim.y + (uint32_t)(box->border.thickness * 2);
     }
@@ -927,7 +927,7 @@ static void yo_draw_aabb(yo_draw_aabb_t draw)
     }
 }
 
-static void yo_draw_text(char *text,
+static void yo_draw_text(yo_string_t text,
                          yo_v2f_t p0, yo_v2f_t p1,
                          yo_v2f_t clip_p0, yo_v2f_t clip_p1,
                          yo_font_id_t font, uint32_t font_size, yo_v4f_t font_color,
@@ -953,10 +953,11 @@ static void yo_draw_text(char *text,
 
     float baseline_y = p1.y + measured_text.descent;
 
-    char *c = text;
-    for (; *c; c++)
+    for (uint32_t codepoint = yo_utf8_codepoint_advance(&text);
+         codepoint;
+         codepoint = yo_utf8_codepoint_advance(&text))
     {
-        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, *c, font_size, true);
+        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, codepoint, font_size, true);
         if (glyph)
         {
             yo_v2f_t glyph_p0 = yo_v2f((p0.x + glyph->bearing_x),
@@ -1019,8 +1020,7 @@ static void yo_draw_text(char *text,
 
     if (text_field_state)
     {
-        // TODO(rune): strlen
-        if (text_field_state->cursor == strlen(text))    cursor_x = p0.x;
+        if (text_field_state->cursor == text.length)    cursor_x = p0.x;
 
         //
         // Draw highlight for selected text
@@ -1161,7 +1161,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
                 text_field_state = &box->text_field_state;
             }
 
-            yo_draw_text((char *)box->text,
+            yo_draw_text(yo_from_cstring(box->text),
                          p0, p1, clip_p0, clip_p1,
                          box->font,
                          box->font_size,

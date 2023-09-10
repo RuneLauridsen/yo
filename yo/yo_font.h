@@ -13,9 +13,19 @@ typedef uint16_t u16;
 typedef struct yo_font_id yo_font_id_t;
 struct yo_font_id
 {
-    uint16_t slot;
-    uint16_t _unused;
-    uint32_t generation;
+    union
+    {
+        struct
+        {
+            uint16_t slot;
+            uint16_t _unused;
+            uint32_t generation;
+        };
+        struct
+        {
+            uint64_t u64;
+        };
+    };
 };
 
 static yo_font_id_t         yo_font_load(void *data, size_t data_size);

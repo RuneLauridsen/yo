@@ -1,21 +1,30 @@
-#define _CRT_SECURE_NO_WARNINGS
+
+
+#if 1
 #include <stdio.h>
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <windows.h>
+int main()
+{
+    printf("static const uint8_t decode_table[256] =\n{");
 
-#include "../yo/yo_internal.h"
-#include "../yo/yo_string.h"
-#include "../yo/yo_memory.h"
+    for (int i = 0; i < 256; i++)
+    {
+        if (i % 32 == 0) printf("\n    ");
 
-#include "../yo/yo_string.c"
-#include "../yo/yo_memory.c"
+        if ((i >> 3) == 0b11110)      printf("4, "); // 11110xxx
+        else if ((i >> 4) == 0b1110)  printf("3, "); // 1110xxxx
+        else if ((i >> 5) == 0b110)   printf("2, "); // 111xxxxx
+        else if ((i >> 7) == 0)       printf("1, "); // 0xxxxxxx
+        else                          printf("0, "); // continuation
+    }
+
+    printf("\n};\n");
+}
+#endif
 
 //
 // NOTE(rune): Chained arena test
 //
-#if 1
+#if 0
 int main()
 {
     yo_arena_t arena;

@@ -153,7 +153,7 @@ static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size)
 static uint64_t yo_font_get_glyph_key(yo_font_id_t font, uint32_t codepoint, uint16_t font_size)
 {
     uint64_t key = (((uint64_t)(codepoint) << 0)  |
-                    ((uint64_t)(font_size)  << 32) |
+                    ((uint64_t)(font_size) << 32) |
                     ((uint64_t)(font.slot) << 48));
     return key;
 }

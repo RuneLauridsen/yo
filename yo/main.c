@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+﻿#define _CRT_SECURE_NO_WARNINGS
 
 //
 // Standard library
@@ -130,7 +130,8 @@ int main()
 
         yo_impl_win32_opengl_begin_frame(&impl);
 
-        yo_demo();
+        yo_text(u8"åĤabceæfgh");
+        //yo_demo();
         // build_ui();
 
         // yo_box(0, 0);
