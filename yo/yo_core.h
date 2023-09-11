@@ -417,6 +417,32 @@ struct yo_config
 ////////////////////////////////////////////////////////////////
 //
 //
+// Fonts
+//
+//
+////////////////////////////////////////////////////////////////
+
+typedef struct yo_font_id yo_font_id_t; // TODO(rune): Just make it a struct { uint64_t u64; };
+struct yo_font_id
+{
+    union
+    {
+        struct
+        {
+            uint16_t slot;
+            uint16_t _unused;
+            uint32_t generation;
+        };
+        struct
+        {
+            uint64_t u64;
+        };
+    };
+};
+
+////////////////////////////////////////////////////////////////
+//
+//
 // Box
 //
 //
@@ -516,7 +542,6 @@ YO_API yo_id_t          yo_id_from_format_v(char *format, va_list args);
 YO_API void             yo_push_id(yo_id_t id);
 YO_API yo_id_t          yo_pop_id(void);
 
-
 ////////////////////////////////////////////////////////////////
 //
 //
@@ -610,6 +635,17 @@ YO_API void             yo_end_popup(void);
 
 YO_API void             yo_scaled_triangle(yo_v2f_t p0, yo_v2f_t p1, yo_v2f_t p2, yo_v4f_t color0, yo_v4f_t color1, yo_v4f_t color2);
 YO_API void             yo_scaled_checkmark(yo_v4f_t color);
+
+////////////////////////////////////////////////////////////////
+//
+//
+// Font
+//
+//
+////////////////////////////////////////////////////////////////
+
+YO_API yo_font_id_t     yo_font_load(void *data, size_t data_size);
+YO_API void             yo_font_unload(yo_font_id_t font);
 
 ////////////////////////////////////////////////////////////////
 //

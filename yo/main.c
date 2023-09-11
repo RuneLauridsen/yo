@@ -32,10 +32,8 @@
 
 #define YO_API static
 #include "yo.h"
-#include "yo.c"
 #include "yo_memory.h"
 #include "yo_memory.c"
-
 
 //
 // Platform & backend
@@ -48,6 +46,43 @@
 #include "impl/yo_platform_win32.c"
 #include "impl/yo_impl_win32_opengl.h"
 #include "impl/yo_impl_win32_opengl.c"
+
+// TODO(rune): File system layer?
+typedef struct file_content file_content_t;
+struct file_content
+{
+    void *data;
+    size_t size;
+};
+
+// TODO(rune): File system layer?
+static file_content_t load_file_content(char *file_name)
+{
+    file_content_t ret = { 0 };
+
+    FILE *file = fopen(file_name, "rb");
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char *data = yo_heap_alloc(size + 1, false);
+
+    if (data)
+    {
+        size = fread(data, 1, size, file);
+        ret.data = data;
+        ret.size = size;
+    }
+
+    fclose(file);
+
+    return ret;
+}
+
+static void unload_file_content(file_content_t file_content)
+{
+    yo_heap_free(file_content.data);
+}
 
 static void build_ui(void);
 
@@ -117,6 +152,9 @@ int main()
     yo_impl_win32_opengl_t impl = { 0 };
     yo_impl_win32_opengl_startup(&impl, 800, 600);
 
+    // yo_freetype_test(yo_ctx->atlas.pixels, yo_ctx->atlas.dim);
+    // yo_ctx->atlas.dirty = true;
+
     //
     // Main application loop
     //
@@ -127,11 +165,13 @@ int main()
     {
         i++;
 
-
         yo_impl_win32_opengl_begin_frame(&impl);
 
-        yo_text(u8"åĤabceæfgh");
-        //yo_demo();
+        yo_box(0, 0);
+        yo_set_fill(yo_rgb(20, 20, 20));
+
+        //yo_debug_show_atlas_texture();
+        yo_demo();
         // build_ui();
 
         // yo_box(0, 0);
@@ -380,3 +420,6 @@ void build_ui()
 }
 
 #endif
+
+// NOTE(rune): Make sure we are not accesing internal yo functions by including implementation last.
+#include "yo.c"

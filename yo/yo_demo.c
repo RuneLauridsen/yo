@@ -100,8 +100,6 @@ YO_API void yo_demo(void)
             yo_set_font_color(YO_BLACK);
             yo_set_fill(YO_YELLOW);
             yo_set_align_h(YO_ALIGN_LEFT);
-            yo_set_dim_h(yo_px(50));
-            yo_set_dim_v(yo_px(50));
             yo_set_border(0, YO_TRANSPARENT, 10);
 
         }

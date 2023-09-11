@@ -18,8 +18,6 @@
 #define YO_HEAP_FREE(p) HeapFree(GetProcessHeap(), 0, p)
 #endif
 
-static yo_context_t *yo_ctx;
-
 ////////////////////////////////////////////////////////////////
 //
 //

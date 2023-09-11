@@ -8,6 +8,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <math.h>
+#include <assert.h>
 
 //
 // Windows & OpenGL

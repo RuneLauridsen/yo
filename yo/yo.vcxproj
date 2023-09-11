@@ -20,7 +20,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
-    <ClCompile Include="yo_font_backend_stb.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="impl\yo_backend_opengl.h" />
@@ -37,11 +36,16 @@
     <ClInclude Include="yo_atlas.c" />
     <ClInclude Include="yo_demo.h" />
     <ClInclude Include="yo_demo.c" />
-    <ClInclude Include="yo_font.h" />
-    <ClInclude Include="yo_font.c" />
     <ClInclude Include="yo.h" />
     <ClInclude Include="impl\yo_impl_win32_gdi.c" />
     <ClInclude Include="yo_font_backend.h" />
+    <ClInclude Include="yo_font_backend_freetype.c" />
+    <ClInclude Include="yo_font_backend_freetype.h" />
+    <ClInclude Include="yo_font_backend_stb.h" />
+    <ClInclude Include="yo_font_backend_stb.c" />
+    <ClInclude Include="yo_font_data.h" />
+    <ClInclude Include="yo_font_table.h" />
+    <ClInclude Include="yo_font_table.c" />
     <ClInclude Include="yo_memory.c" />
     <ClInclude Include="impl\yo_impl_win32_opengl.c" />
     <ClInclude Include="yo_string.c" />
@@ -119,12 +123,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)..\SDL2\include;$(ProjectDir)..\freetype2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\SDL2\lib\x64;$(ProjectDir)..\freetype2\objs\x64\Debug Static;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)thirdparty\freetype\include</IncludePath>
+    <LibraryPath>$(ProjectDir)thirdparty\freetype\lib\x64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)..\SDL2\include;$(ProjectDir)..\freetype2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(ProjectDir)..\SDL2\lib\x64;$(ProjectDir)..\freetype2\objs\x64\Debug Static;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)thirdparty\freetype\include</IncludePath>
+    <LibraryPath>$(ProjectDir)thirdparty\freetype\lib\x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LibraryPath>$(ProjectDir)thirdparty\freetype\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)thirdparty\freetype\include</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LibraryPath>$(ProjectDir)thirdparty\freetype\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)thirdparty\freetype\include</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

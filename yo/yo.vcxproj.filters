@@ -18,9 +18,6 @@
     <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="yo_font_backend_stb.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="yo_core.h">
@@ -51,12 +48,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yo_atlas.c">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="yo_font.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="yo_font.c">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yo_svg.c">
@@ -120,6 +111,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yo.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font_backend_freetype.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font_backend_stb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font_backend_stb.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font_table.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font_table.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font_backend_freetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

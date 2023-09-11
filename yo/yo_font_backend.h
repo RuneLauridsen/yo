@@ -1,7 +1,5 @@
 #pragma once
 
-#include "thirdparty/stb_truetype.h"
-
 typedef struct yo_font_metrics yo_font_metrics_t;
 struct yo_font_metrics
 {
@@ -10,7 +8,8 @@ struct yo_font_metrics
     float descent;
 };
 
-typedef struct yo_codepoint_metrics yo_codepoint_metrics_t;
+// TODO(rune): Rename glyph_metrics
+typedef struct yo_codepoint_metrics yo_glyph_metrics_t;
 struct yo_codepoint_metrics
 {
     yo_v2i_t dim;
@@ -19,9 +18,13 @@ struct yo_codepoint_metrics
     float bearing_y;
 };
 
-typedef stbtt_fontinfo yo_font_backend_info_t; // TODO(rune): Seperate font backend headers?
+typedef struct yo_font_backend      yo_font_backend_t;      // NOTE(rune): Defined in backend-specific .h file.
+typedef struct yo_font_backend_info yo_font_backend_info_t; // NOTE(rune): Defined in backend-specific .h file.
 
-extern bool                     yo_font_backend_load_font(yo_font_backend_info_t *info, void *data, size_t data_size);
-extern yo_font_metrics_t        yo_font_backend_get_font_metrics(yo_font_backend_info_t *info);
-extern yo_codepoint_metrics_t   yo_font_backend_get_codepoint_metrics(yo_font_backend_info_t *info, uint32_t codepoint, float scale);
-extern void                     yo_font_backend_rasterize(yo_font_backend_info_t *info, uint32_t codepoint, float scale, void *pixel, yo_v2i_t dim, int32_t stride);
+static bool                     yo_font_backend_startup(yo_font_backend_t *backend);
+static void                     yo_font_backend_shutdown(yo_font_backend_t *backend);
+static bool                     yo_font_backend_load_font(yo_font_backend_t *backend, yo_font_backend_info_t *info, void *data, size_t data_size);
+static void                     yo_font_backend_unload_font(yo_font_backend_t *backend, yo_font_backend_info_t *info);
+static yo_font_metrics_t        yo_font_backend_get_font_metrics(yo_font_backend_t *backend, yo_font_backend_info_t *info, uint32_t fontsize);
+static yo_glyph_metrics_t       yo_font_backend_get_glyph_metrics(yo_font_backend_t *backend, yo_font_backend_info_t *info, uint32_t codepoint, uint32_t fontsize);
+static void                     yo_font_backend_rasterize(yo_font_backend_t *backend, yo_font_backend_info_t *info, uint32_t codepoint, uint32_t fontsize, void *pixel, yo_v2i_t dim, int32_t stride);

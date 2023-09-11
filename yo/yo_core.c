@@ -8,6 +8,8 @@
 //
 ////////////////////////////////////////////////////////////////
 
+static yo_context_t *yo_ctx;
+
 // NOTE(rune): If yo runs out of memory we return pointers to stubs instead of returning null.
 static yo_box_t stub_box = { 0 };
 
@@ -130,6 +132,137 @@ static void yo_add_box_to_hash(yo_box_t *box, yo_frame_t *frame)
 
     size_t slot_idx = box->id % countof(frame->hash_table);
     YO_SLSTACK_PUSH(frame->hash_table[slot_idx], next_hash, box);
+}
+
+////////////////////////////////////////////////////////////////
+//
+//
+// Font
+//
+//
+////////////////////////////////////////////////////////////////
+
+static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size)
+{
+    yo_font_metrics_t ret = { 0 };
+    yo_font_slot_t *slot = yo_font_table_slot_get(font);
+    if (slot)
+    {
+        ret = yo_font_backend_get_font_metrics(&yo_ctx->font_backend, &slot->backend_info, font_size);
+    }
+    return ret;
+}
+
+static uint64_t yo_glyph_key(yo_font_id_t font, uint32_t codepoint, uint16_t font_size)
+{
+    uint64_t key = (((uint64_t)(codepoint) << 0)  |
+                    ((uint64_t)(font_size) << 32) |
+                    ((uint64_t)(font.slot) << 48));
+    return key;
+}
+
+static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, yo_atlas_t *atlas, uint32_t codepoint, uint32_t font_size, bool rasterize)
+{
+    yo_atlas_node_t *ret = NULL;
+    yo_font_slot_t *slot = yo_font_table_slot_get(font);
+
+    if (slot)
+    {
+        // yo_font_metrics_t slot_metrics = yo_font_backend_get_font_metrics(&yo_ctx->font_backend, &slot->backend_info, font_size);
+
+        // TODO(rune): Store font_size as uint16_t?
+        uint64_t key = yo_glyph_key(font, codepoint, (uint16_t)font_size);
+
+        ret = yo_atlas_node_find(atlas, key);
+        if (!ret)
+        {
+            yo_glyph_metrics_t metrics = yo_font_backend_get_glyph_metrics(&yo_ctx->font_backend,
+                                                                                   &slot->backend_info,
+                                                                                   codepoint,
+                                                                                   font_size);
+
+            //
+            // Allocate atlas region
+            //
+
+            ret = yo_atlas_node_new(atlas, yo_v2i(metrics.dim.x, metrics.dim.y));
+
+            if (ret)
+            {
+                ret->key       = key;
+                ret->bearing_y = metrics.bearing_y;
+                ret->bearing_x = metrics.bearing_x;
+                ret->advance_x = metrics.advance_x;
+            }
+            else
+            {
+                __nop(); // NOTE(rune): Not enough space in glyph atlas
+            }
+        }
+
+        //
+        // Rasterize
+        //
+
+        if (ret)
+        {
+            // TODO(rune): We could just make rasterization a separate function, e.g. with at yo_font_rasterize_pending() function.
+            if (rasterize && !ret->rasterized)
+            {
+                int32_t stride = atlas->dim.x;
+                uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);
+
+                yo_font_backend_rasterize(&yo_ctx->font_backend, &slot->backend_info,
+                                          codepoint, font_size, pixel, yo_v2i(ret->rect.w, ret->rect.h), stride);
+
+                ret->rasterized = true;
+                atlas->dirty    = true;
+            }
+        }
+    }
+
+    return ret;
+}
+
+// NOTE(rune): The default is loaded in yo_create_context(), so we can't rely on the
+// yo_ctx global variable being set yet.
+static yo_font_id_t yo_font_load_ctx(void *data, size_t data_size, yo_context_t *ctx)
+{
+    yo_font_id_t ret     = yo_font_id_none();
+    yo_font_slot_t *slot = NULL;
+    bool ok = false;
+
+    if (data)
+    {
+        slot = yo_font_table_slot_alloc();
+        if (slot)
+        {
+            if (yo_font_backend_load_font(&ctx->font_backend, &slot->backend_info, data, data_size))
+            {
+                ret = slot->id;
+                ok = true;
+            }
+        }
+    }
+
+    if (!ok)
+    {
+        yo_font_table_slot_free(slot);
+    }
+
+    return ret;
+}
+
+YO_API yo_font_id_t yo_font_load(void *data, size_t data_size)
+{
+    yo_font_id_t ret = yo_font_load_ctx(data, data_size, yo_ctx);
+    return ret;
+}
+
+YO_API void yo_font_unload(yo_font_id_t font)
+{
+    yo_font_slot_t *slot = yo_font_table_slot_get(font);
+    yo_font_table_slot_free(slot);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -420,11 +553,11 @@ static yo_measure_text_result_t yo_measure_text(yo_string_t text, yo_font_id_t f
          codepoint;
          codepoint = yo_utf8_codepoint_advance(&text))
     {
-        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, codepoint, font_size, false);
+        yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, false);
         if (glyph)
         {
             ret.dim.x += glyph->advance_x;
-            ret.dim.y = (float)(font_metrics.ascent - font_metrics.descent);
+            ret.dim.y = font_metrics.line_gap;
 
             ret.ascent   = (int32_t)font_metrics.ascent;
             ret.descent  = (int32_t)font_metrics.descent;
@@ -957,7 +1090,7 @@ static void yo_draw_text(yo_string_t text,
          codepoint;
          codepoint = yo_utf8_codepoint_advance(&text))
     {
-        yo_atlas_node_t *glyph = yo_font_get_glyph(font, &yo_ctx->atlas, codepoint, font_size, true);
+        yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, true);
         if (glyph)
         {
             yo_v2f_t glyph_p0 = yo_v2f((p0.x + glyph->bearing_x),
@@ -1507,13 +1640,19 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
         {
             *ret = context_on_stack;
 
+            //
+            // Frame state
+            //
+
             ret->this_frame = &ret->frame_states[0];
             ret->prev_frame = &ret->frame_states[1];
 
-            // TODO(rune): Platform specific
-            // TODO(rune): Memory leak
-            yo_file_content_t default_font_file = yo_load_file_content("C:\\Windows\\Fonts\\segoeui.ttf");
-            ret->default_font = yo_font_load(default_font_file.data, default_font_file.size);
+            //
+            // Font backend
+            //
+
+            yo_font_backend_startup(&ret->font_backend);
+            ret->default_font = yo_font_load_ctx(yo_default_font_data, sizeof(yo_default_font_data), ret);
 
             ok = true;
         }
@@ -1535,6 +1674,8 @@ YO_API void yo_destroy_context(yo_context_t *context)
 {
     if (context)
     {
+        yo_font_backend_shutdown(&context->font_backend);
+
         // WARNING(rune): Must free persistent storage last, since the context structure itself
         // is stored in persistent storage.
         yo_atlas_destroy(&context->atlas);
