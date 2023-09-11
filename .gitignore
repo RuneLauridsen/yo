@@ -6,7 +6,7 @@ obj/
 build/
 Debug/
 Release/
-x64/
-x86/
+/x64/
+/x86/
 svg/
 StructLayoutSettings.json
