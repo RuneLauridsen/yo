@@ -57,8 +57,8 @@ int main()
 
         yo_string_t file_content = yo_load_file(file_names[i]);
 
-        yo_lexed_header_t  lexed  = yo_lex_header(file_content, &arena);
-        yo_parsed_header_t parsed = yo_parse_header(lexed.tokens.first, &arena);
+        yo_token_t *lexed    = yo_lex(file_content, &arena);
+        yo_api_spec_t parsed = yo_parse(lexed, &arena);
 
         yo_string_t bindings_for_csharp = yo_get_bindings_for_csharp(parsed, &arena);
         printf("%.*s", yo_string_fmt(bindings_for_csharp));

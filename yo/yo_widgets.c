@@ -217,7 +217,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
                 {
                     case YO_KEYCODE_LEFT_ARROW:
                     {
-                        if (box_signal.is_ctrl_down)
+                        if (box_signal.modifiers & YO_MODIFIER_CTLR)
                         {
                             size_t i;
                             size_t next_cursor_pos = 0;
@@ -242,7 +242,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
 
                     case YO_KEYCODE_RIGHT_ARROW:
                     {
-                        if (box_signal.is_ctrl_down)
+                        if (box_signal.modifiers & YO_MODIFIER_CTLR)
                         {
                             size_t i;
                             size_t next_cursor_pos = buffer_strlen;
@@ -281,7 +281,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
 
                 if (cursor_moved)
                 {
-                    if (box_signal.is_shift_down == false)
+                    if (!(box_signal.modifiers & YO_MODIFIER_SHIFT))
                     {
                         state->marker = state->cursor;
                     }
@@ -307,7 +307,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
 
                     if (is_letter)
                     {
-                        c = (char)box_signal.keycode + (box_signal.is_shift_down ? 0x0 : 0x20);
+                        c = (char)box_signal.keycode + ((box_signal.modifiers & YO_MODIFIER_SHIFT) ? 0x0 : 0x20);
                     }
 
                     if (is_space)
@@ -538,7 +538,7 @@ YO_API void yo_bullet_item(char *label)
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_axis_t axis, uint32_t thumb_dim, yo_box_t *bounding_box)
+YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_axis_t axis, float thumb_dim, yo_box_t *bounding_box)
 {
     float dummy_value = 0.0f;
     if (!value) { value = &dummy_value; }
@@ -567,14 +567,14 @@ YO_API  void yo_slider(yo_id_t id, float *value, float min, float max)
 
 YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_slider_style_t *style)
 {
-    const uint32_t THUMB_DIM = 22;
+    float thumb_dim = style->thumb_container_dim_a[style->axis];
 
     float dummy_value = 0.0f;
     if (!value) value = &dummy_value;
 
     yo_box_t *bounding_box = yo_box(id, YO_BOX_ACTIVATE_ON_HOLD);
     yo_set_tag("TAG_SLIDER_MAIN");
-    yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, THUMB_DIM, bounding_box);
+    yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, thumb_dim, bounding_box);
     YO_CHILD_SCOPE()
     {
 
@@ -602,8 +602,8 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
                 yo_box_t   *circle_container        = yo_box(yo_id_from_string("slider circle"), 0);
                 yo_signal_t circle_container_signal = yo_get_signal(circle_container);
 
-                yo_set_dim_h(yo_px(style->thumb_container_h_dim));
-                yo_set_dim_v(yo_px(style->thumb_container_v_dim));
+                yo_set_dim_h(yo_px(style->thumb_container_dim_h));
+                yo_set_dim_v(yo_px(style->thumb_container_dim_v));
 
                 bool thumb_hot    = circle_container_signal.hovered;
                 bool thumb_active = signal.is_active;
@@ -730,12 +730,15 @@ YO_API  void yo_menu_end(void)
 
 YO_API  void yo_begin_scroll_area(yo_id_t id)
 {
-    yo_begin_scroll_area_ex(id, 20.0f, 20.0f);
+    yo_begin_scroll_area_ex(id, 0, 0);
 }
 
 YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_rate)
 {
     // TODO(rune): Horizontal scrolling
+
+    if (!scroll_rate) scroll_rate = 20.0f;
+    if (!anim_rate)   anim_rate   = 20.f;
 
     yo_box_t *area = yo_box(id, 0);
     yo_set_layout(YO_LAYOUT_HORIZONTAL);
@@ -762,10 +765,22 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         yo_set_overflow_v(YO_OVERFLOW_SCROLL);
         yo_set_anim(YO_ANIM_SCROLL, anim_rate);
 
-        yo_v2f_t *target_scroll_offset = yo_get_userdata(sizeof(yo_v2f_t));
-        target_scroll_offset->y += scroll_delta_y;
+        yo_v2f_t *offset = yo_get_userdata(sizeof(yo_v2f_t));
 
-        yo_set_scroll(*target_scroll_offset);
+        //
+        // Scroll behaviour
+        //
+
+        float content_dim_y       = yo_get_content_dim(content_container).y;
+        float content_dim_avail_y = yo_get_arranged_rect(content_container).h;
+
+        float offset_min = 0.0f;
+        float offset_max = YO_MAX(content_dim_y - content_dim_avail_y, 0.0f);
+
+        float content_ratio = content_dim_avail_y * YO_CLAMP01(content_dim_avail_y / content_dim_y);
+
+        offset->y = YO_CLAMP(offset->y + scroll_delta_y, offset_min, offset_max);
+        yo_set_scroll(*offset);
 
         //
         // Scroll bar
@@ -777,32 +792,23 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         {
             yo_slider_style_t slider_style = yo_default_slider_style();
             slider_style.axis = YO_AXIS_Y;
-            slider_style.thumb_container_h_dim = 10; // 20;
-            slider_style.thumb_container_v_dim = 20; // 30;
+            slider_style.thumb_container_dim_h = 10;
+            slider_style.thumb_container_dim_v = content_ratio;
 
             yo_thumb_style_t thumb_style  = slider_style.thumb;
             thumb_style.border            = yo_border(0, yo_v4f(0, 0, 0, 0), 5);
             thumb_style.fill              = yo_rgb(128, 128, 128);
-            thumb_style.h_dim             = 10;
-            thumb_style.v_dim             = 20;
+            thumb_style.h_dim             = slider_style.thumb_container_dim_h;
+            thumb_style.v_dim             = slider_style.thumb_container_dim_v;
 
             yo_thumb_style_t thumb_style_hot = thumb_style;
             thumb_style_hot.fill             = yo_rgb(172, 172, 172);
-            //thumb_style_hot.h_dim            = 20;
-            //thumb_style_hot.v_dim            = 30;
-            //thumb_style_hot.border           = yo_border(0, 0, 10);
 
             slider_style.thumb            = thumb_style;
             slider_style.thumb_active     = thumb_style_hot;
             slider_style.thumb_hot        = thumb_style_hot;
 
-            float content_dim_y  = yo_get_content_dim(content_container).y;
-            float content_area_y = yo_get_arranged_rect(content_container).h;
-
-            float slider_min = 0.0f;
-            float slider_max = YO_MAX(content_dim_y - content_area_y, 0.0f);
-
-            yo_slider_ex(yo_id("vert slider"), &target_scroll_offset->y, slider_min, slider_max, &slider_style);
+            yo_slider_ex(yo_id("vert slider"), &offset->y, offset_min, offset_max, &slider_style);
         }
 
         yo_begin_children_of(content_container);

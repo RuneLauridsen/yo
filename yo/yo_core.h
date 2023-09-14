@@ -226,9 +226,9 @@ enum yo_modifier
 {
     YO_MODIFIER_NONE,
 
-    YO_MODIFIER_SHIFT,
-    YO_MODIFIER_CTLR,
-    YO_MODIFIER_ALT,
+    YO_MODIFIER_SHIFT = (1 << 0),
+    YO_MODIFIER_CTLR  = (1 << 1),
+    YO_MODIFIER_ALT   = (1 << 2),
 
     YO_MODIFIER_COUNT,
 };
@@ -243,16 +243,18 @@ enum yo_frame_flags
 typedef struct yo_signal yo_signal_t;
 struct yo_signal
 {
-    union { bool left_clicked, clicked; };
-    bool right_clicked;
+    union
+    {
+        struct { bool left_clicked, right_clicked, middle_clicked; };
+        struct { bool mouse_button_clicked[YO_MOUSE_BUTTON_COUNT]; };
+        struct { bool clicked; };
+    };
 
-    bool       hovered;
+    bool     hovered;
     yo_v2i_t mouse_pos;  // NOTE(rune): Relative to arranged rect
 
     yo_keycode_t keycode;
-    bool is_alt_down;
-    bool is_ctrl_down;
-    bool is_shift_down;
+    yo_modifier_t modifiers;
 
     bool is_hot;
     bool is_active;
@@ -425,19 +427,7 @@ struct yo_config
 typedef struct yo_font_id yo_font_id_t; // TODO(rune): Just make it a struct { uint64_t u64; };
 struct yo_font_id
 {
-    union
-    {
-        struct
-        {
-            uint16_t slot;
-            uint16_t _unused;
-            uint32_t generation;
-        };
-        struct
-        {
-            uint64_t u64;
-        };
-    };
+    uint64_t u64;
 };
 
 ////////////////////////////////////////////////////////////////

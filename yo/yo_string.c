@@ -1,3 +1,5 @@
+#pragma once
+
 ////////////////////////////////////////////////////////////////
 //
 //
@@ -416,7 +418,7 @@ static void yo_builder_append(yo_builder_t *builder, yo_string_t s)
 
 static void yo_builder_append_c(yo_builder_t *builder, char c)
 {
-    yo_string_t s = { .data = (uint8_t *)&c, .length = 1};
+    yo_string_t s = { .data = (uint8_t *)&c, .length = 1 };
     yo_builder_append(builder, s);
 }
 

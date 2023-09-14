@@ -36,7 +36,7 @@ static void yo_builder_append_camel_case(yo_builder_t *builder, yo_string_t s, b
     }
 }
 
-static void yo_builder_append_csharp_type(yo_builder_t *builder, yo_parsed_type_t type)
+static void yo_builder_append_csharp_type(yo_builder_t *builder, yo_type_spec_t type)
 {
     if (yo_string_equal(type.name, yo_string("char")) && type.indirection == 1)
     {
@@ -79,7 +79,7 @@ static bool yo_ignore_name(yo_string_t s)
     return ret;
 }
 
-static yo_string_t yo_get_bindings_for_csharp(yo_parsed_header_t header, yo_arena_t *arena)
+static yo_string_t yo_get_bindings_for_csharp(yo_api_spec_t spec, yo_arena_t *arena)
 {
     yo_builder_t b;
     yo_builder_create(&b, YO_MEGABYTES(1));
@@ -88,7 +88,7 @@ static yo_string_t yo_get_bindings_for_csharp(yo_parsed_header_t header, yo_aren
     // Enums
     //
 
-    for (yo_parsed_enum_t *enum_ = header.enums.first;
+    for (yo_enum_spec_t *enum_ = spec.enums.first;
          enum_;
          enum_ = enum_->next)
     {
@@ -100,7 +100,7 @@ static yo_string_t yo_get_bindings_for_csharp(yo_parsed_header_t header, yo_aren
             yo_builder_append(&b, enum_->type.name);
             yo_builder_append(&b, yo_string("\n{\n"));
 
-            for (yo_parsed_enum_member_t *member = enum_->members.first;
+            for (yo_enum_member_spec_t *member = enum_->members.first;
                  member;
                  member = member->next)
             {
@@ -118,7 +118,7 @@ static yo_string_t yo_get_bindings_for_csharp(yo_parsed_header_t header, yo_aren
     // Functions
     //
 
-    for (yo_parsed_func_t *func = header.funcs.first;
+    for (yo_func_spec_t *func = spec.funcs.first;
          func;
          func = func->next)
     {
@@ -129,7 +129,7 @@ static yo_string_t yo_get_bindings_for_csharp(yo_parsed_header_t header, yo_aren
             yo_builder_append(&b, func->name);
             yo_builder_append_c(&b, '(');
 
-            for (yo_parsed_arg_t *arg = func->args.first;
+            for (yo_arg_spec_t *arg = func->args.first;
                  arg;
                  arg = arg->next)
             {

@@ -5,7 +5,7 @@
 typedef uint32_t yo_token_type_t;
 enum yo_token_type
 {
-   // NOTE(rune): Reserve first 128 values to match ASCII.
+    // NOTE(rune): Reserve first 128 values to match ASCII.
 
     YO_TOKEN_IDEN = 128,
     YO_TOKEN_EOF,
@@ -22,13 +22,7 @@ struct yo_token
     yo_token_t *prev;
 };
 
-typedef struct yo_lex_result yo_lexed_header_t;
-struct yo_lex_result
-{
-    yo_dlist(yo_token_t) tokens;
-};
-
-typedef struct yo_lexer yo_lexer_t;
+typedef struct yo_lexer yo_lex_t;
 struct yo_lexer
 {
     yo_string_t text;
@@ -37,4 +31,4 @@ struct yo_lexer
     yo_dlist(yo_token_t) tokens;
 };
 
-static yo_lexed_header_t yo_lex_header(yo_string_t header, yo_arena_t *arena);
+static yo_token_t *yo_lex(yo_string_t source_code, yo_arena_t *arena);

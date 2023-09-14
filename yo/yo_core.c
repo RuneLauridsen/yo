@@ -145,7 +145,7 @@ static void yo_add_box_to_hash(yo_box_t *box, yo_frame_t *frame)
 static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size)
 {
     yo_font_metrics_t ret = { 0 };
-    yo_font_slot_t *slot = yo_font_table_slot_get(font);
+    yo_font_slot_t *slot = yo_font_table_slot_find(font);
     if (slot)
     {
         ret = yo_font_backend_get_font_metrics(&yo_ctx->font_backend, &slot->backend_info, font_size);
@@ -155,16 +155,20 @@ static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size)
 
 static uint64_t yo_glyph_key(yo_font_id_t font, uint32_t codepoint, uint16_t font_size)
 {
-    uint64_t key = (((uint64_t)(codepoint) << 0)  |
-                    ((uint64_t)(font_size) << 32) |
-                    ((uint64_t)(font.slot) << 48));
+    uint64_t key = (((uint64_t)(codepoint)          << 0)  |
+                    ((uint64_t)(font_size)          << 32) |
+                    ((uint64_t)(font.u64 & 0xffff)  << 48));
+
+    // NOTE(rune): Only the first 16 bits of font.u16 specify the font_slot.
+    // TODO(rune): If we increase the glyph key to 128-bits, we can skip this masking step.
+
     return key;
 }
 
 static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, yo_atlas_t *atlas, uint32_t codepoint, uint32_t font_size, bool rasterize)
 {
     yo_atlas_node_t *ret = NULL;
-    yo_font_slot_t *slot = yo_font_table_slot_get(font);
+    yo_font_slot_t *slot = yo_font_table_slot_find(font);
 
     if (slot)
     {
@@ -177,9 +181,9 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, yo_atlas_t *atlas, uint3
         if (!ret)
         {
             yo_glyph_metrics_t metrics = yo_font_backend_get_glyph_metrics(&yo_ctx->font_backend,
-                                                                                   &slot->backend_info,
-                                                                                   codepoint,
-                                                                                   font_size);
+                                                                           &slot->backend_info,
+                                                                           codepoint,
+                                                                           font_size);
 
             //
             // Allocate atlas region
@@ -239,7 +243,7 @@ static yo_font_id_t yo_font_load_ctx(void *data, size_t data_size, yo_context_t 
         {
             if (yo_font_backend_load_font(&ctx->font_backend, &slot->backend_info, data, data_size))
             {
-                ret = slot->id;
+                ret = slot->font_id;
                 ok = true;
             }
         }
@@ -261,7 +265,7 @@ YO_API yo_font_id_t yo_font_load(void *data, size_t data_size)
 
 YO_API void yo_font_unload(yo_font_id_t font)
 {
-    yo_font_slot_t *slot = yo_font_table_slot_get(font);
+    yo_font_slot_t *slot = yo_font_table_slot_find(font);
     yo_font_table_slot_free(slot);
 }
 
@@ -320,7 +324,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
     yo_box_t *box = yo_alloc_box(id);
     if (box == NULL)
     {
-        yo_set_error(YO_ERROR_OUT_OF_PERSITENT_MEMORY);
+        yo_set_error(YO_ERROR_OUT_OF_TEMPORARY_MEMORY);
         yo_zero_struct(&stub_box);
         return &stub_box;
     }
@@ -1089,9 +1093,11 @@ static void yo_draw_text(yo_string_t text,
 
     float baseline_y = p1.y + measured_text.descent;
 
-    for (uint32_t codepoint = yo_utf8_codepoint_advance(&text);
+    yo_string_t remaining = text;
+
+    for (uint32_t codepoint = yo_utf8_codepoint_advance(&remaining);
          codepoint;
-         codepoint = yo_utf8_codepoint_advance(&text))
+         codepoint = yo_utf8_codepoint_advance(&remaining))
     {
         yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, true);
         if (glyph)
@@ -1622,9 +1628,9 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
     yo_config_t config = user_config ? *user_config : yo_default_config();
 
     yo_context_t context_on_stack = { .config = config };
-    ok &= yo_arena_create(&context_on_stack.persist, YO_MEGABYTES(1), true, YO_ARENA_TYPE_NO_CHAIN);
-    ok &= yo_arena_create(&context_on_stack.frame_states[0].arena, YO_MEGABYTES(1), true, YO_ARENA_TYPE_NO_CHAIN);
-    ok &= yo_arena_create(&context_on_stack.frame_states[1].arena, YO_MEGABYTES(1), true, YO_ARENA_TYPE_NO_CHAIN);
+    ok &= yo_arena_create(&context_on_stack.persist, YO_MEGABYTES(1), true, YO_ARENA_TYPE_CHAIN_EXPONENTIAL);
+    ok &= yo_arena_create(&context_on_stack.frame_states[0].arena, YO_MEGABYTES(1), true, YO_ARENA_TYPE_CHAIN_EXPONENTIAL);
+    ok &= yo_arena_create(&context_on_stack.frame_states[1].arena, YO_MEGABYTES(1), true, YO_ARENA_TYPE_CHAIN_EXPONENTIAL);
     ok &= yo_array_create(&context_on_stack.frame_states[0].events, 256, true);
     ok &= yo_array_create(&context_on_stack.frame_states[1].events, 256, true);
     ok &= yo_array_create(&context_on_stack.parent_stack, 4096, false);
@@ -2302,9 +2308,7 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
         if (event->type == YO_EVENT_TYPE_KEY_PRESS)
         {
             ret.keycode       = event->keycode;
-            ret.is_alt_down   = (event->modifiers & YO_MODIFIER_ALT)   != 0;
-            ret.is_ctrl_down  = (event->modifiers & YO_MODIFIER_CTLR)  != 0;
-            ret.is_shift_down = (event->modifiers & YO_MODIFIER_SHIFT) != 0;
+            ret.modifiers     = event->modifiers;
         }
     }
 

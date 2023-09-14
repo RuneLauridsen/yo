@@ -129,7 +129,7 @@ YO_API void yo_bullet_item(char *label);
 YO_API void        yo_slider(yo_id_t id, float *value, float min, float max);
 YO_API void        yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_slider_style_t *ex);
 YO_API void        yo_slider_with_label(char *label, float *value, float min, float max);
-YO_API yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_axis_t axis, uint32_t thumb_dim, yo_box_t *bounding_box);
+YO_API yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_axis_t axis, float thumb_dim, yo_box_t *bounding_box);
 
 ////////////////////////////////////////////////////////////////
 //

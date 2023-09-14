@@ -32,8 +32,13 @@
 
 #define YO_API static
 #include "yo.h"
+
 #include "yo_memory.h"
 #include "yo_memory.c"
+#include "yo_string.h"
+#include "yo_string.c"
+#include "yo_file.h"
+#include "yo_file.c"
 
 //
 // Platform & backend
@@ -115,8 +120,8 @@ int main()
     // yo_freetype_test(yo_ctx->atlas.pixels, yo_ctx->atlas.dim);
     // yo_ctx->atlas.dirty = true;
 
-    // file_content_t alger_file = load_file_content("C:\\Windows\\Fonts\\ALGER.TTF");
-    // yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.size);
+    // yo_string_t alger_file = yo_load_file("C:\\Windows\\Fonts\\ALGER.TTF");
+    // yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.length);
 
     //
     // Main application loop
@@ -130,64 +135,27 @@ int main()
 
         yo_impl_win32_opengl_begin_frame(&impl);
 
+
+        yo_begin_scroll_area_ex(yo_id("my scroll area"), 0, 0);
+
         yo_layout_v();
         YO_CHILD_SCOPE()
         {
-            yo_text("a");
-            yo_text("b");
-        }
+            static float f[100];
 
-        yo_box(0, 0);
-        yo_set_text("I am the Walrus");
-        yo_set_anim(YO_ANIM_FILL, 20.0f);
-
-        //yo_debug_show_atlas_texture();
-        //yo_demo();
-        build_ui();
-
-        // yo_box(0, 0);
-        // yo_new()->text = "aaaaaaa";
-        // yo_new()->font = alger;
-        // yo_new()->font_size = 20;
-        // yo_new()->font_color = YO_RED;
-        // yo_new()->v_align = YO_ALIGN_TOP;
-
-
-#if 0
-
-        //
-        // Background
-        //
-
-        yo_box(0, 0)->fill = yo_rgb(20, 20, 20);
-
-        //
-        // Debug output
-        //
-
-        yo_v_layout();
-        YO_CHILD_SCOPE()
-        {
-            yo_h_layout();
-            yo_new()->h_align = YO_ALIGN_LEFT;
-            yo_new()->v_dim = yo_px(50);
-            YO_CHILD_SCOPE()
+            for (int j = 0; j < 50; j++)
             {
-                uint32_t font_size = ((i / 4) % 20) + 20;
-                yo_text("abcdefghijklmnopqrstuvxyz");
-                yo_new()->font_size = font_size;
+                yo_slider(yo_id("%i", j), &f[j], 0.0f, 1.0f);
             }
-
-            yo_debug_show_atlas_partitions();
-            yo_debug_show_atlas_texture();
         }
-#endif
+
+        yo_end_scroll_area();
 
         yo_impl_win32_opengl_end_frame(&impl);
 
         //Sleep(1000);
 
-}
+    }
 
     //
     // Platform cleanup
@@ -377,7 +345,7 @@ void build_ui(void)
         yo_debug_show_atlas_texture();
     }
 #endif
-        }
+}
 #else
 void build_ui()
 {

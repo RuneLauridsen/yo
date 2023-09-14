@@ -124,8 +124,12 @@ struct yo_slider_style
 
     // NOTE(rune): Thumb dim can change depending on wether it is active, but we need
     // to know thumb dim in advance, for slider behaviour calculations.
-    float thumb_container_h_dim;
-    float thumb_container_v_dim;
+    union
+    {
+        struct { float thumb_container_dim_h, thumb_container_dim_v; };
+        struct { float thumb_container_dim_a[2]; };
+    };
+
 
     yo_thumb_style_t thumb;
     yo_thumb_style_t thumb_hot;
@@ -137,8 +141,8 @@ static yo_slider_style_t yo_default_slider_style()
     yo_slider_style_t ret =
     {
         .axis = YO_AXIS_X,
-        .thumb_container_h_dim = 22,
-        .thumb_container_v_dim = 22,
+        .thumb_container_dim_h = 22,
+        .thumb_container_dim_v = 22,
 
         .thumb.fill   = yo_rgb(64, 64, 64),
         .thumb.border = yo_border(2, yo_rgb(128, 128, 128), 20 / 2),
