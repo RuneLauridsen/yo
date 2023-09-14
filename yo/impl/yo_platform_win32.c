@@ -2,7 +2,7 @@
 
 static yo_platform_win32_t *global_platform; // TODO(rune): Remove global
 
-static LRESULT CALLBACK yo_platform_win32_opengl_callback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK yo_platform_win32_callback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     switch (uMsg)
     {
@@ -48,7 +48,7 @@ static void yo_platform_win32_startup(yo_platform_win32_t *platform, uint32_t wi
 
     WNDCLASSA window_class = { 0 };
     window_class.lpszClassName = "Yo Window Class";
-    window_class.lpfnWndProc = yo_platform_win32_opengl_callback;
+    window_class.lpfnWndProc = yo_platform_win32_callback;
     RegisterClassA(&window_class);
 
     platform->render_info.w = window_width;

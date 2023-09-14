@@ -26,10 +26,7 @@ static bool yo_font_backend_load_font(yo_font_backend_t *backend, yo_font_backen
                               &info->unscaled_descent,
                               &info->unscaled_line_gap);
 
-        if (!info->unscaled_line_gap)
-        {
-            info->unscaled_line_gap = info->unscaled_ascent - info->unscaled_descent;
-        }
+        info->unscaled_line_gap = info->unscaled_ascent - info->unscaled_descent;
 
         ret = true;
     }

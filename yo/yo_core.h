@@ -482,7 +482,7 @@ typedef struct yo_context yo_context_t;
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API yo_context_t *   yo_create_context(yo_config_t *config);
+YO_API yo_context_t *   yo_create_context(YO_PRINTF_FORMAT_STRING yo_config_t *config);
 YO_API void             yo_destroy_context(yo_context_t *context);
 YO_API void             yo_select_context(yo_context_t *context);
 
@@ -514,15 +514,15 @@ YO_API void             yo_input_char(char c, yo_modifier_t modifiers);
 YO_API void             yo_input_unicode(uint32_t codepoint, yo_modifier_t modifiers);
 YO_API void             yo_input_end(void);
 
-YO_API yo_v2i_t         yo_query_mouse_pos();
+YO_API yo_v2i_t         yo_query_mouse_pos(void);
 YO_API bool             yo_query_mouse_button(yo_mouse_button_t button);      // NOTE(m2dx): Was mouse button down during frame?
 YO_API bool             yo_query_mouse_button_down(yo_mouse_button_t button); // NOTE(m2dx): Did mouse button change from up->down during frame?
 YO_API bool             yo_query_mouse_button_up(yo_mouse_button_t button);   // NOTE(m2dx): Dis mouse button change from down->up during frame?
-YO_API yo_v2f_t         yo_query_scroll();
+YO_API yo_v2f_t         yo_query_scroll(void);
 
 // TODO(rune): Procedures for querying keyboard state.
 
-YO_API float            yo_delta();
+YO_API float            yo_delta(void);
 
 ////////////////////////////////////////////////////////////////
 //
@@ -565,7 +565,7 @@ YO_API void             yo_set_border_thickness(float thickness);
 YO_API void             yo_set_border_color(yo_v4f_t color);
 YO_API void             yo_set_border_radius(float radius);
 YO_API void             yo_set_font(yo_font_id_t font, uint32_t size, yo_v4f_t color);
-YO_API void             yo_set_font_face(yo_font_id_t font);
+YO_API void             yo_set_font_id(yo_font_id_t font);
 YO_API void             yo_set_font_size(uint32_t size);
 YO_API void             yo_set_font_color(yo_v4f_t color);
 YO_API void             yo_set_on_top(bool on_top);
@@ -658,8 +658,8 @@ YO_API void             yo_font_unload(yo_font_id_t font);
 YO_API void *           yo_alloc_temp(size_t size);
 
 // NOTE(rune): Temporary string allocations return a pointer to "" instead of NULL, if the allocation fails.
-YO_API char *           yo_alloc_temp_string(YO_PRINTF_FORMAT_STRING const char *format, ...);
-YO_API char *           yo_alloc_temp_string_v(YO_PRINTF_FORMAT_STRING const char *format, va_list args);
+YO_API char *           yo_alloc_temp_string(YO_PRINTF_FORMAT_STRING char *format, ...);
+YO_API char *           yo_alloc_temp_string_v(YO_PRINTF_FORMAT_STRING char *format, va_list args);
 
 ////////////////////////////////////////////////////////////////
 //

@@ -134,6 +134,12 @@
     <ClInclude Include="yo_font_backend_freetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="yo_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_file.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

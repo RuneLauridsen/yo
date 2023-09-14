@@ -373,7 +373,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
     box->dim_h.max  = YO_FLOAT32_MAX;
     box->dim_v.max  = YO_FLOAT32_MAX;
     box->font       = yo_ctx->default_font;
-    box->font_color = yo_v4f(1.0f, 0.0f, 0.0f, 0.0f);
+    box->font_color = yo_v4f(1.0f, 0.0f, 1.0f, 1.0f);
     box->font_size  = 20;
 
     //
@@ -449,6 +449,8 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
 
 static float yo_anim_f32(float rate, float origin, float target)
 {
+    // TODO(rune): This is quite branchy. Could we do something branch prediction friendly?
+
     // TODO(rune): User configurable epsilon?
     const float EPSILON = 0.01f;
 
@@ -457,6 +459,7 @@ static float yo_anim_f32(float rate, float origin, float target)
 
     if (fabsf(origin - target) < EPSILON) ret = target;
     if (ret != origin) yo_ctx->this_frame->played_anim = true;
+
     return ret;
 }
 
@@ -2258,8 +2261,8 @@ YO_API yo_id_t yo_pop_id(void)
 
 YO_API yo_box_t *yo_box(yo_id_t id, yo_box_flags_t flags)
 {
-    yo_box_t *node = yo_push_box(id, flags);
-    return node;
+    yo_box_t *ret = yo_push_box(id, flags);
+    return ret;
 }
 
 YO_API yo_signal_t yo_get_signal(yo_box_t *box)
@@ -2385,7 +2388,7 @@ YO_API void  yo_set_border_thickness(float thickness)                           
 YO_API void  yo_set_border_color(yo_v4f_t color)                                { yo_ctx->latest_child->border.color = color; }
 YO_API void  yo_set_border_radius(float radius)                                 { yo_ctx->latest_child->border.radius = yo_corners(radius, radius, radius, radius); }
 YO_API void  yo_set_font(yo_font_id_t font, uint32_t size, yo_v4f_t color)      { yo_ctx->latest_child->font = font; yo_ctx->latest_child->font_size = size; yo_ctx->latest_child->font_color = color; }
-YO_API void  yo_set_font_face(yo_font_id_t font)                                { yo_ctx->latest_child->font = font; }
+YO_API void  yo_set_font_id(yo_font_id_t font)                                  { yo_ctx->latest_child->font = font; }
 YO_API void  yo_set_font_size(uint32_t size)                                    { yo_ctx->latest_child->font_size = size; }
 YO_API void  yo_set_font_color(yo_v4f_t color)                                  { yo_ctx->latest_child->font_color = color; }
 YO_API void  yo_set_on_top(bool on_top)                                         { yo_ctx->latest_child->on_top = on_top; }
@@ -2484,7 +2487,7 @@ YO_API void *yo_alloc_temp(size_t size)
     return ret;
 }
 
-YO_API char *yo_alloc_temp_string(YO_PRINTF_FORMAT_STRING const char *format, ...)
+YO_API char *yo_alloc_temp_string(YO_PRINTF_FORMAT_STRING char *format, ...)
 {
     va_list args;
     va_start(args, format);
@@ -2494,7 +2497,7 @@ YO_API char *yo_alloc_temp_string(YO_PRINTF_FORMAT_STRING const char *format, ..
     return ret;
 }
 
-YO_API char *yo_alloc_temp_string_v(YO_PRINTF_FORMAT_STRING const char *format, va_list args)
+YO_API char *yo_alloc_temp_string_v(YO_PRINTF_FORMAT_STRING char *format, va_list args)
 {
     // TODO(rune): Custom printf functions
 

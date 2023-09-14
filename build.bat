@@ -21,6 +21,7 @@ cl %compiler_flags% /Fe:yo_dll.dll /LD ..\yo_dll\main.c /link %linker_flags% /IN
 
 :: yo_csharp
 echo f | xcopy /y yo_dll.dll "../yo_csharp/yo_dll.dll"
+echo f | xcopy /y yo_dll.dll "../yo_csharp/yo_dll.pdb"
 dotnet build ../yo_csharp/yo_csharp.csproj -o .
 
 endlocal

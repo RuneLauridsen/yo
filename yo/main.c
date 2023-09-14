@@ -47,43 +47,6 @@
 #include "impl/yo_impl_win32_opengl.h"
 #include "impl/yo_impl_win32_opengl.c"
 
-// TODO(rune): File system layer?
-typedef struct file_content file_content_t;
-struct file_content
-{
-    void *data;
-    size_t size;
-};
-
-// TODO(rune): File system layer?
-static file_content_t load_file_content(char *file_name)
-{
-    file_content_t ret = { 0 };
-
-    FILE *file = fopen(file_name, "rb");
-    fseek(file, 0, SEEK_END);
-    size_t size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    char *data = yo_heap_alloc(size + 1, false);
-
-    if (data)
-    {
-        size = fread(data, 1, size, file);
-        ret.data = data;
-        ret.size = size;
-    }
-
-    fclose(file);
-
-    return ret;
-}
-
-static void unload_file_content(file_content_t file_content)
-{
-    yo_heap_free(file_content.data);
-}
-
 static void build_ui(void);
 
 int main()
@@ -142,9 +105,6 @@ int main()
 
     //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
 
-    // yo_file_content_t alger_file = yo_load_file_content("C:\\Windows\\Fonts\\ALGER.TTF");
-    // yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.size);
-
     //
     // Platform setup
     //
@@ -154,6 +114,9 @@ int main()
 
     // yo_freetype_test(yo_ctx->atlas.pixels, yo_ctx->atlas.dim);
     // yo_ctx->atlas.dirty = true;
+
+    // file_content_t alger_file = load_file_content("C:\\Windows\\Fonts\\ALGER.TTF");
+    // yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.size);
 
     //
     // Main application loop
@@ -167,12 +130,20 @@ int main()
 
         yo_impl_win32_opengl_begin_frame(&impl);
 
+        yo_layout_v();
+        YO_CHILD_SCOPE()
+        {
+            yo_text("a");
+            yo_text("b");
+        }
+
         yo_box(0, 0);
-        yo_set_fill(yo_rgb(20, 20, 20));
+        yo_set_text("I am the Walrus");
+        yo_set_anim(YO_ANIM_FILL, 20.0f);
 
         //yo_debug_show_atlas_texture();
-        yo_demo();
-        // build_ui();
+        //yo_demo();
+        build_ui();
 
         // yo_box(0, 0);
         // yo_new()->text = "aaaaaaa";
@@ -216,7 +187,7 @@ int main()
 
         //Sleep(1000);
 
-    }
+}
 
     //
     // Platform cleanup
@@ -406,7 +377,7 @@ void build_ui(void)
         yo_debug_show_atlas_texture();
     }
 #endif
-}
+        }
 #else
 void build_ui()
 {

@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace Yo;
+namespace YoOld;
 
 public unsafe static partial class yo_native
 {

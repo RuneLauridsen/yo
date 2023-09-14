@@ -11,10 +11,6 @@
 #define fallthrough                 // NOTE(rune): empty macro to mark intentional fall through in switch cases
 #define countof(x)                  (sizeof(x) / sizeof(x[0]))
 
-#define YO_KILOBYTES(x)             ((x) * 1024LL)
-#define YO_MEGABYTES(x)             (YO_KILOBYTES(x) * 1024LL)
-#define YO_GIGABYTES(x)             (YO_MEGABYTES(x) * 1024LL)
-
 // TODO(rune): Make this a parameter in yo_config_t
 #define YO_BOX_CACHE_COUNT          (256)
 

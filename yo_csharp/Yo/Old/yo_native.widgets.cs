@@ -1,9 +1,9 @@
-﻿global using static Yo.yo_native.yo_circle_flags_t;
+﻿global using static YoOld.yo_native.yo_circle_flags_t;
 
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace Yo;
+namespace YoOld;
 
 public unsafe static partial class yo_native
 {

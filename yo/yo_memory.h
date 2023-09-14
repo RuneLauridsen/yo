@@ -8,6 +8,11 @@
 //
 ////////////////////////////////////////////////////////////////
 
+#define YO_COALESCE(a,b)            ((a)?(a):(b))
+#define YO_KILOBYTES(x)             ((x) * 1024LL)
+#define YO_MEGABYTES(x)             (YO_KILOBYTES(x) * 1024LL)
+#define YO_GIGABYTES(x)             (YO_MEGABYTES(x) * 1024LL)
+
 #define yo_zero_struct(a)           yo_memset0((a), sizeof(*(a)))
 #define yo_zero_struct_array(a,c)   yo_memset0((a), sizeof(*(a)) * c)
 #define yo_equal_struct(a,b)        (yo_memcmp(a, b, sizeof(a)) == 0)
@@ -172,6 +177,7 @@ static void     yo_heap_free(void *p);
 #define yo_slist_queue_join(a,b)          YO_SLQUEUE_JOIN((a)->first, (a)->last, (b)->first, (b)->last,next)
 #define yo_slist_queue_push(list,n)       YO_SLQUEUE_PUSH((list)->first, (list)->last, next, n)
 #define yo_slist_queue_pop(list)          YO_SLQUEUE_POP((list)->first, (list)->last, next)
+#define yo_slist_add(list, node)          yo_slist_queue_push(list, node)
 #define yo_slist_each(T, it, list)        T it = (list); it; it = it->next
 
 #define yo_slist_stack_push(head, n)      YO_SLSTACK_PUSH(head, next, n)
@@ -220,8 +226,8 @@ struct yo_arena_block
 typedef struct yo_arena_temp yo_arena_temp_t;
 struct yo_arena_temp
 {
-    yo_arena_block_t  *chain_head;
-    yo_arena_temp_t *next;
+    yo_arena_block_t *chain_head;
+    yo_arena_temp_t  *next;
 
     // NOTE(rune): In case there wasn't enough space to allocate a yo_arena_temp_t in
     // yo_arena_begin_temp, we still force the user to call yo_end_temp, and use
@@ -256,6 +262,7 @@ static void     yo_arena_destroy(yo_arena_t *arena);
 static void     yo_arena_reset(yo_arena_t *arena);
 
 static void *   yo_arena_push_size(yo_arena_t *arena, size_t size, bool init_to_zero);
+static void *   yo_arena_push_size_ensure_pad(yo_arena_t *arena, size_t size, bool init_to_zero, size_t pad);
 static char *   yo_arena_push_cstring(yo_arena_t *arena, char *cstring);
 
 static bool     yo_arena_begin_temp(yo_arena_t *arena);

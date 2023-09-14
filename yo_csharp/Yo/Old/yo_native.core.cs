@@ -1,6 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
-namespace Yo;
+namespace YoOld;
 
 public unsafe static partial class yo_native
 {
@@ -185,6 +186,20 @@ public unsafe static partial class yo_native
         YO_FRAME_FLAG_LAZY,
     };
 
+    ////////////////////////////////////////////////////////////////
+    //
+    //
+    // Structs
+    //
+    //
+    ////////////////////////////////////////////////////////////////
+
+    public struct yo_sides_u32_t { public uint32_t left, right, top, bottom; };
+    public struct yo_sides_f32_t { public float left, right, top, bottom; };
+    public struct yo_corners_u32_t { public uint32_t top_left, top_right, bottom_left, bottom_right; };
+    public struct yo_corners_f32_t { public float top_left, top_right, bottom_left, bottom_right; };
+    public struct yo_corners_v4f_t { public yo_v4f_t top_left, top_right, bottom_left, bottom_right; };
+
     public struct yo_signal_t
     {
         public bool clicked; // NOTE(rune): Left clicked
@@ -202,141 +217,6 @@ public unsafe static partial class yo_native
         public bool is_active;
     };
 
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Basic
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
-    public struct yo_sides_u32_t { public uint32_t left, right, top, bottom; };
-    public struct yo_sides_f32_t { public float left, right, top, bottom; };
-    public struct yo_corners_u32_t { public uint32_t top_left, top_right, bottom_left, bottom_right; };
-    public struct yo_corners_f32_t { public float top_left, top_right, bottom_left, bottom_right; };
-    public struct yo_corners_v4f_t { public yo_v4f_t top_left, top_right, bottom_left, bottom_right; };
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Graphics
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
-#if false
-    typedef uint32_t yo_draw_cmd_type_t;
-    enum yo_draw_cmd_type
-    {
-        YO_DRAW_CMD_NONE,
-        YO_DRAW_CMD_AABB,
-        YO_DRAW_CMD_TRI,
-        YO_DRAW_CMD_QUAD,
-    };
-
-    // TODO(rune): Consider making this variably sized. Currently we waste a lot of space for YO_DRAW_CMD_TRI.
-    // TODO(rune): This seems very fat for a basic draw_cmd struct.
-    typedef struct yo_draw_cmd yo_draw_cmd_t;
-    struct yo_draw_cmd
-    {
-        yo_draw_cmd_type_t type;
-        union
-        {
-            struct
-            {
-                // NOTE(rune): Position
-                yo_v2f_t p0, p1, clip_p0, clip_p1;
-
-                // NOTE(rune): Fill
-                yo_corners_v4f_t color;
-                yo_corners_f32_t radius;
-
-                // NOTE(rune): Border
-                float border_thickness;
-                yo_v4f_t border_color;
-
-                // NOTE(rune): Texturing
-                uint32_t texture_id;
-                yo_v2f_t uv0, uv1;
-            } aabb;
-
-            struct
-            {
-                yo_v2f_t p[3];
-                yo_v4f_t color[3];
-            } tri;
-
-            struct
-            {
-                yo_v2f_t p[4];
-                yo_v4f_t color[4];
-            } quad;
-        };
-    };
-
-    typedef struct yo_vert yo_vert_t;
-    struct yo_vert
-    {
-        yo_v2f_t rect_p0;
-        yo_v2f_t rect_p1;
-
-        yo_v2f_t corner;
-        yo_v4f_t corner_color;
-        float    corner_radius;
-
-        float    border_thickness;
-        yo_v4f_t border_color;
-
-        yo_v2f_t tex_coord;
-        float    z;
-    };
-
-    typedef uint32_t yo_idx_t;
-
-#endif
-    public struct yo_draw_cmd_t
-    {
-        // TODO(rune): How to unions in C#?
-    };
-
-    public struct yo_render_info_t
-    {
-        public uint32_t w;
-        public uint32_t h;
-
-        public yo_draw_cmd_t* draw_cmds;
-        public size_t draw_cmds_count;
-
-        public uint32_t tex_id;
-        public yo_v2i_t tex_dims;
-        public void* tex_pixels;
-        public bool tex_dirty;
-
-        public bool lazy;
-    };
-
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Configuration
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
-    public struct yo_config_t
-    {
-        public uint32_t popup_close_delay;
-    };
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Box
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
     public struct yo_length_t
     {
         public float min, max, rel;
@@ -349,13 +229,6 @@ public unsafe static partial class yo_native
         public uint32_t marker;
     };
 
-    public struct yo_placement_t
-    {
-        public yo_length_t h_dim, v_dim;
-        public yo_align_t h_align, v_align;
-        public yo_sides_f32_t margin, padding;
-    };
-
     public struct yo_border_t
     {
         public yo_corners_f32_t radius;
@@ -363,77 +236,22 @@ public unsafe static partial class yo_native
         public yo_v4f_t color;
     };
 
-    public struct yo_box_t
+    public struct yo_config_t
     {
-        public byte* tag;   // NOTE(rune): Null terminated ASCII string.
-        public byte* text;  // NOTE(rune): Null terminated ASCII string.
+        public uint32_t popup_close_delay;
+    }
 
-        public yo_layout_t child_layout;
-        public yo_border_t border;
-        public yo_v4f_t fill;
-        public uint32_t font_size;
-        public yo_v4f_t font_color;
-        public bool on_top;
+    public struct yo_font_id_t { public uint64_t u64; }
 
-#if false
-        public yo_placement_t placement;
-#else
-        public yo_length_t h_dim, v_dim;
-        public yo_align_t h_align, v_align;
-        public yo_sides_f32_t margin, padding;
-#endif
-        public yo_overflow_t h_overflow, v_overflow;
-
-        public yo_v2f_t target_scroll_offset;
-        public yo_v2f_t scroll_offset;
-
-        // NOTE(rune): Controls which properties are animated.
-        public yo_anim_flags_t anim;
-
-        // NOTE(rune): All animations play at the same rate. If you want different animation rates,
-        // for different properties, you need to split them up into multiple boxes.
-        public float anim_rate;
-
-        // TODO(rune): We could just make size of the persistent state user defined, which would allow the
-        // user code could store anything across frame.
-        public yo_text_field_state_t text_field_state;
-    };
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Context
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-    ///
     public struct yo_context_t { }
+    public struct yo_box_t { }
 
     [DllImport("yo_dll.dll")] public static extern yo_context_t* yo_create_context(yo_config_t* config);
     [DllImport("yo_dll.dll")] public static extern void yo_destroy_context(yo_context_t* context);
     [DllImport("yo_dll.dll")] public static extern void yo_select_context(yo_context_t* context);
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Frame
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
     [DllImport("yo_dll.dll")] public static extern bool yo_begin_frame(float time, yo_frame_flags_t flags);
     [DllImport("yo_dll.dll")] public static extern void yo_end_frame(yo_render_info_t* buffer);
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Input
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
     [DllImport("yo_dll.dll")] public static extern void yo_input_begin();
-    // [DllImport("yo_dll.dll")] public static extern void yo_input_mouse_state(bool buttons[YO_MOUSE_BUTTON_COUNT], uint32_t x, uint32_t y); TODO(rune): How to port statically sized bool arrays?
     [DllImport("yo_dll.dll")] public static extern void yo_input_mouse_click(yo_mouse_button_t button, uint32_t x, uint32_t y, yo_modifier_t modifiers);
     [DllImport("yo_dll.dll")] public static extern void yo_input_scroll(float x, float y);
     [DllImport("yo_dll.dll")] public static extern void yo_input_key(yo_keycode_t key, yo_modifier_t modifiers);
@@ -441,124 +259,77 @@ public unsafe static partial class yo_native
     [DllImport("yo_dll.dll")] public static extern void yo_input_unicode(uint32_t codepoint, yo_modifier_t modifiers);
     [DllImport("yo_dll.dll")] public static extern void yo_input_end();
     [DllImport("yo_dll.dll")] public static extern yo_v2i_t yo_query_mouse_pos();
-    [DllImport("yo_dll.dll")] public static extern bool yo_query_mouse_button(yo_mouse_button_t button);      // NOTE(m2dx): Was mouse button down during frame?
-    [DllImport("yo_dll.dll")] public static extern bool yo_query_mouse_button_down(yo_mouse_button_t button); // NOTE(m2dx): Did mouse button change from up->down during frame?
-    [DllImport("yo_dll.dll")] public static extern bool yo_query_mouse_button_up(yo_mouse_button_t button);   // NOTE(m2dx): Dis mouse button change from down->up during frame?
+    [DllImport("yo_dll.dll")] public static extern bool yo_query_mouse_button(yo_mouse_button_t button);
+    [DllImport("yo_dll.dll")] public static extern bool yo_query_mouse_button_down(yo_mouse_button_t button);
+    [DllImport("yo_dll.dll")] public static extern bool yo_query_mouse_button_up(yo_mouse_button_t button);
     [DllImport("yo_dll.dll")] public static extern yo_v2f_t yo_query_scroll();
-
-    // TODO(rune): Procedures for querying keyboard state.
-
     [DllImport("yo_dll.dll")] public static extern float yo_delta();
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Id
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
-    /*
-#define YO_ID_NONE      ((yo_id_t)(0x0000'0000'0000'0000))
-#define YO_ID_ROOT      ((yo_id_t)(0xffff'ffff'ffff'ffff))
-#define yo_id(...)      yo_id_from_format(__VA_ARGS__) // TODO(rune): If only 1 arg is supplied, we could just use yo_id_from_string instead, to be more efficient.
-    */
-
-    public const yo_id_t YO_ID_NONE = 0;
-    public const yo_id_t YO_ID_ROOT = 0xffff_ffff_ffff_ffff;
-
-    // TODO(rune): How to port yo_id(...) ???
-
-    [DllImport("yo_dll.dll")] public static extern yo_id_t yo_id_from_string(char* string_);
-    [DllImport("yo_dll.dll")] public static extern yo_id_t yo_id_from_format(char* format, __arglist);
-    // [DllImport("yo_dll.dll")] public static extern yo_id_t yo_id_from_format_v(char* format, va_list args);
+    [DllImport("yo_dll.dll")] public static extern yo_id_t yo_id_from_string(string @string);
+    [DllImport("yo_dll.dll")] public static extern yo_id_t yo_id_from_format(string format);
+    [DllImport("yo_dll.dll")] public static extern yo_id_t yo_id_from_format_v(string format, va_list args);
     [DllImport("yo_dll.dll")] public static extern void yo_push_id(yo_id_t id);
     [DllImport("yo_dll.dll")] public static extern yo_id_t yo_pop_id();
-
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Box
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
     [DllImport("yo_dll.dll")] public static extern yo_box_t* yo_box(yo_id_t id, yo_box_flags_t flags);
     [DllImport("yo_dll.dll")] public static extern yo_signal_t yo_get_signal(yo_box_t* box);
     [DllImport("yo_dll.dll")] public static extern yo_recti_t yo_get_screen_rect(yo_box_t* box);
     [DllImport("yo_dll.dll")] public static extern yo_rectf_t yo_get_arranged_rect(yo_box_t* box);
     [DllImport("yo_dll.dll")] public static extern yo_v2f_t yo_get_content_dim(yo_box_t* box);
-    [DllImport("yo_dll.dll")] public static extern yo_box_t* yo_new();
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Children
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
+    [DllImport("yo_dll.dll")] public static extern void yo_set_tag(string tag);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_text(string text);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_layout(yo_layout_t layout);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_fill(yo_v4f_t fill);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_border_s(yo_border_t border);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_border(float thickness, yo_v4f_t color, float radius);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_border_thickness(float thickness);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_border_color(yo_v4f_t color);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_border_radius(float radius);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_font(yo_font_id_t font, uint32_t size, yo_v4f_t color);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_font_id(yo_font_id_t font);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_font_size(uint32_t size);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_font_color(yo_v4f_t color);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_on_top(bool on_top);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_overflow_h(yo_overflow_t overflow);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_overflow_v(yo_overflow_t overflow);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_align_a(yo_align_t align, yo_axis_t axis);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_align_h(yo_align_t align);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_align_v(yo_align_t align);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_dim_a(yo_length_t length, yo_axis_t axis);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_dim_h(yo_length_t length);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_dim_v(yo_length_t length);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_margin(float left, float top, float right, float bottom);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_margin_hv(float h, float v);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_margin_a(float forward, float backward, yo_axis_t axis);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_margin_left(float left);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_margin_top(float top);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_margin_right(float right);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_margin_bottom(float bottom);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_padding(float left, float top, float right, float bottom);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_padding_hv(float h, float v);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_anim(yo_anim_flags_t flags, float rate);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_anim_flags(yo_anim_flags_t flags);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_anim_rate(float rate);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_scroll(yo_v2f_t offset);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_scroll_a(float offset, yo_axis_t axis);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_scroll_h(float offset);
+    [DllImport("yo_dll.dll")] public static extern void yo_set_scroll_v(float offset);
+    [DllImport("yo_dll.dll")] public static extern yo_text_field_state_t* yo_get_text_field_state();
+    [DllImport("yo_dll.dll")] public static extern void* yo_get_userdata(size_t size);
     [DllImport("yo_dll.dll")] public static extern void yo_begin_children();
     [DllImport("yo_dll.dll")] public static extern void yo_begin_children_of(yo_box_t* box);
     [DllImport("yo_dll.dll")] public static extern void yo_end_children();
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Popup
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
-    // WARNING(rune): Not finished
     [DllImport("yo_dll.dll")] public static extern void yo_open_popup(yo_id_t id, yo_popup_flags_t flags);
     [DllImport("yo_dll.dll")] public static extern bool yo_begin_popup(yo_id_t id);
     [DllImport("yo_dll.dll")] public static extern void yo_end_popup();
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Scaled
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
     [DllImport("yo_dll.dll")] public static extern void yo_scaled_triangle(yo_v2f_t p0, yo_v2f_t p1, yo_v2f_t p2, yo_v4f_t color0, yo_v4f_t color1, yo_v4f_t color2);
     [DllImport("yo_dll.dll")] public static extern void yo_scaled_checkmark(yo_v4f_t color);
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Memory
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
+    [DllImport("yo_dll.dll")] public static extern yo_font_id_t yo_font_load(void* data, size_t data_size);
+    [DllImport("yo_dll.dll")] public static extern void yo_font_unload(yo_font_id_t font);
     [DllImport("yo_dll.dll")] public static extern void* yo_alloc_temp(size_t size);
-
-    // NOTE(rune): Temporary string allocations return a pointer to "" instead of NULL, if the allocation fails.
-    [DllImport("yo_dll.dll")] public static extern char* yo_alloc_temp_string(char* format, __arglist);
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Errors
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
+    [DllImport("yo_dll.dll")] public static extern string yo_alloc_temp_string(string format);
+    [DllImport("yo_dll.dll")] public static extern string yo_alloc_temp_string_v(string format, va_list args);
     [DllImport("yo_dll.dll")] public static extern yo_error_t yo_get_error();
-    [DllImport("yo_dll.dll")] public static extern char* yo_get_error_message();
-
-    ////////////////////////////////////////////////////////////////
-    //
-    //
-    // Debug
-    //
-    //
-    ////////////////////////////////////////////////////////////////
-
+    [DllImport("yo_dll.dll")] public static extern string yo_get_error_message();
     [DllImport("yo_dll.dll")] public static extern void yo_debug_show_atlas_partitions();
     [DllImport("yo_dll.dll")] public static extern void yo_debug_show_atlas_texture();
 }

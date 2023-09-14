@@ -21,16 +21,6 @@
 ////////////////////////////////////////////////////////////////
 //
 //
-// Helpers
-//
-//
-////////////////////////////////////////////////////////////////
-
-#define YO_COALESCE(a,b)            ((a)?(a):(b))
-
-////////////////////////////////////////////////////////////////
-//
-//
 // Basic
 //
 //
@@ -115,6 +105,8 @@ static void yo_arena_init(yo_arena_t *arena, void *memory, size_t size)
 static bool yo_arena_create(yo_arena_t *arena, size_t size, bool init_to_zero, yo_arena_type_t type)
 {
     bool ret = false;
+
+    if (!size) size = YO_MEGABYTES(1);
 
     void *memory = yo_heap_alloc(size, init_to_zero);
     if (memory)
@@ -219,6 +211,20 @@ static void *yo_arena_push_size(yo_arena_t *arena, size_t size, bool init_to_zer
         block->size_used += size;
 
         if (init_to_zero) yo_memset(ret, 0, size);
+    }
+
+    return ret;
+}
+
+static void *yo_arena_push_size_ensure_pad(yo_arena_t *arena, size_t size, bool init_to_zero, size_t pad)
+{
+    void *ret = yo_arena_push_size(arena, size + pad, init_to_zero);
+
+    if (ret)
+    {
+        yo_arena_block_t *block = YO_COALESCE(arena->chain_head, &arena->self);
+        YO_ASSERT(block->size_used >= size + pad);
+        block->size_used -= pad;
     }
 
     return ret;

@@ -167,7 +167,7 @@ YO_API void yo_end_scroll_area(void);
 ////////////////////////////////////////////////////////////////
 
 typedef uint32_t yo_table_falgs_t;
-enum
+enum yo_table_falgs
 {
     YO_TABLE_FLAG_NONE,
     YO_TABLE_FLAG_NO_HEADERS = 1

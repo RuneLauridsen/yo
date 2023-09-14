@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Yo.yo_native;
-using Yo;
+using static YoOld.yo_native;
+using YoOld;
 
-namespace Yo;
+namespace YoOld;
 
 public unsafe static partial class yo_native
 {
