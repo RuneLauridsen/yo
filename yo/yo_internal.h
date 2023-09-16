@@ -157,19 +157,19 @@ struct yo_box
     // NOTE(rune): Hashtable
     yo_box_t *next_hash;
 
-    // NOTE(rune): Calculated during measure pass
+    // NOTE(rune): Calculated during measure pass.
     struct
     {
         yo_v2f_t content_size;
         yo_measure_text_result_t measured_text;
     };
 
-    // NOTE(rune): Calculated during arrange pass
+    // NOTE(rune): Calculated during arrange pass.
     struct
     {
         bool arranged;
-        yo_rectf_t arranged_rect; // NOTE(rune): Relative to parent top-left
-        yo_rectf_t screen_rect;   // NOTE(rune): Relative to screen top-left
+        yo_rectf_t arranged_rect; // NOTE(rune): Relative to parent top-left.
+        yo_rectf_t screen_rect;   // NOTE(rune): Relative to screen top-left.
     };
 
     // NOTE(rune): Persistent userdata. Copied from previous frame.
@@ -240,17 +240,17 @@ struct yo_context
     yo_frame_t *this_frame;
     yo_frame_t *prev_frame;
 
-    // Data for building current frame hierarchy
+    // NOTE(rune): Data for building current frame hierarchy
     yo_box_t *root;
     yo_box_t *latest_child;
     yo_array(yo_internal_box_ptr_t) parent_stack;
     yo_array(yo_id_t)  id_stack;
 
-    // Popups
+    // NOTE(rune): Popups
     yo_array(yo_popup_t) popups;            // NOTE(rune): Tracks yo_open_popup calls across frames.
     yo_array(yo_id_t)    popup_build_stack; // NOTE(rune): Tracks yo_begin_popup/yo_end_popup calls. Cleared every frame.
 
-    // Fonts
+    // NOTE(rune): Fonts
     yo_atlas_t  atlas;
     yo_font_id_t default_font;
 

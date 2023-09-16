@@ -1,6 +1,6 @@
 #pragma once
 
-#if 0
+#if 1
 #define YO_FONT_BACKEND_STB
 #else
 #define YO_FONT_BACKEND_FREETYPE
