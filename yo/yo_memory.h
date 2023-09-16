@@ -13,8 +13,8 @@
 #define YO_MEGABYTES(x)             (YO_KILOBYTES(x) * 1024LL)
 #define YO_GIGABYTES(x)             (YO_MEGABYTES(x) * 1024LL)
 
-#define yo_zero_struct(a)           yo_memset0((a), sizeof(*(a)))
-#define yo_zero_struct_array(a,c)   yo_memset0((a), sizeof(*(a)) * c)
+#define yo_zero_struct(a)           yo_memset((a), 0, sizeof(*(a)))
+#define yo_zero_struct_array(a,c)   yo_memset((a), 0, sizeof(*(a)) * c)
 #define yo_equal_struct(a,b)        (yo_memcmp(a, b, sizeof(a)) == 0)
 
 ////////////////////////////////////////////////////////////////
@@ -28,7 +28,6 @@
 static void *   yo_memcpy(void *destination, void *source, size_t size);
 static void *   yo_memmove(void *destination, void *source, size_t size);
 static void *   yo_memset(void *destination, uint8_t val, size_t size);
-static void     yo_memset0(void *ptr, size_t size);
 static int      yo_memcmp(void *a, void *b, size_t size);
 static bool     yo_memequ(void *a, void *b, size_t size);
 
@@ -177,7 +176,7 @@ static void     yo_heap_free(void *p);
 #define yo_slist_queue_join(a,b)          YO_SLQUEUE_JOIN((a)->first, (a)->last, (b)->first, (b)->last,next)
 #define yo_slist_queue_push(list,n)       YO_SLQUEUE_PUSH((list)->first, (list)->last, next, n)
 #define yo_slist_queue_pop(list)          YO_SLQUEUE_POP((list)->first, (list)->last, next)
-#define yo_slist_add(list, node)          yo_slist_queue_push(list, node)
+#define yo_slist_add(list, node)          yo_slist_queue_push(list, node) // NOTE(rune): Just an alias for yo_slist_queue_push.
 #define yo_slist_each(T, it, list)        T it = (list); it; it = it->next
 
 #define yo_slist_stack_push(head, n)      YO_SLSTACK_PUSH(head, next, n)
@@ -189,7 +188,7 @@ static void     yo_heap_free(void *p);
 #define yo_dlist_insert_after(list, node, after) YO_DLIST_INSERT   ((list)->first, (list)->last, next, prev, after, node)
 #define yo_dlist_insert_before(list, node, before) YO_DLIST_INSERT   ((list)->last, (list)->first, prev, next, before, node)
 #define yo_dlist_remove(list, node)       YO_DLIST_REMOVE    ((list)->first, (list)->last, next, prev, node)
-#define yo_dlist_add(list, node)          yo_dlist_push_back(list, node)
+#define yo_dlist_add(list, node)          yo_dlist_push_back(list, node) // NOTE(rune): Just an alias for yo_dlist_push_back.
 #define yo_dlist_each(T, it, list)        T it = (list)->first; it; it = it->next
 
 #define yo_dlist_stack_push(head, node)   YO_DLIST_STACK_PUSH(head, next, prev, node)
@@ -199,7 +198,7 @@ static void     yo_heap_free(void *p);
 ////////////////////////////////////////////////////////////////
 //
 //
-// Arena
+// Arena (linear allocator)
 //
 //
 ////////////////////////////////////////////////////////////////
@@ -273,7 +272,7 @@ static void     yo_arena_end_temp(yo_arena_t *arena);
 ////////////////////////////////////////////////////////////////
 //
 //
-// Dynamic array
+// Generic dynamic array
 //
 //
 ////////////////////////////////////////////////////////////////

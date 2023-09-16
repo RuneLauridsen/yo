@@ -41,11 +41,6 @@ static void *yo_memset(void *destination, uint8_t val, size_t size)
     return memset(destination, val, size);
 }
 
-static void yo_memset0(void *ptr, size_t size)
-{
-    yo_memset(ptr, 0, size);
-}
-
 static int yo_memcmp(void *a, void *b, size_t size)
 {
     return memcmp(a, b, size);
@@ -394,6 +389,6 @@ static void yo_array_void_reset(yo_array_void_t *array, size_t elem_size, bool c
 
     if (clear_to_zero)
     {
-        yo_memset0(array->elems, array->count_allocated * elem_size);
+        yo_memset(array->elems, 0, array->count_allocated * elem_size);
     }
 }
