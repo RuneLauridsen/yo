@@ -123,6 +123,8 @@ YO_PLATFORM_API void yo_impl_win32_opengl_begin_frame(yo_impl_win32_opengl_t *im
 
 YO_PLATFORM_API void yo_impl_win32_opengl_end_frame(yo_impl_win32_opengl_t *impl)
 {
+    YO_PROFILE_BEGIN(yo_impl_win32_opengl_end_frame);
+
     yo_end_frame(&impl->platform.render_info);
 
     SetCursor(impl->platform.cursor);
@@ -131,6 +133,11 @@ YO_PLATFORM_API void yo_impl_win32_opengl_end_frame(yo_impl_win32_opengl_t *impl
 
     yo_backend_opengl_render_frame(&impl->backend, &impl->platform.render_info);
 
+    YO_PROFILE_BEGIN(swap_buffers);
     SwapBuffers(dc);
+    YO_PROFILE_END(swap_buffers);
+
     ReleaseDC(impl->platform.window, dc);
+
+    YO_PROFILE_END(yo_impl_win32_opengl_end_frame);
 }

@@ -12,6 +12,16 @@
 #include <assert.h>
 
 //
+// Tracy
+//
+
+#define TRACY_ENABLE
+#include "thirdparty/tracy/tracy/TracyC.h"
+
+#define YO_PROFILE_BEGIN(name)  TracyCZoneN(__##name, #name, true)
+#define YO_PROFILE_END(name)    TracyCZoneEnd(__##name)
+
+//
 // Windows & OpenGL
 //
 
@@ -32,6 +42,7 @@
 
 #define YO_API static
 #include "yo.h"
+#include "yo.c"
 
 #include "yo_memory.h"
 #include "yo_memory.c"
@@ -135,26 +146,13 @@ int main()
 
         yo_impl_win32_opengl_begin_frame(&impl);
 
-
-        yo_begin_scroll_area_ex(yo_id("my scroll area"), 0, 0);
-
-        yo_layout_v();
-        YO_CHILD_SCOPE()
-        {
-            static float f[100];
-
-            for (int j = 0; j < 50; j++)
-            {
-                yo_slider(yo_id("%i", j), &f[j], 0.0f, 1.0f);
-            }
-        }
-
-        yo_end_scroll_area();
+        YO_PROFILE_BEGIN(ui_build);
+        yo_demo();
+        YO_PROFILE_END(ui_build);
 
         yo_impl_win32_opengl_end_frame(&impl);
 
-        //Sleep(1000);
-
+        TracyCFrameMark;
     }
 
     //

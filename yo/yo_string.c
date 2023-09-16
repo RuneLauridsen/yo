@@ -268,6 +268,8 @@ static bool yo_ends_with(yo_string_t s, yo_string_t suffix)
 
 static uint32_t yo_utf8_codepoint_advance(yo_string_t *s)
 {
+    YO_PROFILE_BEGIN(yo_utf8_codepoint_advance);
+
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
 
     // NOTE(rune): Table generated with:
@@ -365,6 +367,8 @@ static uint32_t yo_utf8_codepoint_advance(yo_string_t *s)
 
         *s = yo_substring(*s, 4);
     }
+
+    YO_PROFILE_END(yo_utf8_codepoint_advance);
 
     return ret;
 }

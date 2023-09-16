@@ -21,6 +21,7 @@ struct yo_backend_opengl
     GLuint vs;
     GLuint fs;
     GLuint program;
+    GLuint program_u_resolution;
 
     yo_array(yo_vert_t) vertex_array;
     yo_array(yo_idx_t)  index_array;

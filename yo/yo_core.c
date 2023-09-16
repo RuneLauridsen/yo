@@ -216,8 +216,11 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, yo_atlas_t *atlas, uint3
                 int32_t stride = atlas->dim.x;
                 uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);
 
+                YO_PROFILE_BEGIN(yo_font_backend_rasterize);
                 yo_font_backend_rasterize(&yo_ctx->font_backend, &slot->backend_info,
                                           codepoint, font_size, pixel, yo_v2i(ret->rect.w, ret->rect.h), stride);
+
+                YO_PROFILE_END(yo_font_backend_rasterize);
 
                 ret->rasterized = true;
                 atlas->dirty    = true;
@@ -1074,6 +1077,8 @@ static void yo_draw_text(yo_string_t text,
                          yo_measure_text_result_t measured_text,
                          yo_text_field_state_t *text_field_state)
 {
+    YO_PROFILE_BEGIN(yo_draw_text);
+
     YO_UNUSED(p1);
     YO_UNUSED(measured_text);
 
@@ -1102,11 +1107,14 @@ static void yo_draw_text(yo_string_t text,
         yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, true);
         if (glyph)
         {
+            YO_PROFILE_BEGIN(yo_draw_text_1);
             yo_v2f_t glyph_p0 = yo_v2f((p0.x + glyph->bearing_x),
                                        (baseline_y + glyph->bearing_y));
 
             yo_v2f_t glyph_p1 = yo_v2f((p0.x + glyph->bearing_x + glyph->rect.w),
                                        (baseline_y + glyph->bearing_y + glyph->rect.h));
+
+            YO_PROFILE_END(yo_draw_text_1);
 
 #if 0
             if ((pGlyph1.x >= p1.x) || (pGlyph1.y >= p1.y))
@@ -1114,17 +1122,23 @@ static void yo_draw_text(yo_string_t text,
                 break;
             }
 #endif
+
+            YO_PROFILE_BEGIN(yo_draw_text_2);
             if (text_field_state)
             {
                 if (index == highlight_begin)          highlight_x0 = p0.x;
                 if (index == highlight_end - 1)        highlight_x1 = p0.x + glyph->advance_x;
                 if (index == text_field_state->cursor) cursor_x     = p0.x;
             }
+            YO_PROFILE_END(yo_draw_text_2);
 
+            YO_PROFILE_BEGIN(yo_draw_text_3);
             yo_v2f_t uv0;
             yo_v2f_t uv1;
             yo_atlas_node_uv(&yo_ctx->atlas, glyph, &uv0, &uv1);
+            YO_PROFILE_END(yo_draw_text_3);
 
+            YO_PROFILE_BEGIN(yo_draw_text_4);
             yo_draw_aabb_t draw =
             {
                 .p0         = glyph_p0,
@@ -1146,8 +1160,11 @@ static void yo_draw_text(yo_string_t text,
             draw.p1.y      = roundf(draw.p1.y);
             draw.clip_p0.y = roundf(draw.clip_p0.y);
             draw.clip_p0.y = roundf(draw.clip_p0.y);
+            YO_PROFILE_END(yo_draw_text_4);
 
+            YO_PROFILE_BEGIN(yo_draw_text_5);
             yo_draw_aabb(draw);
+            YO_PROFILE_END(yo_draw_text_5);
 
             p0.x += glyph->advance_x;
         }
@@ -1205,10 +1222,14 @@ static void yo_draw_text(yo_string_t text,
         }
 #endif
     }
+
+    YO_PROFILE_END(yo_draw_text);
 }
 
 static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool on_top)
 {
+    YO_PROFILE_BEGIN(yo_render_recurse);
+
 #if 1
     if (yo_cstring_equal(box->tag, "ABCDEF"))
     {
@@ -1353,6 +1374,8 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     {
         yo_render_recurse(child, render_info, on_top);
     }
+
+    YO_PROFILE_END(yo_render_recurse);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1708,6 +1731,8 @@ YO_API void yo_select_context(yo_context_t *context)
 
 YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
 {
+    YO_PROFILE_BEGIN(yo_begin_frame);
+
     //
     // Lazy input / animations
     //
@@ -1790,11 +1815,16 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
 
     yo_begin_children();
 
+    YO_PROFILE_END(yo_begin_frame);
+
     return yo_ctx->this_frame->lazy;
+
 }
 
 YO_API void yo_end_frame(yo_render_info_t *info)
 {
+    YO_PROFILE_BEGIN(yo_end_frame);
+
     yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].build);
 
     info->lazy = yo_ctx->this_frame->lazy;
@@ -1806,26 +1836,31 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         // Measure
         //
         {
+            YO_PROFILE_BEGIN(measure_pass);
             yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].measure);
             yo_measure_content_recurse(yo_ctx->root);
             yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].measure);
+            YO_PROFILE_END(measure_pass);
         }
+
 
         //
         // Arrange
         //
         {
-            yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].arrange);
+            YO_PROFILE_BEGIN(arrange_pass);
             yo_ctx->root->arranged_rect = yo_rectf(0.0f, 0.0f, (float)info->w, (float)info->h);
             yo_ctx->root->screen_rect   = yo_rectf(0.0f, 0.0f, (float)info->w, (float)info->h);
             yo_arrange_children_recurse(yo_ctx->root);
-            yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].arrange);
+            YO_PROFILE_END(arrange_pass);
         }
 
         //
         // Render
         //
         {
+            YO_PROFILE_BEGIN(render_pass);
+
             yo_array_reset(&yo_ctx->draw_cmds, true);
 
             info->tex.id     = 42; // TODO(rune): Hardcoded texture id
@@ -1833,19 +1868,19 @@ YO_API void yo_end_frame(yo_render_info_t *info)
             info->tex.pixels = yo_ctx->atlas.pixels;
             info->tex.dirty  = yo_ctx->atlas.dirty;
 
-            yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].render);
             yo_render_recurse(yo_ctx->root, info, false);
             yo_render_recurse(yo_ctx->root, info, true);
-            yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].render);
 
             info->draw_cmds       = yo_ctx->draw_cmds.elems;
             info->draw_cmds_count = yo_ctx->draw_cmds.count;
+
+            YO_PROFILE_END(render_pass);
         }
 
         //
         // Print debug information
         //
-#if 1
+#if 0
         {
             yo_clear_print_buffer();
 
@@ -1862,13 +1897,6 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         }
 #endif
 
-        //
-        // Cache prune
-        //
-        {
-            yo_begin_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
-            yo_end_performance_timing(&yo_ctx->timings[yo_ctx->timings_index].prune);
-        }
     }
 
     //
@@ -1880,6 +1908,8 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         yo_ctx->this_frame = &yo_ctx->frame_states[(yo_ctx->frame_count + 0) % 2];
         yo_ctx->prev_frame = &yo_ctx->frame_states[(yo_ctx->frame_count + 1) % 2];
     }
+
+    YO_PROFILE_END(yo_end_frame);
 }
 
 ////////////////////////////////////////////////////////////////

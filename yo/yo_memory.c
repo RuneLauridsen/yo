@@ -68,20 +68,20 @@ static bool yo_memequ(void *a, void *b, size_t size)
 static void *yo_heap_alloc(size_t size, bool init_to_zero)
 {
     void *ret = YO_HEAP_ALLOC(size, init_to_zero);
-    idk_track_alloc(IDK_LOCATION, ret, size);
+    //idk_track_alloc(IDK_LOCATION, ret, size);
     return ret;
 }
 
 static void *yo_heap_realloc(void *p, size_t new_size, bool init_to_zero)
 {
     void *ret =  YO_HEAP_REALLOC(p, new_size, init_to_zero);
-    idk_track_realloc(IDK_LOCATION, p, ret, new_size);
+    //idk_track_realloc(IDK_LOCATION, p, ret, new_size);
     return ret;
 }
 
 static void yo_heap_free(void *p)
 {
-    idk_track_free(IDK_LOCATION, p);
+    //idk_track_free(IDK_LOCATION, p);
     YO_HEAP_FREE(p);
 }
 

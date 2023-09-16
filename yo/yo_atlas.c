@@ -73,7 +73,8 @@ static void yo_atlas_destroy(yo_atlas_t *atlas)
 
 static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
 {
-#if 1
+    YO_PROFILE_BEGIN(yo_atlas_node_find);
+
     // TODO(rune): Profile! Hashtable lookup?
 
     yo_atlas_node_t *ret = NULL;
@@ -92,11 +93,9 @@ static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
         }
     }
 
+    YO_PROFILE_END(yo_atlas_node_find);
+
     return ret;
-#else
-    YO_UNUSED(key);
-    return atlas->shelf_list.first->node_list.first;
-#endif
 }
 
 static void yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1)
@@ -192,6 +191,8 @@ static yo_atlas_shelf_t * yo_atlas_shelf_reset_and_merge(yo_atlas_t *atlas, yo_a
 
 static yo_atlas_shelf_t *yo_atlas_prune_until_enough_y(yo_atlas_t *atlas, int32_t y)
 {
+    YO_PROFILE_BEGIN(yo_atlas_prune_until_enough_y);
+
     YO_UNUSED(atlas, y);
 
     yo_atlas_shelf_t *ret = NULL;
@@ -227,11 +228,15 @@ static yo_atlas_shelf_t *yo_atlas_prune_until_enough_y(yo_atlas_t *atlas, int32_
 
     } while (stale && !ret);
 
+    YO_PROFILE_END(yo_atlas_prune_until_enough_y);
+
     return ret;
 }
 
 static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim)
 {
+    YO_PROFILE_BEGIN(yo_atlas_node_new);
+
     yo_atlas_node_t  *ret                 = NULL;
     yo_atlas_shelf_t *best_shelf_nonempty = NULL;
     yo_atlas_shelf_t *best_shelf_empty    = NULL;
@@ -296,6 +301,8 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim)
             best_shelf->used_x += dim.x;
         }
     }
+
+    YO_PROFILE_END(yo_atlas_node_new);
 
     return ret;
 }

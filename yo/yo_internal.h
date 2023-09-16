@@ -275,14 +275,18 @@ struct yo_context
 static inline uint64_t yo_get_performance_counter(void)
 {
     uint64_t a = 0;
+#ifdef _WINDOWS_
     QueryPerformanceCounter((LARGE_INTEGER *)&a);
+#endif
     return a;
 }
 
 static inline uint64_t yo_get_performance_frequency(void)
 {
-    uint64_t a = 0;
+    uint64_t a = UINT64_MAX;
+#ifdef _WINDOWS_
     QueryPerformanceFrequency((LARGE_INTEGER *)&a);
+#endif
     return a;
 }
 

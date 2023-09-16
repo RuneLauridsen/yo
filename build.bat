@@ -14,10 +14,10 @@ if %VSCMD_ARG_TGT_ARCH%==x64 set LIB=%LIB%;..\yo\thirdparty\freetype\lib\x64
 if %VSCMD_ARG_TGT_ARCH%==x86 set LIB=%LIB%;..\yo\thirdparty\freetype\lib\x86
 
 :: yo
-cl %compiler_flags% /Fe:yo.exe ..\yo\main.c             /link %linker_flags% /INCREMENTAL:NO /SUBSYSTEM:WINDOWS
+cl %compiler_flags% /Fe:yo.exe ..\yo\main.c ..\yo\thirdparty\tracy\TracyClient.Cpp   /link %linker_flags% /SUBSYSTEM:WINDOWS
 
 :: yo_dll
-cl %compiler_flags% /Fe:yo_dll.dll /LD ..\yo_dll\main.c /link %linker_flags% /INCREMENTAL:NO
+cl %compiler_flags% /Fe:yo_dll.dll /LD ..\yo_dll\main.c                              /link %linker_flags%
 
 :: yo_csharp
 echo f | xcopy /y yo_dll.dll "../yo_csharp/yo_dll.dll"

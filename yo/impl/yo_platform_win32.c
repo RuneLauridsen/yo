@@ -1,9 +1,31 @@
 #pragma once
 
+
 static yo_platform_win32_t *global_platform; // TODO(rune): Remove global
+
+// DEBUG(rune):
+#if 0
+#include <time.h>
+
+static void yo_print_msg(UINT uMsg)
+{
+    time_t rawtime;
+    struct tm * timeinfo;
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    printf("%u\t%s", uMsg, asctime(timeinfo));
+
+}
+#else
+#define yo_print_msg(...)
+#endif
+
 
 static LRESULT CALLBACK yo_platform_win32_callback(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+    yo_print_msg(uMsg);
+
     switch (uMsg)
     {
         case WM_DESTROY:
@@ -21,6 +43,16 @@ static LRESULT CALLBACK yo_platform_win32_callback(HWND hwnd, UINT uMsg, WPARAM 
             global_platform->render_info.h = HIWORD(lParam);
 
             InvalidateRect(hwnd, NULL, true);
+        }
+
+        case WM_TIMER:
+        {
+            // NOTE(rune): Sometimes the message loop hangs after receiving a WM_TIMER message.
+            // but explicitly ignoring WM_TIMER seems the fix the issue.
+
+            // TODO(rune): Find out what the deal is with WM_TIMER.
+
+            return 0;
         }
     }
 
@@ -80,6 +112,8 @@ static void yo_platform_win32_shutdown(yo_platform_win32_t *platform)
 
 static void yo_platform_win32_begin_frame(yo_platform_win32_t *platform)
 {
+    YO_PROFILE_BEGIN(yo_platform_win32_begin_frame);
+
     yo_input_begin();
 
     //
@@ -90,6 +124,8 @@ static void yo_platform_win32_begin_frame(yo_platform_win32_t *platform)
         MSG msg = { 0 };
         while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE))
         {
+            yo_print_msg(msg.message);
+
             yo_modifier_t modifiers = 0;
 
             if (GetKeyState(VK_LMENU)   & 0xf000) modifiers |= YO_MODIFIER_ALT;
@@ -168,6 +204,8 @@ static void yo_platform_win32_begin_frame(yo_platform_win32_t *platform)
     ShowWindow(platform->window, SW_SHOW);
 
     platform->cursor = LoadCursorA(NULL, IDC_ARROW);
+
+    YO_PROFILE_END(yo_platform_win32_begin_frame);
 }
 
 static void yo_platform_win32_end_frame(yo_platform_win32_t *platform)

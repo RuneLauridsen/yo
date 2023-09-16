@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.c" />
+    <ClCompile Include="thirdparty\tracy\TracyClient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="impl\yo_backend_opengl.h" />
@@ -160,6 +161,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -199,6 +201,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <DisableLanguageExtensions>
       </DisableLanguageExtensions>
+      <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -8,6 +8,10 @@
 //
 ////////////////////////////////////////////////////////////////
 
+#ifndef YO_PLATFORM_API
+#define YO_PLATFORM_API
+#endif
+
 typedef struct yo_impl_win32_opengl yo_impl_win32_opengl_t;
 struct yo_impl_win32_opengl
 {

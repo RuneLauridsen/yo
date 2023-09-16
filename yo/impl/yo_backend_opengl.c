@@ -260,6 +260,8 @@ static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
         // NOTE(rune): Shader objects are no longer needed after they have been linked to the program objects.
         backend->glDeleteShader(backend->vs);
         backend->glDeleteShader(backend->fs);
+
+        backend->program_u_resolution = backend->glGetUniformLocation(backend->program, "u_resolution");
     }
 
 
@@ -353,6 +355,8 @@ static bool yo_backend_opengl_reserve_vert_idx(yo_backend_opengl_t *backend, siz
 
 static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_render_info_t *info)
 {
+    YO_PROFILE_BEGIN(yo_backend_opengl_render_frame);
+
     // DEBUG(rune):
     if (info->draw_cmds_count == 0)
     {
@@ -365,6 +369,7 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
     // TODO(rune): Currently we use the rounded aabb shader for everything, even simple triangles.
     // While this makes the implementation simpler, it is quite wasteful.
 
+    YO_PROFILE_BEGIN(openg_loop);
     for (size_t i = 0; i < info->draw_cmds_count; i++)
     {
         yo_draw_cmd_t *cmd = &info->draw_cmds[i];
@@ -533,21 +538,28 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
             } break;
         }
     }
+    YO_PROFILE_END(openg_loop);
+
 
     //
     // Upload vertex and index buffers
     //
 
+    YO_PROFILE_BEGIN(opengl_upload_vertices);
     backend->glBindBuffer(GL_ARRAY_BUFFER, backend->VBO);
     backend->glBufferData(GL_ARRAY_BUFFER, yo_array_size(&backend->vertex_array), backend->vertex_array.elems, GL_STREAM_DRAW);
+    YO_PROFILE_END(opengl_upload_vertices);
 
+    YO_PROFILE_BEGIN(opengl_upload_indicies);
     backend->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, backend->EBO);
     backend->glBufferData(GL_ELEMENT_ARRAY_BUFFER, yo_array_size(&backend->index_array), backend->index_array.elems, GL_STREAM_DRAW);
+    YO_PROFILE_END(opengl_upload_indicies);
 
     //
     // Upload texture
     //
 
+    YO_PROFILE_BEGIN(opengl_upload_texture);
     // TODO(rune): Multiple textures
     glBindTexture(GL_TEXTURE_2D, info->tex.id);
 
@@ -572,25 +584,49 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    YO_PROFILE_END(opengl_upload_texture);
 
     //
     // Render
     //
 
+    YO_PROFILE_BEGIN(glViewport);
     glViewport(0, 0, info->w, info->h);
+    YO_PROFILE_END(glViewport);
+
+    YO_PROFILE_BEGIN(glCleaColor);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    YO_PROFILE_END(glCleaColor);
+
+    YO_PROFILE_BEGIN(glClear_GL_COLOR_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
+    YO_PROFILE_END(glClear_GL_COLOR_BUFFER_BIT);
 
+    YO_PROFILE_BEGIN(glClearColor);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    YO_PROFILE_END(glClearColor);
+
+    YO_PROFILE_BEGIN(glClear_GL_DEPTH_BUFFER_BIT);
     glClear(GL_DEPTH_BUFFER_BIT);
+    YO_PROFILE_END(glClear_GL_DEPTH_BUFFER_BIT);
+
+    YO_PROFILE_BEGIN(glClearDepth);
     glClearDepth(1.0f);
+    YO_PROFILE_END(glClearDepth);
 
-    int32_t resolution_uniform_location = backend->glGetUniformLocation(backend->program, "u_resolution");
-
+    YO_PROFILE_BEGIN(glUseProgram);
     backend->glUseProgram(backend->program);
-    backend->glUniform2f(resolution_uniform_location, (float)(info->w), (float)(info->h));
+    YO_PROFILE_END(glUseProgram);
 
+    YO_PROFILE_BEGIN(glUniform2f);
+    backend->glUniform2f(backend->program_u_resolution, (float)(info->w), (float)(info->h));
+    YO_PROFILE_END(glUniform2f);
+
+    YO_PROFILE_BEGIN(opengl_draw_elements);
     glBindTexture(GL_TEXTURE_2D, 42);
     backend->glBindVertexArray(backend->VAO);
     glDrawElements(GL_TRIANGLES, (int32_t)(backend->index_array.count), GL_UNSIGNED_INT, 0);
+    YO_PROFILE_END(opengl_draw_elements);
+
+    YO_PROFILE_END(yo_backend_opengl_render_frame);
 }
