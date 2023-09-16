@@ -44,13 +44,6 @@
 #include "yo.h"
 #include "yo.c"
 
-#include "yo_memory.h"
-#include "yo_memory.c"
-#include "yo_string.h"
-#include "yo_string.c"
-#include "yo_file.h"
-#include "yo_file.c"
-
 //
 // Platform & backend
 //
@@ -67,76 +60,8 @@ static void build_ui(void);
 
 int main()
 {
-#if 0
-    yo_arena_t _arena = { 0 }, *arena = &_arena;
-    yo_arena_create(arena, YO_MEGABYTES(256), true, 0);
-
-    yo_atlas_t a;
-    yo_atlas_init(&a, yo_v2i(128, 128), arena);
-    yo_init_glyph_atlas(&a);
-
-    a.current_generation = 100;
-    yo_atlas_new_node(&a, yo_v2i(60, 20));
-    yo_atlas_new_node(&a, yo_v2i(80, 20));
-
-    yo_atlas_new_node(&a, yo_v2i(60, 20));
-
-    yo_atlas_new_node(&a, yo_v2i(60, 20));
-    yo_atlas_new_node(&a, yo_v2i(60, 20));
-
-    //yo_atlas_evict_shelf(&a, a.shelf_list.first->next);
-    //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
-    //yo_atlas_shelf_evict(&a, a.shelf_list.first);
-
-    yo_atlas_new_node(&a, yo_v2i(20, 25));
-    yo_atlas_new_node(&a, yo_v2i(20, 25));
-    yo_atlas_new_node(&a, yo_v2i(20, 25));
-    yo_atlas_new_node(&a, yo_v2i(20, 25));
-    yo_atlas_new_node(&a, yo_v2i(20, 25));
-    yo_atlas_new_node(&a, yo_v2i(20, 25));
-    a.current_generation += 50;
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-    yo_atlas_new_node(&a, yo_v2i(20, 20));
-
-    yo_atlas_new_node(&a, yo_v2i(20, 40));
-
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(40, 40));
-    yo_atlas_new_node(&a, yo_v2i(18, 40));
-#endif
-
-    //yo_atlas_shelf_evict(&a, a.shelf_list.first->next->next);
-
-    //
-    // Platform setup
-    //
-
     yo_impl_win32_opengl_t impl = { 0 };
     yo_impl_win32_opengl_startup(&impl, 800, 600);
-
-    // yo_freetype_test(yo_ctx->atlas.pixels, yo_ctx->atlas.dim);
-    // yo_ctx->atlas.dirty = true;
-
-    // yo_string_t alger_file = yo_load_file("C:\\Windows\\Fonts\\ALGER.TTF");
-    // yo_font_id_t alger = yo_font_load(alger_file.data, alger_file.length);
-
-    //
-    // Main application loop
-    //
 
     int i = 0;
 
@@ -147,7 +72,22 @@ int main()
         yo_impl_win32_opengl_begin_frame(&impl);
 
         YO_PROFILE_BEGIN(ui_build);
-        yo_demo();
+        {
+            yo_layout_v();
+            yo_begin_children();
+
+            yo_box(0, 0);
+            yo_set_fill(YO_RED);
+            yo_set_dim(yo_px(100), yo_px(100));
+            yo_set_dim(yo_px(100), yo_px(100));
+
+            yo_box(0, 0);
+            yo_set_fill(YO_ORANGE);
+            yo_set_dim(yo_px(100), yo_px(100));
+            yo_set_dim(yo_px(100), yo_px(100));
+
+            yo_end_children();
+        }
         YO_PROFILE_END(ui_build);
 
         yo_impl_win32_opengl_end_frame(&impl);
@@ -259,7 +199,7 @@ for (yo_range32(it, 0, 1000))
 yo_end_scroll_area();
 
 }
-#elif 1
+#elif 0
 void build_ui(void)
 {
     static float f = 0.0f;
@@ -344,7 +284,7 @@ void build_ui(void)
     }
 #endif
 }
-#else
+#elif 0
 void build_ui()
 {
     yo_text("A");
@@ -357,6 +297,3 @@ void build_ui()
 }
 
 #endif
-
-// NOTE(rune): Make sure we are not accesing internal yo functions by including implementation last.
-#include "yo.c"

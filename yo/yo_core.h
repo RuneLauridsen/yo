@@ -82,17 +82,8 @@ enum yo_layout
     // Relative sizes are relative to parent size.
     YO_LAYTOUT_NONE,
 
-    // NOTE(rune): Children are stacked horizontally.
-    // Relative horizontal size is relative to remaining horizontal space no taken by absolute sized children.
-    // Relative vertical size is relative to parent vertical size.
     YO_LAYOUT_HORIZONTAL,
-
-    // NOTE(rune): Children are stacked vertically.
-    // Relative horizontal size is relative to parent horizontal size.
-    // Relative vertical size is relative to remaining vertical space no taken by absolute sized children.
     YO_LAYOUT_VERTICAL,
-
-    YO_LAYOUT_TABLE_COLUMN,
 
     YO_LAYOUT_COUNT,
 };
@@ -565,6 +556,7 @@ YO_API void             yo_set_overflow_v(yo_overflow_t overflow);
 YO_API void             yo_set_align_a(yo_align_t align, yo_axis_t axis);
 YO_API void             yo_set_align_h(yo_align_t align);
 YO_API void             yo_set_align_v(yo_align_t align);
+YO_API void             yo_set_dim(yo_length_t length_h, yo_length_t length_v);
 YO_API void             yo_set_dim_a(yo_length_t length, yo_axis_t axis);
 YO_API void             yo_set_dim_h(yo_length_t length);
 YO_API void             yo_set_dim_v(yo_length_t length);
