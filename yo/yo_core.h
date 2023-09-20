@@ -78,12 +78,17 @@ enum yo_axis
 typedef uint32_t yo_layout_t;
 enum yo_layout
 {
-    // NOTE(rune): Children take up as much of the parent space as possible.
-    // Relative sizes are relative to parent size.
-    YO_LAYTOUT_NONE,
+    // NOTE(rune): For YO_LAYOUT_NONE layout axis is not relevant.
+    YO_LAYTOUT_NONE         = 0,
 
-    YO_LAYOUT_HORIZONTAL,
-    YO_LAYOUT_VERTICAL,
+    // NOTE(rune): First bit determines layout axis.
+    YO_LAYOUT_X             = 0,
+    YO_LAYOUT_Y             = 1,
+
+    YO_LAYOUT_STACK         = 2,
+
+    YO_LAYOUT_STACK_X        = YO_LAYOUT_STACK|YO_LAYOUT_X,
+    YO_LAYOUT_STACK_Y        = YO_LAYOUT_STACK|YO_LAYOUT_Y,
 
     YO_LAYOUT_COUNT,
 };
@@ -551,31 +556,31 @@ YO_API void             yo_set_font_size(uint32_t size);
 YO_API void             yo_set_font_color(yo_v4f_t color);
 YO_API void             yo_set_on_top(bool on_top);
 YO_API void             yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis);
-YO_API void             yo_set_overflow_h(yo_overflow_t overflow);
-YO_API void             yo_set_overflow_v(yo_overflow_t overflow);
+YO_API void             yo_set_overflow_x(yo_overflow_t overflow);
+YO_API void             yo_set_overflow_y(yo_overflow_t overflow);
 YO_API void             yo_set_align_a(yo_align_t align, yo_axis_t axis);
-YO_API void             yo_set_align_h(yo_align_t align);
-YO_API void             yo_set_align_v(yo_align_t align);
-YO_API void             yo_set_dim(yo_length_t length_h, yo_length_t length_v);
-YO_API void             yo_set_dim_a(yo_length_t length, yo_axis_t axis);
-YO_API void             yo_set_dim_h(yo_length_t length);
-YO_API void             yo_set_dim_v(yo_length_t length);
+YO_API void             yo_set_align_x(yo_align_t align);
+YO_API void             yo_set_align_y(yo_align_t align);
+YO_API void             yo_set_dim(yo_length_t dim_x, yo_length_t dim_y);
+YO_API void             yo_set_dim_a(yo_length_t dim, yo_axis_t axis);
+YO_API void             yo_set_dim_x(yo_length_t dim);
+YO_API void             yo_set_dim_y(yo_length_t dim);
 YO_API void             yo_set_margin(float left, float top, float right, float bottom);
-YO_API void             yo_set_margin_hv(float h, float v);
+YO_API void             yo_set_margin_xy(float h, float v);
 YO_API void             yo_set_margin_a(float forward, float backward, yo_axis_t axis);
 YO_API void             yo_set_margin_left(float left);
 YO_API void             yo_set_margin_top(float top);
 YO_API void             yo_set_margin_right(float right);
 YO_API void             yo_set_margin_bottom(float bottom);
 YO_API void             yo_set_padding(float left, float top, float right, float bottom);
-YO_API void             yo_set_padding_hv(float h, float v);
+YO_API void             yo_set_padding_xy(float h, float v);
 YO_API void             yo_set_anim(yo_anim_flags_t flags, float rate);
 YO_API void             yo_set_anim_flags(yo_anim_flags_t flags);
 YO_API void             yo_set_anim_rate(float rate);
 YO_API void             yo_set_scroll(yo_v2f_t offset);
 YO_API void             yo_set_scroll_a(float offset, yo_axis_t axis);
-YO_API void             yo_set_scroll_h(float offset);
-YO_API void             yo_set_scroll_v(float offset);
+YO_API void             yo_set_scroll_x(float offset);
+YO_API void             yo_set_scroll_y(float offset);
 
 // TODO(rune): Can we store text_field_state like normal userdata?
 // Renderer needs to know about text_field_state to draw cursor+selection.

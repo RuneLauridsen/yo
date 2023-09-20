@@ -15,11 +15,17 @@
 // Tracy
 //
 
-#define TRACY_ENABLE
-#include "thirdparty/tracy/tracy/TracyC.h"
-
-#define YO_PROFILE_BEGIN(name)  TracyCZoneN(__##name, #name, true)
-#define YO_PROFILE_END(name)    TracyCZoneEnd(__##name)
+#if 0
+#   define TRACY_ENABLE
+#   include "thirdparty/tracy/tracy/TracyC.h"
+#   define YO_PROFILE_FRAME_MARK() TracyCFrameMark
+#   define YO_PROFILE_BEGIN(name)  TracyCZoneN(__##name, #name, true)
+#   define YO_PROFILE_END(name)    TracyCZoneEnd(__##name)
+#else
+#   define YO_PROFILE_FRAME_MARK()
+#   define YO_PROFILE_BEGIN(name)
+#   define YO_PROFILE_END(name)
+#endif
 
 //
 // Windows & OpenGL
@@ -72,27 +78,80 @@ int main()
         yo_impl_win32_opengl_begin_frame(&impl);
 
         YO_PROFILE_BEGIN(ui_build);
-        {
-            yo_layout_v();
-            yo_begin_children();
 
+#if 0
+        yo_box(0, 0);
+        yo_set_layout(YO_LAYOUT_HORIZONTAL_FLEX);
+        yo_set_dim_x(yo_rel(1.0f));
+        yo_set_padding(5, 5, 5, 5);
+        yo_set_fill(yo_rgb(128, 128, 128));
+        YO_CHILD_SCOPE()
+        {
             yo_box(0, 0);
             yo_set_fill(YO_RED);
-            yo_set_dim(yo_px(100), yo_px(100));
-            yo_set_dim(yo_px(100), yo_px(100));
+            yo_set_text("its 123");
 
             yo_box(0, 0);
-            yo_set_fill(YO_ORANGE);
-            yo_set_dim(yo_px(100), yo_px(100));
-            yo_set_dim(yo_px(100), yo_px(100));
-
-            yo_end_children();
+            yo_set_fill(YO_BLUE);
+            yo_set_text("and it goes 123");
         }
+#endif
+
+#if 0
+        {
+            yo_box(0, 0);
+            yo_set_layout(YO_LAYOUT_HORIZONTAL_FLEX);
+            yo_set_padding(10, 10, 10, 10);
+            yo_set_fill(yo_rgb(50, 50, 50));
+            YO_CHILD_SCOPE()
+            {
+                yo_box(0, 0);
+                yo_set_font_color(YO_BLACK);
+                yo_set_fill(YO_CYAN);
+                yo_set_text("123");
+
+                yo_box(0, 0);
+                yo_set_font_color(YO_YELLOW);
+                yo_set_fill(YO_BLUE);
+                yo_set_text("i am the walrus");
+                yo_set_dim_x(yo_rel(2.0f));
+                yo_set_dim_y(yo_rel(0.7f));
+
+                yo_box(0, 0);
+                yo_set_layout(YO_LAYOUT_VERTICAL);
+                yo_set_fill(YO_MAGENTA);
+                //yo_set_dim_x(yo_rel(1.0f));
+
+                YO_CHILD_SCOPE()
+                {
+                    yo_box(0, 0);
+                    yo_set_fill(YO_RED);
+                    yo_set_text("redredred");
+
+                    yo_box(0, 0);
+                    yo_set_fill(YO_ORANGE);
+                    yo_set_text("i love oranges!");
+                }
+            }
+        }
+#endif
+
+#if 0
+        yo_layout_x();
+        yo_set_dim_x(yo_rel(1.0f));
+        YO_CHILD_SCOPE()
+        {
+            static float f = 0.0f;
+            yo_slider(yo_id("hello"), &f, 0.0f, 10.0f);
+        }
+#endif
+        build_ui();
+
         YO_PROFILE_END(ui_build);
 
         yo_impl_win32_opengl_end_frame(&impl);
 
-        TracyCFrameMark;
+        YO_PROFILE_FRAME_MARK();
     }
 
     //
@@ -199,12 +258,43 @@ for (yo_range32(it, 0, 1000))
 yo_end_scroll_area();
 
 }
+#elif 1
+void build_ui(void)
+{
+    static float f = 0.0f;
+
+    yo_layout_y();
+    yo_begin_children();
+    //yo_set_dim_x(yo_rel(1.0f));
+    yo_set_fill(yo_rgb(20, 20, 20));
+    yo_set_tag("AAA");
+
+    YO_CHILD_SCOPE()
+    {
+        //yo_button("bbb");
+
+        static char text_field_buffer[256] = { 'a', 'b', 'c' };
+        yo_text_field(yo_id("txtf"), text_field_buffer, sizeof(text_field_buffer));
+
+        yo_slider(yo_id("my-slider"), &f, 1.0f, 10.f);
+
+        yo_box(0, 0);
+        yo_set_fill(yo_rgb(128, 64, 64));
+        yo_set_border(0, yo_v4f(0, 0, 0, 0), 2);
+        yo_set_dim_a(yo_rel(1.0f), YO_AXIS_X);
+        yo_set_dim_a(yo_px(10), !YO_AXIS_X);
+        yo_set_margin_a(2, 2, YO_AXIS_X);
+    }
+
+    yo_end_children();
+}
+
 #elif 0
 void build_ui(void)
 {
     static float f = 0.0f;
 
-    yo_layout_v();
+    yo_layout_y();
     yo_set_tag("AAA");
     yo_set_fill(yo_rgb(20, 20, 20));
 
@@ -223,7 +313,7 @@ void build_ui(void)
     }
 
     yo_box(0, 0);
-    yo_set_dim_v(yo_px(200));
+    yo_set_dim_y(yo_px(200));
     yo_set_fill(YO_ORANGE);
     YO_CHILD_SCOPE()
     {
@@ -275,8 +365,8 @@ void build_ui(void)
     }
     yo_table_end(&table);
 
-    yo_layout_h();
-    yo_set_align_h(YO_ALIGN_CENTER);
+    yo_layout_x();
+    yo_set_align_x(YO_ALIGN_CENTER);
     YO_CHILD_SCOPE()
     {
         yo_debug_show_atlas_partitions();

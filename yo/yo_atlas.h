@@ -53,7 +53,7 @@ struct yo_atlas
 
 static bool             yo_atlas_create(yo_atlas_t *atlas, yo_v2i_t initial_dim);
 static void             yo_atlas_destroy(yo_atlas_t *atlas);
-static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key);
-static void             yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1);
-static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim);
 static void             yo_atlas_reset(yo_atlas_t *atlas);
+static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim);
+static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key);
+static yo_rectf2_t      yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node);

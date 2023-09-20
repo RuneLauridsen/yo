@@ -113,8 +113,8 @@ struct yo_thumb_style
 {
     yo_border_t border;
     yo_color_t fill;
-    float h_dim;
-    float v_dim;
+    float dim_x;
+    float dim_y;
 };
 
 typedef struct yo_slider_style yo_slider_style_t;
@@ -126,7 +126,7 @@ struct yo_slider_style
     // to know thumb dim in advance, for slider behaviour calculations.
     union
     {
-        struct { float thumb_container_dim_h, thumb_container_dim_v; };
+        struct { float thumb_container_dim_x, thumb_container_dim_y; };
         struct { float thumb_container_dim_a[2]; };
     };
 
@@ -141,23 +141,23 @@ static yo_slider_style_t yo_default_slider_style()
     yo_slider_style_t ret =
     {
         .axis = YO_AXIS_X,
-        .thumb_container_dim_h = 22,
-        .thumb_container_dim_v = 22,
+        .thumb_container_dim_x = 22,
+        .thumb_container_dim_y = 22,
 
         .thumb.fill   = yo_rgb(64, 64, 64),
         .thumb.border = yo_border(2, yo_rgb(128, 128, 128), 20 / 2),
-        .thumb.h_dim  = 20,
-        .thumb.v_dim  = 20,
+        .thumb.dim_x  = 20,
+        .thumb.dim_y  = 20,
 
         .thumb_hot.fill    = yo_rgb(64, 64, 64),
         .thumb_hot.border  = yo_border(3, yo_rgb(150, 150, 150), 22 / 2),
-        .thumb_hot.h_dim   = 22,
-        .thumb_hot.v_dim   = 22,
+        .thumb_hot.dim_x   = 22,
+        .thumb_hot.dim_y   = 22,
 
         .thumb_active.fill    = yo_rgb(64, 64, 64),
         .thumb_active.border  = yo_border(3, yo_rgb(150, 150, 150), 22 / 2),
-        .thumb_active.h_dim   = 22,
-        .thumb_active.v_dim   = 22,
+        .thumb_active.dim_x   = 22,
+        .thumb_active.dim_y   = 22,
     };
 
     return ret;

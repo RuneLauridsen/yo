@@ -98,22 +98,19 @@ static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
     return ret;
 }
 
-static void yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node, yo_v2f_t *uv0, yo_v2f_t *uv1)
+static yo_rectf2_t yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node)
 {
+    yo_rectf2_t ret = { 0 };
+
     if (node)
     {
-        uv0->x = (float)(node->rect.x) / (float)(atlas->dim.x);
-        uv0->y = (float)(node->rect.y) / (float)(atlas->dim.y);
-        uv1->x = (float)(node->rect.x + node->rect.w) / (float)(atlas->dim.x);
-        uv1->y = (float)(node->rect.y + node->rect.h) / (float)(atlas->dim.y);
+        ret.p0.x = (float)(node->rect.x) / (float)(atlas->dim.x);
+        ret.p0.y = (float)(node->rect.y) / (float)(atlas->dim.y);
+        ret.p1.x = (float)(node->rect.x + node->rect.w) / (float)(atlas->dim.x);
+        ret.p1.y = (float)(node->rect.y + node->rect.h) / (float)(atlas->dim.y);
     }
-    else
-    {
-        uv0->x = 0.0f;
-        uv0->y = 0.0f;
-        uv1->x = 0.0f;
-        uv1->y = 0.0f;
-    }
+
+    return ret;
 }
 
 static inline bool yo_atlas_shelf_can_fit(yo_atlas_t *atlas, yo_atlas_shelf_t *shelf, yo_v2i_t dim)

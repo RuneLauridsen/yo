@@ -57,8 +57,8 @@ struct yo_perf_timing
     double millis;
 };
 
-typedef struct yo_measure_text_result yo_measure_text_result_t;
-struct yo_measure_text_result
+typedef struct yo_measured_text yo_measured_text_t;
+struct yo_measured_text
 {
     yo_v2f_t dim;
 
@@ -124,18 +124,18 @@ struct yo_box
 
         union
         {
-            struct { yo_length_t dim_h, dim_v; };
+            struct { yo_length_t dim_x, dim_y; };
             struct { yo_length_t dim_a[2]; };
         };
         union
         {
-            struct { yo_align_t align_h, align_v; };
+            struct { yo_align_t align_x, align_y; };
             struct { yo_align_t align_a[2]; };
         };
 
         union
         {
-            struct { yo_overflow_t overflow_h, overflow_v; };
+            struct { yo_overflow_t overflow_x, overflow_y; };
             struct { yo_overflow_t overflow_a[2]; };
         };
     };
@@ -157,20 +157,32 @@ struct yo_box
     // NOTE(rune): Hashtable
     yo_box_t *next_hash;
 
-    // NOTE(rune): Calculated during measure pass.
-    struct
+    struct // TODO(rune): Remove, old layout system
     {
-        yo_v2f_t content_size;
-        yo_measure_text_result_t measured_text;
+
+        // NOTE(rune): Calculated during measure pass.
+        struct
+        {
+            yo_v2f_t content_size;
+            yo_measured_text_t measured_text;
+        };
+
+        // NOTE(rune): Calculated during arrange pass.
+        struct
+        {
+            bool arranged;
+            yo_rectf_t arranged_rect; // NOTE(rune): Relative to parent top-left.
+        };
     };
 
-    // NOTE(rune): Calculated during arrange pass.
+    // NOTE(rune): New layout system
     struct
     {
-        bool arranged;
-        yo_rectf_t arranged_rect; // NOTE(rune): Relative to parent top-left.
-        yo_rectf_t screen_rect;   // NOTE(rune): Relative to screen top-left.
+        yo_v2f_t pref_dim;
+        yo_rectf2_t layout_rect; // NOTE(rune): Relative to parent top-left.
     };
+
+    yo_rectf_t screen_rect;
 
     // NOTE(rune): Persistent userdata. Copied from previous frame.
     struct
@@ -220,9 +232,9 @@ struct yo_frame
     bool lazy;
 };
 
-typedef yo_box_t *yo_internal_box_ptr_t;
+typedef yo_box_t *yo_box_ptr_t;
 
-YO_TYPEDEF_ARRAY(yo_internal_box_ptr_t);
+YO_TYPEDEF_ARRAY(yo_box_ptr_t);
 YO_TYPEDEF_ARRAY(yo_popup_t);
 YO_TYPEDEF_ARRAY(yo_draw_cmd_t);
 YO_TYPEDEF_ARRAY(yo_id_t);
@@ -243,7 +255,7 @@ struct yo_context
     // NOTE(rune): Data for building current frame hierarchy
     yo_box_t *root;
     yo_box_t *latest_child;
-    yo_array(yo_internal_box_ptr_t) parent_stack;
+    yo_array(yo_box_ptr_t) parent_stack;
     yo_array(yo_id_t)  id_stack;
 
     // NOTE(rune): Popups

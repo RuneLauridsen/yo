@@ -103,7 +103,7 @@ union yo_v2i
 {
     struct { int32_t x, y; };
     struct { int32_t w, h; }; // TODO(rune): Remove
-    struct { int32_t dim_h, dim_v; };
+    struct { int32_t dim_x, dim_y; };
     struct { int32_t axis[2]; };
     struct { int32_t v[2]; };
 };
@@ -141,7 +141,7 @@ union yo_recti
     struct
     {
         int32_t left, top;
-        uint32_t dim_h, dim_v;
+        uint32_t dim_x, dim_y;
     };
     struct
     {
@@ -166,7 +166,7 @@ union yo_rectf
     struct
     {
         float left, top;
-        float dim_h, dim_v;
+        float dim_x, dim_y;
     };
     struct
     {
@@ -174,6 +174,16 @@ union yo_rectf
         float dim_a[2];
     };
 #endif
+};
+
+// TODO(rune): Completely switch over to yo_rectf2_t
+typedef union yo_rectf2 yo_rectf2_t;
+union yo_rectf2
+{
+    struct { yo_v2f_t p0, p1; };
+    struct { yo_v2f_t p[2]; };
+    struct { float x0, y0, x1, y1; };
+    struct { float left, top, right, bottom; };
 };
 
 static inline bool yo_clips_rect(yo_recti_t rect, yo_v2i_t point)
@@ -213,13 +223,13 @@ static inline bool yo_recti_equal(yo_recti_t a, yo_recti_t b)
 
 static inline int32_t yo_recti_width(yo_recti rect)
 {
-    int32_t ret = rect.dim_h;
+    int32_t ret = rect.dim_x;
     return ret;
 }
 
 static inline int32_t yo_recti_height(yo_recti rect)
 {
-    int32_t ret = rect.dim_v;
+    int32_t ret = rect.dim_y;
     return ret;
 }
 

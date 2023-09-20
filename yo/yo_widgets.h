@@ -50,11 +50,11 @@ YO_API yo_box_t *yo_circle(yo_id_t id, float diameter, yo_v4f_t fill, uint32_t b
 ////////////////////////////////////////////////////////////////
 
 YO_API void yo_space_a(yo_length_t amount, yo_axis_t axis);
-YO_API void yo_space_h(yo_length_t amount);
-YO_API void yo_space_v(yo_length_t amount);
+YO_API void yo_space_x(yo_length_t amount);
+YO_API void yo_space_y(yo_length_t amount);
 YO_API void yo_layout_a(yo_axis_t axis);
-YO_API void yo_layout_h(void);
-YO_API void yo_layout_v(void);
+YO_API void yo_layout_x(void);
+YO_API void yo_layout_y(void);
 
 ////////////////////////////////////////////////////////////////
 //

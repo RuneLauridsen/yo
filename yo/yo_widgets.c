@@ -13,8 +13,8 @@ YO_API  yo_box_t *yo_rectangle(yo_v4f_t fill, yo_length_t width, yo_length_t hei
     yo_box_t *box   = yo_box(id, 0);
     yo_set_tag("TAG_RECTANGLE");
     yo_set_fill(fill);
-    yo_set_dim_h(width);
-    yo_set_dim_v(height);
+    yo_set_dim_x(width);
+    yo_set_dim_y(height);
     return box;
 }
 
@@ -30,8 +30,8 @@ YO_API  yo_box_t *yo_circle(yo_id_t id, float diameter, yo_v4f_t fill, uint32_t 
 
     yo_box_t *box   = yo_box(id, 0);
     yo_set_border((float)(border_thickness), border_color, (float)(diameter / 2));
-    yo_set_dim_h(yo_px(diameter));
-    yo_set_dim_v(yo_px(diameter));
+    yo_set_dim_x(yo_px(diameter));
+    yo_set_dim_y(yo_px(diameter));
     yo_set_fill(fill);
     return box;
 }
@@ -45,43 +45,43 @@ YO_API  yo_box_t *yo_circle(yo_id_t id, float diameter, yo_v4f_t fill, uint32_t 
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void yo_space_h(yo_length_t amount)
+YO_API void yo_space_x(yo_length_t amount)
 {
     yo_box(0, 0);
-    yo_set_dim_v(yo_rel(1.0f));
-    yo_set_dim_h(amount);
+    yo_set_dim_y(yo_rel(1.0f));
+    yo_set_dim_x(amount);
 }
 
-YO_API void yo_space_v(yo_length_t amount)
+YO_API void yo_space_y(yo_length_t amount)
 {
     yo_box(0, 0);
-    yo_set_dim_v(amount);
-    yo_set_dim_h(yo_rel(1.0f));
+    yo_set_dim_y(amount);
+    yo_set_dim_x(yo_rel(1.0f));
 }
 
-YO_API void yo_layout_h(void)
+YO_API void yo_layout_x(void)
 {
     yo_box(0, 0);
     yo_set_tag("TAG_HORIZONTAL_LAYOUT");
-    yo_set_layout(YO_LAYOUT_HORIZONTAL);
+    yo_set_layout(YO_LAYOUT_STACK_X);
 }
 
-YO_API void yo_layout_v(void)
+YO_API void yo_layout_y(void)
 {
     yo_box(0, 0);
     yo_set_tag("TAG_VERTICAL_LAYOUT");
-    yo_set_layout(YO_LAYOUT_VERTICAL);
+    yo_set_layout(YO_LAYOUT_STACK_Y);
 }
 
 YO_API void yo_layout_a(yo_axis_t axis)
 {
     if (axis == YO_AXIS_X)
     {
-        yo_layout_h();
+        yo_layout_x();
     }
     else
     {
-        yo_layout_v();
+        yo_layout_y();
     }
 }
 
@@ -89,11 +89,11 @@ YO_API void yo_space_a(yo_length_t length, yo_axis_t axis)
 {
     if (axis == YO_AXIS_X)
     {
-        yo_space_h(length);
+        yo_space_x(length);
     }
     else
     {
-        yo_space_v(length);
+        yo_space_y(length);
     }
 }
 
@@ -383,8 +383,8 @@ YO_API  yo_signal_t yo_button(char *text)
     yo_set_font_size(style.font_size);
     yo_set_font_color(style.font_color);
     yo_set_border_s(style.border);
-    yo_set_padding_hv(style.h_padding, style.v_padding);
-    yo_set_align_h(YO_ALIGN_LEFT);
+    yo_set_padding_xy(style.h_padding, style.v_padding);
+    yo_set_align_x(YO_ALIGN_LEFT);
     yo_set_anim(YO_ANIM_FILL, 20.0f);
 
     yo_signal_t signal = yo_get_signal(box);
@@ -413,13 +413,13 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
 
     bool was_clicked = false;
 
-    yo_layout_h();
+    yo_layout_x();
     YO_CHILD_SCOPE()
     {
         yo_box_t *check_square    = yo_box(yo_id_from_string(label), 0);
         yo_set_tag("TAG_CHECK_SQUARE");
-        yo_set_dim_h(yo_px(20));
-        yo_set_dim_v(yo_px(20));
+        yo_set_dim_x(yo_px(20));
+        yo_set_dim_y(yo_px(20));
         yo_set_padding(2, 2, 2, 2);
         yo_set_border(1, yo_rgb(128, 128, 128), 2);
         yo_set_fill(yo_rgb(64, 64, 64));
@@ -442,10 +442,10 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
             yo_scaled_checkmark(yo_rgb(200, 200, 200));
         }
 
-        yo_space_h(yo_px(5));
+        yo_space_x(yo_px(5));
 
         yo_text(label);
-        yo_set_align_v(YO_ALIGN_CENTER);
+        yo_set_align_y(YO_ALIGN_CENTER);
     }
 
     return was_clicked;
@@ -463,12 +463,12 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
 {
     bool was_clicked = false;
 
-    yo_layout_h();
+    yo_layout_x();
     yo_begin_children();
     {
         yo_box_t *circle_container = yo_box(yo_id_from_string(label), 0);
-        yo_set_dim_h(yo_px(24));
-        yo_set_dim_v(yo_px(24));
+        yo_set_dim_x(yo_px(24));
+        yo_set_dim_y(yo_px(24));
         yo_signal_t signal = yo_get_signal(circle_container);
 
         yo_begin_children();
@@ -482,8 +482,8 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
                 yo_circle(yo_id("circle"), 16, yo_rgb(64, 64, 64), 0, yo_v4f(0, 0, 0, 0), 0);
             }
 
-            yo_set_align_v(YO_ALIGN_CENTER);
-            yo_set_align_h(YO_ALIGN_CENTER);
+            yo_set_align_y(YO_ALIGN_CENTER);
+            yo_set_align_x(YO_ALIGN_CENTER);
             yo_set_anim(YO_ANIM_FILL|YO_ANIM_BORDER, 20.0f);
 
 
@@ -502,7 +502,7 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
         yo_end_children();
 
         yo_text(label);
-        yo_set_align_v(YO_ALIGN_CENTER);
+        yo_set_align_y(YO_ALIGN_CENTER);
     }
     yo_end_children();
 
@@ -519,11 +519,11 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
 
 YO_API void yo_bullet_item(char *label)
 {
-    yo_layout_h();
+    yo_layout_x();
     YO_CHILD_SCOPE()
     {
         yo_circle(0, 7, yo_rgb(200, 200, 200), 0, YO_TRANSPARENT, 0);
-        yo_set_align_v(YO_ALIGN_CENTER);
+        yo_set_align_y(YO_ALIGN_CENTER);
         yo_set_margin(10, 7, 6, 0);
 
         yo_text(label);
@@ -583,6 +583,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
         //
         {
             yo_box(0, 0);
+            yo_set_tag("TAG_SLIDER_LINE");
             yo_set_fill(yo_rgb(64, 64, 64));
             yo_set_border(0, yo_v4f(0, 0, 0, 0), 2);
             yo_set_dim_a(yo_rel(1.0f), style->axis);
@@ -602,8 +603,8 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
                 yo_box_t   *circle_container        = yo_box(yo_id_from_string("slider circle"), 0);
                 yo_signal_t circle_container_signal = yo_get_signal(circle_container);
 
-                yo_set_dim_h(yo_px(style->thumb_container_dim_h));
-                yo_set_dim_v(yo_px(style->thumb_container_dim_v));
+                yo_set_dim_x(yo_px(style->thumb_container_dim_x));
+                yo_set_dim_y(yo_px(style->thumb_container_dim_y));
 
                 bool thumb_hot    = circle_container_signal.hovered;
                 bool thumb_active = signal.is_active;
@@ -617,8 +618,8 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
                     yo_box(0, 0);
                     yo_set_border_s(thumb_style->border);
                     yo_set_fill(thumb_style->fill);
-                    yo_set_dim_h(yo_px(thumb_style->h_dim));
-                    yo_set_dim_v(yo_px(thumb_style->v_dim));
+                    yo_set_dim_x(yo_px(thumb_style->dim_x));
+                    yo_set_dim_y(yo_px(thumb_style->dim_y));
                 }
 
                 yo_space_a(yo_rel(1.0f - (*value - min) / (max - min)), style->axis);
@@ -642,16 +643,16 @@ YO_API  void yo_slider_with_label(char *label, float *value, float min, float ma
 
 YO_API  void yo_menu_separator(void)
 {
-    yo_space_v(yo_px(5));
+    yo_space_y(yo_px(5));
     yo_rectangle(yo_rgb(64, 64, 64), yo_rel(1.0f), yo_px(1), 0);
-    yo_space_v(yo_px(5));
+    yo_space_y(yo_px(5));
 }
 
 YO_API  yo_signal_t yo_menu_item(char *label)
 {
     yo_box_t *box = yo_box(yo_id_from_string(label), 0);
     yo_set_text(label);
-    yo_set_dim_h(yo_rel(1.0f));
+    yo_set_dim_x(yo_rel(1.0f));
     yo_set_text(label);
     yo_set_tag("TAG_BUTTON");
     yo_set_font_color(yo_rgb(230, 230, 230));
@@ -675,7 +676,7 @@ YO_API  bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
 
     yo_id_t id = yo_id_from_string(label);
     yo_box(id, 0);
-    yo_set_layout(YO_LAYOUT_HORIZONTAL);
+    yo_set_layout(YO_LAYOUT_STACK_X);
     yo_begin_children();
     {
         if (yo_menu_item(label).hovered)
@@ -691,12 +692,12 @@ YO_API  bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
         ret = true;
 
         yo_begin_children();
-        yo_layout_h();
-        yo_set_overflow_h(YO_OVERFLOW_SPILL);
-        yo_set_overflow_v(YO_OVERFLOW_SPILL);
+        yo_layout_x();
+        yo_set_overflow_x(YO_OVERFLOW_SPILL);
+        yo_set_overflow_y(YO_OVERFLOW_SPILL);
         yo_begin_children();
 
-        yo_layout_v();
+        yo_layout_y();
         yo_set_fill(bg);
         yo_set_border(1, yo_rgb(64, 64, 64), 0);
         yo_set_padding(5, 5, 5, 0);
@@ -741,7 +742,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
     if (!anim_rate)   anim_rate   = 20.f;
 
     yo_box_t *area = yo_box(id, 0);
-    yo_set_layout(YO_LAYOUT_HORIZONTAL);
+    yo_set_layout(YO_LAYOUT_STACK_X);
 
     bool mouse_hover = yo_get_signal(area).hovered;
     float scroll_delta_y = 0.0f;
@@ -759,10 +760,10 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         //
 
         yo_box_t *content_container     = yo_box(yo_id("scroll_container"), 0);
-        yo_set_layout(YO_LAYOUT_VERTICAL);
+        yo_set_layout(YO_LAYOUT_STACK_Y);
         yo_set_tag("scroll_container");
-        yo_set_dim_h(yo_rel(1.0f));
-        yo_set_overflow_v(YO_OVERFLOW_SCROLL);
+        yo_set_dim_x(yo_rel(1.0f));
+        yo_set_overflow_y(YO_OVERFLOW_SCROLL);
         yo_set_anim(YO_ANIM_SCROLL, anim_rate);
 
         yo_v2f_t *offset = yo_get_userdata(sizeof(yo_v2f_t));
@@ -787,19 +788,19 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         //
 
         yo_box(0, 0);
-        yo_set_dim_v(yo_rel(1.0f));
+        yo_set_dim_y(yo_rel(1.0f));
         YO_CHILD_SCOPE()
         {
             yo_slider_style_t slider_style = yo_default_slider_style();
             slider_style.axis = YO_AXIS_Y;
-            slider_style.thumb_container_dim_h = 10;
-            slider_style.thumb_container_dim_v = content_ratio;
+            slider_style.thumb_container_dim_x = 10;
+            slider_style.thumb_container_dim_y = content_ratio;
 
             yo_thumb_style_t thumb_style  = slider_style.thumb;
             thumb_style.border            = yo_border(0, yo_v4f(0, 0, 0, 0), 5);
             thumb_style.fill              = yo_rgb(128, 128, 128);
-            thumb_style.h_dim             = slider_style.thumb_container_dim_h;
-            thumb_style.v_dim             = slider_style.thumb_container_dim_v;
+            thumb_style.dim_x             = slider_style.thumb_container_dim_x;
+            thumb_style.dim_y             = slider_style.thumb_container_dim_y;
 
             yo_thumb_style_t thumb_style_hot = thumb_style;
             thumb_style_hot.fill             = yo_rgb(172, 172, 172);
@@ -859,7 +860,7 @@ YO_API  void yo_table_headers(yo_table_t *table);
 
 YO_API  void yo_table_begin(yo_table_t *table)
 {
-    yo_layout_v();
+    yo_layout_y();
     yo_begin_children();
 
     if (!(table->flags & YO_TABLE_FLAG_NO_HEADERS))
@@ -879,7 +880,7 @@ YO_API  void yo_table_begin_row(yo_table_t *table)
 {
     table->col_idx = 0;
 
-    yo_layout_h();
+    yo_layout_x();
     yo_begin_children();
 }
 
@@ -897,11 +898,11 @@ YO_API  void yo_table_cell(yo_table_t *table)
         yo_box(0, 0);
         yo_set_border(1, yo_rgb(128, 128, 128), 0);
         yo_set_fill(yo_rgb(20, 20, 20));
-        yo_set_dim_h(table->cols[table->col_idx].width);
+        yo_set_dim_x(table->cols[table->col_idx].width);
 
         if (table->cols[table->col_idx].width.is_rel)
         {
-            yo_set_overflow_h(YO_OVERFLOW_CLIP);
+            yo_set_overflow_x(YO_OVERFLOW_CLIP);
         }
     }
 

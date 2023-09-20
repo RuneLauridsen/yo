@@ -63,15 +63,15 @@ static yo_glyph_metrics_t yo_font_backend_get_glyph_metrics(yo_font_backend_t *b
     int32_t dim_x = x1 - x0;
     int32_t dim_y = y1 - y0;
 
-    int32_t scaled_advance_h;
+    int32_t scaled_advance_x;
     int32_t scaled_bearing_x;
-    stbtt_GetCodepointHMetrics(&info->stbtt_info, codepoint, &scaled_advance_h, &scaled_bearing_x);
+    stbtt_GetCodepointHMetrics(&info->stbtt_info, codepoint, &scaled_advance_x, &scaled_bearing_x);
 
     ret.dim.x = dim_x;
     ret.dim.y = dim_y;
     ret.bearing_y = (float)y0;
     ret.bearing_x = scale * scaled_bearing_x;
-    ret.advance_x = scale * scaled_advance_h;
+    ret.advance_x = scale * scaled_advance_x;
 
     return ret;
 }

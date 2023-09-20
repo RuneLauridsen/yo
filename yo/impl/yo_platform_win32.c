@@ -44,16 +44,6 @@ static LRESULT CALLBACK yo_platform_win32_callback(HWND hwnd, UINT uMsg, WPARAM 
 
             InvalidateRect(hwnd, NULL, true);
         }
-
-        case WM_TIMER:
-        {
-            // NOTE(rune): Sometimes the message loop hangs after receiving a WM_TIMER message.
-            // but explicitly ignoring WM_TIMER seems the fix the issue.
-
-            // TODO(rune): Find out what the deal is with WM_TIMER.
-
-            return 0;
-        }
     }
 
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
@@ -100,7 +90,7 @@ static void yo_platform_win32_startup(yo_platform_win32_t *platform, uint32_t wi
                                        0,
                                        0);
 
-
+    ShowWindow(platform->window, SW_SHOW);
 }
 
 static void yo_platform_win32_shutdown(yo_platform_win32_t *platform)
@@ -191,6 +181,7 @@ static void yo_platform_win32_begin_frame(yo_platform_win32_t *platform)
         if (GetKeyState(VK_MBUTTON) & 0xf000) buttons[YO_MOUSE_BUTTON_MIDDLE] = true;
 
         yo_input_mouse_state(buttons, pos.x, pos.y);
+
     }
 
     yo_input_end();
@@ -199,11 +190,8 @@ static void yo_platform_win32_begin_frame(yo_platform_win32_t *platform)
     // Wall-clock
     //
 
-    platform->tick_current =  GetTickCount64() - platform->tick_start;
-
-    ShowWindow(platform->window, SW_SHOW);
-
-    platform->cursor = LoadCursorA(NULL, IDC_ARROW);
+    platform->tick_current = GetTickCount64() - platform->tick_start;
+    platform->cursor       = LoadCursorA(NULL, IDC_ARROW);
 
     YO_PROFILE_END(yo_platform_win32_begin_frame);
 }
