@@ -593,40 +593,37 @@ static yo_measured_text_t yo_measure_text(yo_string_t text, yo_font_id_t font, u
 
 static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t avail_max)
 {
-    YO_UNUSED(box, avail_min, avail_max);
-
     // DEBUG(rune):
-    if (yo_struct_equal(&box->fill, &yo_rgb(10, 10, 10)))
+    if (yo_cstring_equal(box->tag, "TAG_ORANGE"))
     {
         __nop();
     }
 
-    // DEBUG(rune):
-    if (yo_cstring_equal(box->tag, "TAG_SLIDER_LINE"))
-    {
-        __nop();
-    }
+    yo_v2f_t ret = { 0.0f, 0.0f };
 
-    yo_v2f_t pref_dim = { 0.0f, 0.0f };
+    //
+    // NOTE(rune): Obey fixed sized constraints.
+    //
 
-    avail_min.x = YO_MAX(avail_min.x, box->dim_x.min);
-    avail_min.y = YO_MAX(avail_min.y, box->dim_y.min);
+    yo_v2f_max_assign(&avail_min, yo_v2f(box->dim_x.min, box->dim_y.min));
+    yo_v2f_min_assign(&avail_max, yo_v2f(box->dim_x.max, box->dim_y.max));
 
-    avail_max.x = YO_MIN(avail_max.x, box->dim_x.max);
-    avail_max.y = YO_MIN(avail_max.y, box->dim_y.max);
+    //
+    // NOTE(rune): Padding and margin gives less room for children.
+    //
 
     yo_v2f_t avail_for_children_min = avail_min;
     yo_v2f_t avail_for_children_max = avail_max;
 
-    avail_for_children_min.x -= box->padding.axis[YO_AXIS_X].forward;
-    avail_for_children_min.x -= box->padding.axis[YO_AXIS_X].backward;
-    avail_for_children_min.y -= box->padding.axis[YO_AXIS_Y].forward;
-    avail_for_children_min.y -= box->padding.axis[YO_AXIS_Y].backward;
+    yo_v2f_sub_assign(&avail_for_children_min, box->padding.p[0]);
+    yo_v2f_sub_assign(&avail_for_children_min, box->padding.p[1]);
+    yo_v2f_sub_assign(&avail_for_children_max, box->padding.p[0]);
+    yo_v2f_sub_assign(&avail_for_children_max, box->padding.p[1]);
 
-    avail_for_children_max.x -= box->padding.axis[YO_AXIS_X].forward;
-    avail_for_children_max.x -= box->padding.axis[YO_AXIS_X].backward;
-    avail_for_children_max.y -= box->padding.axis[YO_AXIS_Y].forward;
-    avail_for_children_max.y -= box->padding.axis[YO_AXIS_Y].backward;
+    yo_v2f_sub_assign(&avail_for_children_min, box->margin.p[0]);
+    yo_v2f_sub_assign(&avail_for_children_min, box->margin.p[1]);
+    yo_v2f_sub_assign(&avail_for_children_max, box->margin.p[0]);
+    yo_v2f_sub_assign(&avail_for_children_max, box->margin.p[1]);
 
     if (box->children.first)
     {
@@ -641,6 +638,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
             {
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
                 {
+                    // DEBUG(rune):
                     if (yo_cstring_equal(child->tag, "AAA"))
                     {
                         __nop();
@@ -656,8 +654,8 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                     child->layout_rect.p0 = yo_v2f(0.0f, 0.0f);
                     child->layout_rect.p1 = child->pref_dim;
 
-                    pref_dim.x = YO_MAX(pref_dim.x, child->pref_dim.x);
-                    pref_dim.y = YO_MAX(pref_dim.y, child->pref_dim.y);
+                    ret.x = YO_MAX(ret.x, child->pref_dim.x);
+                    ret.y = YO_MAX(ret.y, child->pref_dim.y);
                 }
             } break;
 
@@ -693,11 +691,11 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                         remaining_min.v[axis] -= child_pref_dim.v[axis];
                         remaining_max.v[axis] -= child_pref_dim.v[axis];
 
-                        child_count_abs++;
-                        total_abs += child_pref_dim.v[axis];
-
                         child_pref_dim_max.x = YO_MAX(child_pref_dim_max.x, child_pref_dim.x);
                         child_pref_dim_max.y = YO_MAX(child_pref_dim_max.y, child_pref_dim.y);
+
+                        child_count_abs++;
+                        total_abs += child_pref_dim.v[axis];
                     }
                     else
                     {
@@ -722,7 +720,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                         float fraction = child->dim_a[axis].rel / total_rel;
 
                         yo_v2f_t space_for_child = { 0.0f, 0.0f };
-                        space_for_child.v[axis] = remaining_max.v[axis] * fraction;
+                        space_for_child.v[axis] = (avail_max.v[axis] - total_abs) * fraction;
                         space_for_child.v[orto] = avail_for_children_max.v[orto];
 
                         yo_v2f_t min = yo_v2f(0, 0);
@@ -736,13 +734,15 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                         }
 
                         yo_v2f_t child_pref_dim = yo_layout_recurse(child, min, max);
-
                         child->pref_dim = child_pref_dim;
+
+                        remaining_min.v[axis] -= child_pref_dim.v[axis];
+                        remaining_max.v[axis] -= child_pref_dim.v[axis];
                     }
                 }
 
                 //
-                // NOTE(rune): Place children
+                // NOTE(rune): Place children.
                 //
 
                 float space = YO_CLAMP_LOW(remaining_min.v[axis], 0.0f) / (child_count + 1);
@@ -753,16 +753,14 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
                 {
-                    child->layout_rect.x0 = pos.x;
-                    child->layout_rect.y0 = pos.y;
-                    child->layout_rect.x1 = pos.x + child->pref_dim.x;
-                    child->layout_rect.y1 = pos.y + child->pref_dim.y;
+                    child->layout_rect.p0 = pos;
+                    child->layout_rect.p1 = yo_v2f_add(pos, child->pref_dim);
 
                     pos.v[axis] += child->pref_dim.v[axis];
                     pos.v[axis] += space;
 
-                    pref_dim.v[axis] = pos.v[axis];
-                    pref_dim.v[orto] = YO_MAX(pref_dim.v[orto], child->pref_dim.v[orto]);
+                    ret.v[axis] = pos.v[axis];
+                    ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
                 }
 
             } break;
@@ -778,25 +776,28 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
         if (box->text)
         {
             yo_measured_text_t measured = yo_measure_text(yo_from_cstring(box->text), box->font, box->font_size);
-            pref_dim.x = measured.dim.x;
-            pref_dim.y = (float)(measured.ascent - measured.descent);
-        }
-        else
-        {
-            pref_dim.x = box->dim_x.min;
-            pref_dim.y = box->dim_y.min;
+            ret.x = measured.dim.x;
+            ret.y = (float)(measured.ascent - measured.descent);
         }
     }
 
-    pref_dim.x += box->padding.axis[YO_AXIS_X].forward;
-    pref_dim.x += box->padding.axis[YO_AXIS_X].backward;
-    pref_dim.y += box->padding.axis[YO_AXIS_Y].forward;
-    pref_dim.y += box->padding.axis[YO_AXIS_Y].backward;
+    //
+    // NOTE(rune): Padding + margin means parent needs to allocate more space for box.
+    //
 
-    pref_dim.x = YO_CLAMP(pref_dim.x, avail_min.x, avail_max.x);
-    pref_dim.y = YO_CLAMP(pref_dim.y, avail_min.y, avail_max.y);
+    yo_v2f_add_assign(&ret, box->padding.p[0]);
+    yo_v2f_add_assign(&ret, box->padding.p[1]);
 
-    return pref_dim;
+    yo_v2f_add_assign(&ret, box->margin.p[0]);
+    yo_v2f_add_assign(&ret, box->margin.p[1]);
+
+    //
+    // NOTE(rune): Obey constraints given by parent.
+    //
+
+    yo_v2f_clamp_assign(&ret, avail_min, avail_max);
+
+    return ret;
 }
 
 static void yo_post_layout_recurse(yo_box_t *box, yo_v2f_t parent_top_left)
@@ -807,13 +808,15 @@ static void yo_post_layout_recurse(yo_box_t *box, yo_v2f_t parent_top_left)
         __nop();
     }
 
-    box->screen_rect.pos[YO_AXIS_X]   = box->layout_rect.x0 + parent_top_left.x;
-    box->screen_rect.pos[YO_AXIS_Y]   = box->layout_rect.y0 + parent_top_left.y;
-    box->screen_rect.dim_a[YO_AXIS_X] = box->layout_rect.x1 - box->layout_rect.x0;
-    box->screen_rect.dim_a[YO_AXIS_Y] = box->layout_rect.y1 - box->layout_rect.y0;
+    // TODO(rune): Use p0, p1 rect for box->screen_rect.
 
-    parent_top_left.x += box->layout_rect.x0 + box->padding.axis[YO_AXIS_X].forward;
-    parent_top_left.y += box->layout_rect.y0 + box->padding.axis[YO_AXIS_Y].forward;
+    box->screen_rect.x0 = box->layout_rect.x0 + parent_top_left.x + box->margin.p[0].x;
+    box->screen_rect.y0 = box->layout_rect.y0 + parent_top_left.y + box->margin.p[0].y;
+    box->screen_rect.x1 = box->layout_rect.x1 + parent_top_left.x - box->margin.p[1].x;
+    box->screen_rect.y1 = box->layout_rect.y1 + parent_top_left.y - box->margin.p[1].y;
+
+    parent_top_left.x = box->screen_rect.x0 + box->padding.p[0].x;
+    parent_top_left.y = box->screen_rect.y0 + box->padding.p[0].y;
 
     for (yo_slist_each(yo_box_t *, child, box->children.first))
     {
@@ -1117,10 +1120,10 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     }
 #endif
 
-    yo_rectf_t rect = box->screen_rect;
+    yo_rectf2_t rect = box->screen_rect;
 
-    yo_v2f_t p0 = yo_v2f(rect.x, rect.y);
-    yo_v2f_t p1 = yo_v2f(rect.x + rect.w, rect.y + rect.h);
+    yo_v2f_t p0 = yo_v2f(rect.x0, rect.y0);
+    yo_v2f_t p1 = yo_v2f(rect.x1, rect.y1);
 
     bool clip_to_parent_x = (box->parent) && (box->parent->overflow_x != YO_OVERFLOW_SPILL) && (box->parent->overflow_x != YO_OVERFLOW_SCROLL);
     bool clip_to_parent_y = (box->parent) && (box->parent->overflow_x != YO_OVERFLOW_SPILL) && (box->parent->overflow_x != YO_OVERFLOW_SCROLL);
@@ -1138,14 +1141,14 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
 
     if (clip_to_parent_x && enable_clip)
     {
-        clip_p0.x = box->parent->screen_rect.x;
-        clip_p1.x = box->parent->screen_rect.x + box->parent->screen_rect.w;
+        clip_p0.x = box->parent->screen_rect.x0;
+        clip_p1.x = box->parent->screen_rect.x1;
     }
 
     if (clip_to_parent_y && enable_clip)
     {
-        clip_p0.y = box->parent->screen_rect.y;
-        clip_p1.y = box->parent->screen_rect.y + box->parent->screen_rect.h;
+        clip_p0.y = box->parent->screen_rect.y0;
+        clip_p1.y = box->parent->screen_rect.y1;
     }
 
     if (box->on_top == on_top && box->id != YO_ID_ROOT)
@@ -1336,10 +1339,10 @@ static void yo_debug_print_hierarchy(yo_box_t *box, uint32_t depth)
                    (int)box->layout_rect.y0,
                    (int)box->layout_rect.x1,
                    (int)box->layout_rect.y1,
-                   (int)box->screen_rect.x,
-                   (int)box->screen_rect.y,
-                   (int)box->screen_rect.w,
-                   (int)box->screen_rect.h);
+                   (int)box->screen_rect.x0,
+                   (int)box->screen_rect.y0,
+                   (int)box->screen_rect.x1 - box->screen_rect.x0,
+                   (int)box->screen_rect.y1 - box->screen_rect.y0);
 
     for (uint32_t i = 0; i < depth; i++)
     {
@@ -2119,7 +2122,7 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
 {
     yo_signal_t ret = { 0 };
 
-    yo_rectf_t hit_test_rect = yo_rectf(0, 0, 9999, 9999);
+    yo_rectf2_t hit_test_rect = yo_rectf2(yo_v2f(0, 0), yo_v2f(9999, 9999));
 
     if (box)
     {
@@ -2133,7 +2136,7 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
         if (prev) hit_test_rect = prev->screen_rect;
     }
 
-    if (yo_clips_rectf(hit_test_rect, yo_ctx->this_frame->mouse_pos))
+    if (yo_clips_rectf2(hit_test_rect, yo_ctx->this_frame->mouse_pos))
     {
         ret.hovered = true;
     }
@@ -2142,7 +2145,7 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
     {
         yo_event_t *event = &yo_ctx->this_frame->events.elems[i];
 
-        if (yo_clips_rectf(hit_test_rect, event->pos))
+        if (yo_clips_rectf2(hit_test_rect, event->pos))
         {
             if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_LEFT)  ret.left_clicked  = true;
             if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_RIGHT) ret.right_clicked = true;
@@ -2156,15 +2159,15 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
     }
 
     yo_v2i_t mouse = yo_query_mouse_pos();
-    ret.mouse_pos.x = mouse.x - (int32_t)hit_test_rect.x; // TODO(rune): Input mouse in floating point?
-    ret.mouse_pos.y = mouse.y - (int32_t)hit_test_rect.y;
+    ret.mouse_pos.x = mouse.x - (int32_t)hit_test_rect.x0; // TODO(rune): Input mouse in floating point?
+    ret.mouse_pos.y = mouse.y - (int32_t)hit_test_rect.y0;
 
     return ret;
 }
 
-YO_API yo_recti_t yo_get_screen_rect(yo_box_t *box)
+YO_API yo_rectf_t yo_get_screen_rect(yo_box_t *box)
 {
-    yo_recti_t ret = { 0 };
+    yo_rectf_t ret = { 0 };
 
     if (box && box->id)
     {
@@ -2172,10 +2175,10 @@ YO_API yo_recti_t yo_get_screen_rect(yo_box_t *box)
         if (from_prev_frame)
         {
             // TODO(rune): Return in floating point.
-            ret.x = (int32_t)from_prev_frame->screen_rect.x;
-            ret.y = (int32_t)from_prev_frame->screen_rect.y;
-            ret.w = (uint32_t)from_prev_frame->screen_rect.w;
-            ret.h = (uint32_t)from_prev_frame->screen_rect.h;
+            ret.x = from_prev_frame->screen_rect.x0;
+            ret.y = from_prev_frame->screen_rect.y0;
+            ret.w = from_prev_frame->screen_rect.x1 - ret.x;
+            ret.h = from_prev_frame->screen_rect.y1 - ret.y;
 
         }
     }
@@ -2250,14 +2253,14 @@ YO_API void  yo_set_dim_a(yo_length_t dim, yo_axis_t axis)                      
 YO_API void  yo_set_dim_x(yo_length_t dim)                                      { yo_ctx->latest_child->dim_x = dim; }
 YO_API void  yo_set_dim_y(yo_length_t dim)                                      { yo_ctx->latest_child->dim_y = dim; }
 YO_API void  yo_set_margin(float left, float top, float right, float bottom)    { yo_ctx->latest_child->margin = yo_margin(left, top, right, bottom); }
-YO_API void  yo_set_margin_xy(float h, float v)                                 { yo_ctx->latest_child->margin = yo_margin_hv(h, v); }
-YO_API void  yo_set_margin_a(float forward, float backward, yo_axis_t axis)     { yo_ctx->latest_child->margin.axis[axis].forward = forward; yo_ctx->latest_child->margin.axis[axis].backward = backward; }
+YO_API void  yo_set_margin_xy(float x, float y)                                 { yo_ctx->latest_child->margin = yo_margin_xy(x, y); }
+YO_API void  yo_set_margin_a(float forward, float backward, yo_axis_t axis)     { yo_ctx->latest_child->margin.forward[axis] = forward; yo_ctx->latest_child->margin.backward[axis] = backward; }
 YO_API void  yo_set_margin_left(float left)                                     { yo_ctx->latest_child->margin.left = left; }
 YO_API void  yo_set_margin_top(float top)                                       { yo_ctx->latest_child->margin.top = top; }
 YO_API void  yo_set_margin_right(float right)                                   { yo_ctx->latest_child->margin.right = right; }
 YO_API void  yo_set_margin_bottom(float bottom)                                 { yo_ctx->latest_child->margin.bottom = bottom; }
 YO_API void  yo_set_padding(float left, float top, float right, float bottom)   { yo_ctx->latest_child->padding = yo_padding(left, top, right, bottom); }
-YO_API void  yo_set_padding_xy(float h, float v)                                { yo_ctx->latest_child->padding = yo_padding_hv(h, v); }
+YO_API void  yo_set_padding_xy(float x, float y)                                { yo_ctx->latest_child->padding = yo_padding_xy(x, y); }
 YO_API void  yo_set_anim(yo_anim_flags_t anim, float rate)                      { yo_ctx->latest_child->anim = anim; yo_ctx->latest_child->anim_rate = rate; }
 YO_API void  yo_set_anim_flags(yo_anim_flags_t anim)                            { yo_ctx->latest_child->anim = anim; }
 YO_API void  yo_set_anim_rate(float rate)                                       { yo_ctx->latest_child->anim_rate = rate; }

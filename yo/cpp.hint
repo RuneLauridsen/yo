@@ -32,3 +32,4 @@
 #define yo_dlist_stack_push(head, node)   YO_DLIST_STACK_PUSH(head, next, prev, node)
 #define yo_dlist_stack_pop(head)          YO_DLIST_STACK_POP(head, next, prev)
 #define yo_dlist_stack_remove(head, node) YO_DLIST_STACK_REMOVE(head, next, prev, node)
+#define YO_CHILD_SCOPE()

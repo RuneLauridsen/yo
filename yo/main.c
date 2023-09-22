@@ -271,19 +271,45 @@ void build_ui(void)
 
     YO_CHILD_SCOPE()
     {
-        //yo_button("bbb");
-
+        // NOTE(rune): Text field-
         static char text_field_buffer[256] = { 'a', 'b', 'c' };
         yo_text_field(yo_id("txtf"), text_field_buffer, sizeof(text_field_buffer));
 
+        // NOTE(rune): Horizontal slider, fills whole parent.
         yo_slider(yo_id("my-slider"), &f, 1.0f, 10.f);
 
+        // NOTE(rune): Vertical slider in a orange container.
         yo_box(0, 0);
-        yo_set_fill(yo_rgb(128, 64, 64));
-        yo_set_border(0, yo_v4f(0, 0, 0, 0), 2);
-        yo_set_dim_a(yo_rel(1.0f), YO_AXIS_X);
-        yo_set_dim_a(yo_px(10), !YO_AXIS_X);
-        yo_set_margin_a(2, 2, YO_AXIS_X);
+        yo_set_tag("TAG_ORANGE");
+        yo_set_dim(yo_rel(1.0f), yo_px(200));
+        yo_set_fill(YO_ORANGE);
+        yo_set_layout(YO_LAYOUT_STACK_X);
+        YO_CHILD_SCOPE()
+        {
+            yo_space_x(yo_rel(1.0f));
+
+            yo_slider_style_t style = yo_default_slider_style();
+            style.axis = YO_AXIS_Y;
+            yo_slider_ex(yo_id("vert slider"), &f, 1.0f, 10.0f, &style);
+
+            yo_space_x(yo_rel(1.0f));
+        }
+
+        yo_box(0, 0);
+        yo_set_fill(yo_rgb(128, 128, 128));
+        YO_CHILD_SCOPE()
+        {
+            yo_box(0, 0);
+            yo_set_fill(yo_rgb(256, 128, 128));
+            yo_set_padding(10, 20, 30, 40);
+            yo_set_margin(40, 30, 20, 10);
+            YO_CHILD_SCOPE()
+            {
+                yo_box(0, 0);
+                yo_set_fill(yo_rgb(128, 256, 256));
+                yo_set_dim(yo_px(200), yo_px(100));
+            }
+        }
     }
 
     yo_end_children();

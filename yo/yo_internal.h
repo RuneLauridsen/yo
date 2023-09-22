@@ -182,7 +182,7 @@ struct yo_box
         yo_rectf2_t layout_rect; // NOTE(rune): Relative to parent top-left.
     };
 
-    yo_rectf_t screen_rect;
+    yo_rectf2_t screen_rect;
 
     // NOTE(rune): Persistent userdata. Copied from previous frame.
     struct

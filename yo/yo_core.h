@@ -74,7 +74,8 @@ enum yo_axis
 
 // TODO(rune): Better explanations
 // TODO(rune): Some kind of wrapping layout like CSS flexbox
-// Determines how yo_box_node arranges its children
+
+// NOTE(rune): Determines how yo_box_t arranges its children.
 typedef uint32_t yo_layout_t;
 enum yo_layout
 {
@@ -264,20 +265,25 @@ struct yo_signal
 //
 ////////////////////////////////////////////////////////////////
 
+// TODO(rune): Should these structs be moved to yo_internal.h? Since we moved to the yo_set_xyz API,
+// they aren't part of the public API anymore, but maybe they're still a nice utility to provide, if
+// the user want's to build e.g. a styling system, on top af the base API. Experimentation needed.
+
 typedef union yo_sides_u32 yo_sides_u32_t;
 union yo_sides_u32
 {
     struct { uint32_t left, right, top, bottom; };
-    struct { uint32_t forward, backward; } axis[2];
+    struct { float forward[2], backward[2]; };
     struct { uint32_t side[4]; };
 };
 
 typedef union yo_sides_f32 yo_sides_f32_t;
 union yo_sides_f32
 {
-    struct { float left, right, top, bottom; };
-    struct { float forward, backward; } axis[2];
+    struct { float left, top, right, bottom; };
+    struct { float forward[2], backward[2]; };
     struct { float side[4]; };
+    struct { yo_v2f_t p[2]; };
 };
 
 typedef union yo_corners_f32 yo_corners_f32_t;
@@ -299,6 +305,14 @@ union yo_corners_v4f
 {
     struct { yo_v4f_t top_left, top_right, bottom_left, bottom_right; };
     struct { yo_v4f_t corner[4]; };
+};
+
+typedef struct yo_border yo_border_t;
+struct yo_border
+{
+    yo_corners_f32_t radius;
+    float            thickness;
+    yo_v4f_t         color;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -448,15 +462,6 @@ struct yo_text_field_state
     uint32_t marker;
 };
 
-typedef struct yo_border yo_border_t;
-struct yo_border
-{
-    yo_corners_f32_t radius;
-    float            thickness;
-    yo_v4f_t         color;
-};
-
-
 typedef struct yo_box     yo_box_t;
 typedef struct yo_context yo_context_t;
 
@@ -538,7 +543,7 @@ YO_API yo_id_t          yo_pop_id(void);
 
 YO_API yo_box_t *       yo_box(yo_id_t id, yo_box_flags_t flags);
 YO_API yo_signal_t      yo_get_signal(yo_box_t *box);
-YO_API yo_recti_t       yo_get_screen_rect(yo_box_t *box);
+YO_API yo_rectf_t       yo_get_screen_rect(yo_box_t *box);
 YO_API yo_rectf_t       yo_get_arranged_rect(yo_box_t *box);
 YO_API yo_v2f_t         yo_get_content_dim(yo_box_t *box);
 YO_API void             yo_set_tag(char *tag);
@@ -566,14 +571,14 @@ YO_API void             yo_set_dim_a(yo_length_t dim, yo_axis_t axis);
 YO_API void             yo_set_dim_x(yo_length_t dim);
 YO_API void             yo_set_dim_y(yo_length_t dim);
 YO_API void             yo_set_margin(float left, float top, float right, float bottom);
-YO_API void             yo_set_margin_xy(float h, float v);
+YO_API void             yo_set_margin_xy(float x, float y);
 YO_API void             yo_set_margin_a(float forward, float backward, yo_axis_t axis);
 YO_API void             yo_set_margin_left(float left);
 YO_API void             yo_set_margin_top(float top);
 YO_API void             yo_set_margin_right(float right);
 YO_API void             yo_set_margin_bottom(float bottom);
 YO_API void             yo_set_padding(float left, float top, float right, float bottom);
-YO_API void             yo_set_padding_xy(float h, float v);
+YO_API void             yo_set_padding_xy(float x, float y);
 YO_API void             yo_set_anim(yo_anim_flags_t flags, float rate);
 YO_API void             yo_set_anim_flags(yo_anim_flags_t flags);
 YO_API void             yo_set_anim_rate(float rate);
@@ -756,9 +761,9 @@ static inline yo_sides_f32_t yo_margin(float left, float top, float right, float
     return ret;
 }
 
-static inline yo_sides_f32_t yo_margin_hv(float horizontal, float vertical)
+static inline yo_sides_f32_t yo_margin_xy(float x, float y)
 {
-    yo_sides_f32_t ret = yo_margin(horizontal, vertical, horizontal, vertical);
+    yo_sides_f32_t ret = yo_margin(x, y, x, y);
     return ret;
 }
 
@@ -780,9 +785,9 @@ static inline yo_sides_f32_t yo_padding(float left, float top, float right, floa
     return ret;
 }
 
-static inline yo_sides_f32_t yo_padding_hv(float horizontal, float vertical)
+static inline yo_sides_f32_t yo_padding_xy(float x, float y)
 {
-    yo_sides_f32_t ret = yo_padding(horizontal, vertical, horizontal, vertical);
+    yo_sides_f32_t ret = yo_padding(x, y, x, y);
     return ret;
 }
 

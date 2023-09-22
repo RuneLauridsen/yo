@@ -34,6 +34,7 @@
 #else
 #define yo_rectf(x,y,w,h)   ((yo_rectf_t){x,y,w,h})
 #endif
+#define yo_rectf2(p0,p1)    ((yo_rectf2_t){p0,p1})
 #define yo_rgba(r,g,b,a)    ((yo_v4f_t){(float)(r)/255.0f, (float)(g)/255.0f, (float)(b)/255.0f, (float)(a)/255.0f})
 #define yo_rgba32(r,g,b,a)  ((((uint32_t)(r) << 0)) | (((uint32_t)(g) << 8)) | (((uint32_t)(b) << 16)) | (((uint32_t)(a) << 24)))
 
@@ -108,17 +109,19 @@ union yo_v2i
     struct { int32_t v[2]; };
 };
 
-static bool yo_v2i_equal(yo_v2i_t a, yo_v2i_t b)
-{
-    bool ret = (a.x == b.x) && (a.y == b.y);
-    return ret;
-}
+static inline bool      yo_v2i_equal(yo_v2i_t a, yo_v2i_t b)                        { return a.x == b.x && a.y == b.y; }
+static inline bool      yo_v2f_equal(yo_v2f_t a, yo_v2f_t b)                        { return a.x == b.x && a.y == b.y; }
+static inline yo_v2f_t  yo_v2f_add(yo_v2f_t a, yo_v2f_t b)                          { return yo_v2f(a.x + b.x, a.y + b.y); }
+static inline yo_v2f_t  yo_v2f_sub(yo_v2f_t a, yo_v2f_t b)                          { return yo_v2f(a.x - b.x, a.y - b.y); }
+static inline yo_v2f_t  yo_v2f_min(yo_v2f_t a, yo_v2f_t b)                          { return yo_v2f(YO_MIN(a.x, b.x), YO_MIN(a.y, b.y)); }
+static inline yo_v2f_t  yo_v2f_max(yo_v2f_t a, yo_v2f_t b)                          { return yo_v2f(YO_MAX(a.x, b.x), YO_MAX(a.y, b.y)); }
+static inline yo_v2f_t  yo_v2f_clamp(yo_v2f_t a, yo_v2f_t low, yo_v2f_t high)       { return yo_v2f_min(yo_v2f_max(a, low), high); }
 
-static bool yo_v2f_equal(yo_v2f_t a, yo_v2f_t b)
-{
-    bool ret = (a.x == b.x) && (a.y == b.y);
-    return ret;
-}
+static inline void yo_v2f_add_assign(yo_v2f_t *a, yo_v2f_t b)                       { *a = yo_v2f_add(*a, b); }
+static inline void yo_v2f_sub_assign(yo_v2f_t *a, yo_v2f_t b)                       { *a = yo_v2f_sub(*a, b); }
+static inline void yo_v2f_min_assign(yo_v2f_t *a, yo_v2f_t b)                       { *a = yo_v2f_min(*a, b); }
+static inline void yo_v2f_max_assign(yo_v2f_t *a, yo_v2f_t b)                       { *a = yo_v2f_max(*a, b); }
+static inline void yo_v2f_clamp_assign(yo_v2f_t *a, yo_v2f_t low, yo_v2f_t high)    { *a = yo_v2f_clamp(*a, low, high); }
 
 ////////////////////////////////////////////////////////////////
 //
@@ -202,6 +205,16 @@ static inline bool yo_clips_rectf(yo_rectf_t rect, yo_v2f_t point)
                 (point.x < (rect.x + rect.w)) &&
                 (point.y >= rect.y) &&
                 (point.y < (rect.y + rect.h)));
+
+    return ret;
+}
+
+static inline bool yo_clips_rectf2(yo_rectf2_t rect, yo_v2f_t point)
+{
+    bool ret = ((point.x >= rect.x0) &&
+                (point.x <= rect.x1) &&
+                (point.y >= rect.y0) &&
+                (point.y <= rect.y1));
 
     return ret;
 }

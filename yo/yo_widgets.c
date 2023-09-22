@@ -50,6 +50,7 @@ YO_API void yo_space_x(yo_length_t amount)
     yo_box(0, 0);
     yo_set_dim_y(yo_rel(1.0f));
     yo_set_dim_x(amount);
+    yo_set_tag("TAG_SPACE_X");
 }
 
 YO_API void yo_space_y(yo_length_t amount)
@@ -57,6 +58,7 @@ YO_API void yo_space_y(yo_length_t amount)
     yo_box(0, 0);
     yo_set_dim_y(amount);
     yo_set_dim_x(yo_rel(1.0f));
+    yo_set_tag("TAG_SPACE_Y");
 }
 
 YO_API void yo_layout_x(void)
@@ -545,8 +547,9 @@ YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_a
 
     *value = YO_CLAMP(*value, min, max);
 
-    yo_signal_t signal = yo_get_signal(bounding_box);
-    yo_recti_t screen_rect = yo_get_screen_rect(bounding_box);
+    yo_signal_t signal      = yo_get_signal(bounding_box);
+    yo_rectf_t  screen_rect = yo_get_screen_rect(bounding_box);
+
     if (signal.is_active && yo_query_mouse_button(YO_MOUSE_BUTTON_LEFT))
     {
         float fx = (float)(signal.mouse_pos.axis[axis]);
@@ -574,6 +577,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
 
     yo_box_t *bounding_box = yo_box(id, YO_BOX_ACTIVATE_ON_HOLD);
     yo_set_tag("TAG_SLIDER_MAIN");
+    yo_set_dim_a(yo_rel(1.0f), style->axis);
     yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, thumb_dim, bounding_box);
     YO_CHILD_SCOPE()
     {
