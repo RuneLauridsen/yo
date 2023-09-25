@@ -8,7 +8,7 @@
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API  yo_box_t *yo_rectangle(yo_v4f_t fill, yo_length_t width, yo_length_t height, yo_id_t id)
+YO_API  yo_box_t *yo_rectangle(yo_id_t id, yo_v4f_t fill, yo_length_t width, yo_length_t height)
 {
     yo_box_t *box   = yo_box(id, 0);
     yo_set_tag("TAG_RECTANGLE");
@@ -20,7 +20,7 @@ YO_API  yo_box_t *yo_rectangle(yo_v4f_t fill, yo_length_t width, yo_length_t hei
 
 YO_API  yo_box_t *yo_fill(yo_v4f_t fill)
 {
-    yo_box_t *box = yo_rectangle(fill, yo_rel(1.0f), yo_rel(1.0f), 0);
+    yo_box_t *box = yo_rectangle(0, fill, yo_rel(1.0f), yo_rel(1.0f));
     return box;
 }
 
@@ -578,6 +578,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
     yo_box_t *bounding_box = yo_box(id, YO_BOX_ACTIVATE_ON_HOLD);
     yo_set_tag("TAG_SLIDER_MAIN");
     yo_set_dim_a(yo_rel(1.0f), style->axis);
+    yo_set_fill(YO_MAGENTA); // DEBUG(rune):
     yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, thumb_dim, bounding_box);
     YO_CHILD_SCOPE()
     {
@@ -593,7 +594,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
             yo_set_dim_a(yo_rel(1.0f), style->axis);
             yo_set_dim_a(yo_px(10), !style->axis);
             yo_set_margin_a(2, 2, style->axis);
-            yo_set_align_a(YO_ALIGN_CENTER, style->axis);
+            yo_set_align_center();
         }
 
         //
@@ -610,7 +611,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
 
                 yo_set_dim_x(yo_px(style->thumb_container_dim_x));
                 yo_set_dim_y(yo_px(style->thumb_container_dim_y));
-                yo_set_align_a(YO_ALIGN_CENTER, style->axis);
+                yo_set_align_center();
 
                 bool thumb_hot    = circle_container_signal.hovered;
                 bool thumb_active = signal.is_active;
@@ -626,6 +627,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
                     yo_set_fill(thumb_style->fill);
                     yo_set_dim_x(yo_px(thumb_style->dim_x));
                     yo_set_dim_y(yo_px(thumb_style->dim_y));
+                    yo_set_align_center();
                 }
 
                 yo_space_a(yo_rel(1.0f - (*value - min) / (max - min)), style->axis);
@@ -650,7 +652,7 @@ YO_API  void yo_slider_with_label(char *label, float *value, float min, float ma
 YO_API  void yo_menu_separator(void)
 {
     yo_space_y(yo_px(5));
-    yo_rectangle(yo_rgb(64, 64, 64), yo_rel(1.0f), yo_px(1), 0);
+    yo_rectangle(0, yo_rgb(64, 64, 64), yo_rel(1.0f), yo_px(1));
     yo_space_y(yo_px(5));
 }
 

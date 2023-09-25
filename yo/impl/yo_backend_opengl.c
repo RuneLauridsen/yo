@@ -357,12 +357,6 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
 {
     YO_PROFILE_BEGIN(yo_backend_opengl_render_frame);
 
-    // DEBUG(rune):
-    if (info->draw_cmds_count == 0)
-    {
-        __nop();
-    }
-
     yo_array_reset(&backend->vertex_array, true);
     yo_array_reset(&backend->index_array, true);
 

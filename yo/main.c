@@ -287,14 +287,15 @@ void build_ui(void)
 {
     yo_box(0, 0);
     yo_set_fill(YO_RED);
-    yo_set_dim(yo_px(256), yo_px(256));
+    //yo_set_layout(YO_LAYOUT_STACK_X);
+    yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
     YO_CHILD_SCOPE()
     {
-        yo_box(0, 0);
-        yo_set_dim(yo_px(50), yo_px(50));
-        yo_set_fill(YO_BLUE);
-        yo_set_margin_left(10);
-        yo_set_margin_top(20);
+        yo_rectangle(0, YO_CYAN, yo_px(100), yo_px(50));
+        yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
+
+        yo_rectangle(0, YO_BLUE, yo_px(75), yo_px(125));
+        yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
     }
 }
 #elif 1

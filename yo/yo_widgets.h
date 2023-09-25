@@ -8,7 +8,7 @@
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API yo_box_t *yo_rectangle(yo_v4f_t fill, yo_length_t width, yo_length_t height, yo_id_t id);
+YO_API yo_box_t *yo_rectangle(yo_id_t id, yo_v4f_t fill, yo_length_t width, yo_length_t height);
 
 ////////////////////////////////////////////////////////////////
 //

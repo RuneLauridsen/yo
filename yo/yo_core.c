@@ -312,12 +312,6 @@ static yo_popup_t *yo_get_popup_by_id(yo_id_t id); // TODO(rune): Cleanup declar
 
 static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
 {
-    // DEBUG(rune):
-    if (id == 5696385795564432402)
-    {
-        __nop();
-    }
-
     if (yo_ctx->error)
     {
         yo_zero_struct(&stub_box);
@@ -597,40 +591,18 @@ struct yo_range_f32
     float min, max;
 };
 
-static  yo_range_f32_t yo_align(yo_align_t alignment, float min, float max, float dim)
+static  float yo_align(yo_align_t alignment, float pref_dim, float avail_dim)
 {
-    YO_UNUSED(min);
+    float ret = { 0 };
 
-    yo_range_f32_t ret = { 0 };
-
+    // TODO(rune): This could just be a lookup table.
     switch (alignment)
     {
-        case YO_ALIGN_CENTER:
-        {
-            ret.min = (max - dim) / 2.0f;
-            ret.max = (max - dim) / 2.0f + dim;
-        } break;
-
-        case YO_ALIGN_FRONT:
-        {
-            ret.min = 0.0f;
-            ret.max = dim;
-        } break;
-
-        case YO_ALIGN_BACK:
-        {
-            ret.min = max - dim;
-            ret.max = max;
-
-        } break;
-
-        // TODO(rune): Is there any reason to keep YO_ALIGN_STRETCH?
-        case YO_ALIGN_STRETCH:
-        default:
-        {
-            ret.min = 0.0f;
-            ret.max = dim;
-        } break;
+        case YO_ALIGN_CENTER:   ret = (avail_dim - pref_dim) / 2.0f; break;
+        case YO_ALIGN_FRONT:    ret = 0.0f;                          break;
+        case YO_ALIGN_BACK:     ret = avail_dim - pref_dim;          break;
+        case YO_ALIGN_STRETCH:  ret = 0.0f;                          break; // TODO(rune): Is there any reason to keep YO_ALIGN_STRETCH?
+        default:                ret = 0.0f;                          break;
     }
 
     return ret;
@@ -638,12 +610,6 @@ static  yo_range_f32_t yo_align(yo_align_t alignment, float min, float max, floa
 
 static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t avail_max)
 {
-    // DEBUG(rune):
-    if (yo_cstring_equal(box->tag, "TAG_ORANGE"))
-    {
-        __nop();
-    }
-
     yo_v2f_t ret = { 0.0f, 0.0f };
 
     //
@@ -674,6 +640,13 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
     {
         const uint32_t LAYOUT_AXIS_MASK = 1;
 
+        // TODO(rune): We could just write the layout code, so that it always lays out children in the x-axis,
+        // and then just swap the x-y coordinates when layout is finished. Would probably make give the compiler
+        // a better opportunity to optimize. Profile!
+
+        // TODO(rune): We iterate the children multiple times, but they are not laid out sequentially in memory.
+        // We should consider iterating fewer times, or changing the data layout. Profile!
+
         yo_axis_t axis = box->child_layout & LAYOUT_AXIS_MASK;
         yo_axis_t orto = !axis;
 
@@ -681,14 +654,12 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
         {
             case YO_LAYTOUT_NONE:
             {
+                //
+                // NOTE(rune): Measure children.
+                //
+
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
                 {
-                    // DEBUG(rune):
-                    if (yo_cstring_equal(child->tag, "AAA"))
-                    {
-                        __nop();
-                    }
-
                     yo_v2f_t min = yo_v2f(0, 0);
                     yo_v2f_t max = avail_for_children_max;
 
@@ -697,15 +668,24 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
                     child->pref_dim = yo_layout_recurse(child, min, max);
 
-                    yo_range_f32_t aligned_x = yo_align(child->align_x, 0, avail_for_children_max.x, child->pref_dim.x);
-                    yo_range_f32_t aligned_y = yo_align(child->align_y, 0, avail_for_children_max.y, child->pref_dim.y);
-
-                    child->layout_rect.p0 = yo_v2f(aligned_x.min, aligned_y.min);
-                    child->layout_rect.p1 = yo_v2f(aligned_x.max, aligned_y.max);
-
-                    ret.x = YO_MAX(ret.x, child->pref_dim.x);
-                    ret.y = YO_MAX(ret.y, child->pref_dim.y);
+                    yo_v2f_max_assign(&ret, child->pref_dim);
                 }
+
+                yo_v2f_clamp_assign(&ret, avail_for_children_min, avail_for_children_max);
+
+                //
+                // NOTE(rune): Place children.
+                //
+
+                for (yo_slist_each(yo_box_t *, child, box->children.first))
+                {
+                    float aligned_x = yo_align(child->align_x, child->pref_dim.x, ret.x);
+                    float aligned_y = yo_align(child->align_y, child->pref_dim.y, ret.y);
+
+                    child->layout_rect.p0 = yo_v2f(aligned_x, aligned_y);
+                    child->layout_rect.p1 = yo_v2f_add(child->layout_rect.p0, child->pref_dim);
+                }
+
             } break;
 
             case YO_LAYOUT_STACK:
@@ -722,7 +702,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 float    total_rel       = 0.0f;
 
                 //
-                // NOTE(rune): Calculate sum of fixed sized children.
+                // NOTE(rune): Measure fixed sized children, and calculate sum of children rel.
                 //
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
@@ -745,6 +725,9 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
                         child_count_abs++;
                         total_abs += child_pref_dim.v[axis];
+
+                        ret.v[axis] += child->pref_dim.v[axis];
+                        ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
                     }
                     else
                     {
@@ -759,7 +742,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 remaining_min.y = YO_CLAMP_LOW(remaining_min.y, 0.0f);
 
                 //
-                // NOTE(rune): Calculate size of relative sized children.
+                // NOTE(rune): Measure relative sized children.
                 //
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
@@ -787,29 +770,34 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
                         remaining_min.v[axis] -= child_pref_dim.v[axis];
                         remaining_max.v[axis] -= child_pref_dim.v[axis];
+
+                        ret.v[axis] += child->pref_dim.v[axis];
+                        ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
                     }
                 }
+
+
 
                 //
                 // NOTE(rune): Place children.
                 //
 
+                yo_v2f_clamp_assign(&ret, avail_for_children_min, avail_for_children_max);
                 float space = YO_CLAMP_LOW(remaining_min.v[axis], 0.0f) / (child_count + 1);
-
-                yo_v2f_t pos = { 0.0f, 0.0f };
-
-                pos.v[axis] += space;
+                float pos = space;
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
                 {
-                    child->layout_rect.p0 = pos;
-                    child->layout_rect.p1 = yo_v2f_add(pos, child->pref_dim);
+                    child->layout_rect.p0.v[axis] = pos;
+                    child->layout_rect.p1.v[axis] = pos + child->pref_dim.v[axis];
 
-                    pos.v[axis] += child->pref_dim.v[axis];
-                    pos.v[axis] += space;
+                    float aligned_orto = yo_align(child->align_a[orto], child->pref_dim.v[orto], ret.v[orto]);
 
-                    ret.v[axis] = pos.v[axis];
-                    ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
+                    child->layout_rect.p0.v[orto] = aligned_orto;
+                    child->layout_rect.p1.v[orto] = aligned_orto + child->pref_dim.v[orto];
+
+                    pos += child->pref_dim.v[axis];
+                    pos += space;
                 }
 
             } break;
@@ -851,14 +839,6 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
 static void yo_post_layout_recurse(yo_box_t *box, yo_v2f_t parent_top_left)
 {
-    // DEBUG(rune):
-    if (yo_struct_equal(&box->fill, &yo_rgb(10, 10, 10)))
-    {
-        __nop();
-    }
-
-    // TODO(rune): Use p0, p1 rect for box->screen_rect.
-
     box->screen_rect.x0 = box->layout_rect.x0 + parent_top_left.x + box->margin.p[0].x;
     box->screen_rect.y0 = box->layout_rect.y0 + parent_top_left.y + box->margin.p[0].y;
     box->screen_rect.x1 = box->layout_rect.x1 + parent_top_left.x + box->margin.p[0].x;
@@ -1182,21 +1162,13 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     yo_v2f_t clip_p0 = p0;
     yo_v2f_t clip_p1 = p1;
 
-    // DEBUG(rune):
-    if (yo_struct_equal(&box->fill, &YO_MAGENTA))
-    {
-        __nop();
-    }
-
-    bool enable_clip = true; // DEBUG(rune):
-
-    if (clip_to_parent_x && enable_clip)
+    if (clip_to_parent_x)
     {
         clip_p0.x = box->parent->screen_rect.x0;
         clip_p1.x = box->parent->screen_rect.x1;
     }
 
-    if (clip_to_parent_y && enable_clip)
+    if (clip_to_parent_y)
     {
         clip_p0.y = box->parent->screen_rect.y0;
         clip_p1.y = box->parent->screen_rect.y1;
@@ -2300,6 +2272,13 @@ YO_API void  yo_set_align(yo_align_t align_x, yo_align_t align_y)               
 YO_API void  yo_set_align_a(yo_align_t align, yo_axis_t axis)                   { yo_ctx->latest_child->align_a[axis] = align; }
 YO_API void  yo_set_align_x(yo_align_t align)                                   { yo_ctx->latest_child->align_x = align; }
 YO_API void  yo_set_align_y(yo_align_t align)                                   { yo_ctx->latest_child->align_y = align; }
+YO_API void  yo_set_align_x_left()                                              { yo_ctx->latest_child->align_x = YO_ALIGN_LEFT; }
+YO_API void  yo_set_align_x_right()                                             { yo_ctx->latest_child->align_x = YO_ALIGN_RIGHT; }
+YO_API void  yo_set_align_x_center()                                            { yo_ctx->latest_child->align_x = YO_ALIGN_CENTER; }
+YO_API void  yo_set_align_y_top()                                               { yo_ctx->latest_child->align_y = YO_ALIGN_TOP; }
+YO_API void  yo_set_align_y_bottom()                                            { yo_ctx->latest_child->align_y = YO_ALIGN_BOTTOM; }
+YO_API void  yo_set_align_y_center()                                            { yo_ctx->latest_child->align_y = YO_ALIGN_CENTER; }
+YO_API void  yo_set_align_center()                                              { yo_ctx->latest_child->align_x = YO_ALIGN_CENTER; yo_ctx->latest_child->align_y = YO_ALIGN_CENTER; }
 YO_API void  yo_set_dim(yo_length_t dim_x, yo_length_t dim_y)                   { yo_ctx->latest_child->dim_x = dim_x;  yo_ctx->latest_child->dim_y = dim_y; }
 YO_API void  yo_set_dim_a(yo_length_t dim, yo_axis_t axis)                      { yo_ctx->latest_child->dim_a[axis] = dim; }
 YO_API void  yo_set_dim_x(yo_length_t dim)                                      { yo_ctx->latest_child->dim_x = dim; }
