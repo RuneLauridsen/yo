@@ -591,6 +591,51 @@ static yo_measured_text_t yo_measure_text(yo_string_t text, yo_font_id_t font, u
 //
 ////////////////////////////////////////////////////////////////
 
+typedef struct yo_range_f32 yo_range_f32_t;
+struct yo_range_f32
+{
+    float min, max;
+};
+
+static  yo_range_f32_t yo_align(yo_align_t alignment, float min, float max, float dim)
+{
+    YO_UNUSED(min);
+
+    yo_range_f32_t ret = { 0 };
+
+    switch (alignment)
+    {
+        case YO_ALIGN_CENTER:
+        {
+            ret.min = (max - dim) / 2.0f;
+            ret.max = (max - dim) / 2.0f + dim;
+        } break;
+
+        case YO_ALIGN_FRONT:
+        {
+            ret.min = 0.0f;
+            ret.max = dim;
+        } break;
+
+        case YO_ALIGN_BACK:
+        {
+            ret.min = max - dim;
+            ret.max = max;
+
+        } break;
+
+        // TODO(rune): Is there any reason to keep YO_ALIGN_STRETCH?
+        case YO_ALIGN_STRETCH:
+        default:
+        {
+            ret.min = 0.0f;
+            ret.max = dim;
+        } break;
+    }
+
+    return ret;
+}
+
 static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t avail_max)
 {
     // DEBUG(rune):
@@ -651,8 +696,12 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                     if (child->dim_y.is_rel) min.y = max.y * YO_CLAMP(child->dim_y.rel, 0.0f, 1.0f);
 
                     child->pref_dim = yo_layout_recurse(child, min, max);
-                    child->layout_rect.p0 = yo_v2f(0.0f, 0.0f);
-                    child->layout_rect.p1 = child->pref_dim;
+
+                    yo_range_f32_t aligned_x = yo_align(child->align_x, 0, avail_for_children_max.x, child->pref_dim.x);
+                    yo_range_f32_t aligned_y = yo_align(child->align_y, 0, avail_for_children_max.y, child->pref_dim.y);
+
+                    child->layout_rect.p0 = yo_v2f(aligned_x.min, aligned_y.min);
+                    child->layout_rect.p1 = yo_v2f(aligned_x.max, aligned_y.max);
 
                     ret.x = YO_MAX(ret.x, child->pref_dim.x);
                     ret.y = YO_MAX(ret.y, child->pref_dim.y);
@@ -812,8 +861,8 @@ static void yo_post_layout_recurse(yo_box_t *box, yo_v2f_t parent_top_left)
 
     box->screen_rect.x0 = box->layout_rect.x0 + parent_top_left.x + box->margin.p[0].x;
     box->screen_rect.y0 = box->layout_rect.y0 + parent_top_left.y + box->margin.p[0].y;
-    box->screen_rect.x1 = box->layout_rect.x1 + parent_top_left.x - box->margin.p[1].x;
-    box->screen_rect.y1 = box->layout_rect.y1 + parent_top_left.y - box->margin.p[1].y;
+    box->screen_rect.x1 = box->layout_rect.x1 + parent_top_left.x + box->margin.p[0].x;
+    box->screen_rect.y1 = box->layout_rect.y1 + parent_top_left.y + box->margin.p[0].y;
 
     parent_top_left.x = box->screen_rect.x0 + box->padding.p[0].x;
     parent_top_left.y = box->screen_rect.y0 + box->padding.p[0].y;
@@ -1107,6 +1156,8 @@ static void yo_draw_text(yo_string_t text,
 static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool on_top)
 {
     YO_PROFILE_BEGIN(yo_render_recurse);
+
+    yo_anim_box(box);
 
 #if 1
     if (yo_cstring_equal(box->tag, "ABCDEF"))
@@ -1699,7 +1750,7 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         //
         // Print debug information
         //
-#if 1
+#if 0
         {
             yo_clear_print_buffer();
 
@@ -2245,6 +2296,7 @@ YO_API void  yo_set_on_top(bool on_top)                                         
 YO_API void  yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis)          { yo_ctx->latest_child->overflow_a[axis] = overflow; }
 YO_API void  yo_set_overflow_x(yo_overflow_t overflow)                          { yo_ctx->latest_child->overflow_x = overflow; }
 YO_API void  yo_set_overflow_y(yo_overflow_t overflow)                          { yo_ctx->latest_child->overflow_y = overflow; }
+YO_API void  yo_set_align(yo_align_t align_x, yo_align_t align_y)               { yo_ctx->latest_child->align_x = align_x; yo_ctx->latest_child->align_y = align_y; }
 YO_API void  yo_set_align_a(yo_align_t align, yo_axis_t axis)                   { yo_ctx->latest_child->align_a[axis] = align; }
 YO_API void  yo_set_align_x(yo_align_t align)                                   { yo_ctx->latest_child->align_x = align; }
 YO_API void  yo_set_align_y(yo_align_t align)                                   { yo_ctx->latest_child->align_y = align; }

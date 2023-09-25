@@ -258,6 +258,45 @@ for (yo_range32(it, 0, 1000))
 yo_end_scroll_area();
 
 }
+#elif 0
+void build_ui(void)
+{
+    static int i = 0;
+
+    yo_align_t a[] = { YO_ALIGN_LEFT,  YO_ALIGN_CENTER,  YO_ALIGN_RIGHT };
+
+    yo_box(0, 0);
+    yo_set_fill(YO_RED);
+    yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
+    YO_CHILD_SCOPE()
+    {
+        int j = (i / 60) % countof(a);
+        int k = (i / (60*3)) % countof(a);
+
+        yo_box(0, 0);
+        yo_set_fill(YO_BLUE);
+        yo_set_dim(yo_px(100), yo_px(100));
+        yo_set_align_x(a[j]);
+        yo_set_align_y(a[k]);
+    }
+
+    i++;
+}
+#elif 0
+void build_ui(void)
+{
+    yo_box(0, 0);
+    yo_set_fill(YO_RED);
+    yo_set_dim(yo_px(256), yo_px(256));
+    YO_CHILD_SCOPE()
+    {
+        yo_box(0, 0);
+        yo_set_dim(yo_px(50), yo_px(50));
+        yo_set_fill(YO_BLUE);
+        yo_set_margin_left(10);
+        yo_set_margin_top(20);
+    }
+}
 #elif 1
 void build_ui(void)
 {
@@ -271,9 +310,9 @@ void build_ui(void)
 
     YO_CHILD_SCOPE()
     {
-        // NOTE(rune): Text field-
+        // NOTE(rune): Text field.
         static char text_field_buffer[256] = { 'a', 'b', 'c' };
-        yo_text_field(yo_id("txtf"), text_field_buffer, sizeof(text_field_buffer));
+        yo_text_field(yo_id("txt"), text_field_buffer, sizeof(text_field_buffer));
 
         // NOTE(rune): Horizontal slider, fills whole parent.
         yo_slider(yo_id("my-slider"), &f, 1.0f, 10.f);
@@ -295,110 +334,60 @@ void build_ui(void)
             yo_space_x(yo_rel(1.0f));
         }
 
-        yo_box(0, 0);
-        yo_set_fill(yo_rgb(128, 128, 128));
+
+        yo_format_text("The value is %f", f);
+        yo_set_font_size((uint32_t)(f * 8) + 10);
+
+        yo_text("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+
+
+
+        struct { char *name, *name2; yo_v4f_t rgb; } rows_values[] =
+        {
+            { "Red",     "red",     YO_RED,     },
+            { "Green",   "green",   YO_GREEN,   },
+            { "Blue",    "blue",    YO_BLUE,    },
+            { "Yellow",  "yellow",  YO_YELLOW,  },
+            { "Magenta", "magenta", YO_MAGENTA, },
+            { "Cyan",    "cyan",    YO_CYAN,    },
+        };
+
+        yo_table_t table;
+        yo_table_def(&table, 4, 0);
+        yo_table_def_col(&table, "Color", yo_rel(1));
+        yo_table_def_col(&table, "Rating", yo_px(100));
+        yo_table_def_col(&table, "Misc", yo_rel(1));
+        yo_table_def_col(&table, "Misc", yo_rel(1));
+
+        yo_table_begin(&table);
+
+        for (uint32_t row_idx = 0; row_idx < countof(rows_values); row_idx++)
+        {
+            static bool b = false;
+
+            yo_table_begin_row(&table);
+            yo_table_cell_text(&table, rows_values[row_idx].name);
+            yo_set_fill(YO_GREEN);
+            yo_table_cell_text(&table, "fixed");
+            yo_set_fill(YO_CYAN);
+            yo_table_cell_format_text(&table, "val: %f", f);
+            yo_set_fill(YO_BLUE);
+            yo_table_cell_checkbox(&table, rows_values[row_idx].name2, &b);
+            yo_set_fill(YO_MAGENTA);
+            yo_table_end_row(&table);
+        }
+        yo_table_end(&table);
+
+        yo_layout_x();
+        yo_set_align_x(YO_ALIGN_CENTER);
         YO_CHILD_SCOPE()
         {
-            yo_box(0, 0);
-            yo_set_fill(yo_rgb(256, 128, 128));
-            yo_set_padding(10, 20, 30, 40);
-            yo_set_margin(40, 30, 20, 10);
-            YO_CHILD_SCOPE()
-            {
-                yo_box(0, 0);
-                yo_set_fill(yo_rgb(128, 256, 256));
-                yo_set_dim(yo_px(200), yo_px(100));
-            }
+            yo_debug_show_atlas_partitions();
+            yo_debug_show_atlas_texture();
         }
     }
 
     yo_end_children();
-}
-
-#elif 0
-void build_ui(void)
-{
-    static float f = 0.0f;
-
-    yo_layout_y();
-    yo_set_tag("AAA");
-    yo_set_fill(yo_rgb(20, 20, 20));
-
-    YO_CHILD_SCOPE()
-    {
-        yo_button("bbbb");
-
-        static char text_field_buffer[256] = { 'a', 'b', 'c' };
-        yo_text_field(yo_id("txtf"), text_field_buffer, sizeof(text_field_buffer));
-
-        yo_box(yo_id("a"), 0);
-        yo_set_margin(10, 10, 10, 10);
-        yo_set_fill(yo_rgb(40, 0, 0));
-        yo_begin_children();
-        yo_slider(yo_id("slider"), &f, 1.0f, 10.0f);
-    }
-
-    yo_box(0, 0);
-    yo_set_dim_y(yo_px(200));
-    yo_set_fill(YO_ORANGE);
-    YO_CHILD_SCOPE()
-    {
-        yo_slider_style_t style = yo_default_slider_style();
-        style.axis = YO_AXIS_Y;
-        yo_slider_ex(yo_id("vert slider"), &f, 1.0f, 10.0f, &style);
-    }
-
-
-    yo_format_text("The value is %f", f);
-    yo_set_font_size((uint32_t)(f * 8) + 10);
-
-    yo_text("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-
-#if 1
-    struct { char *name, *name2; yo_v4f_t rgb; } rows_values[] =
-    {
-        { "Red",     "red",     YO_RED,     },
-        { "Green",   "green",   YO_GREEN,   },
-        { "Blue",    "blue",    YO_BLUE,    },
-        { "Yellow",  "yellow",  YO_YELLOW,  },
-        { "Magenta", "magenta", YO_MAGENTA, },
-        { "Cyan",    "cyan",    YO_CYAN,    },
-    };
-
-    yo_table_t table;
-    yo_table_def(&table, 4, 0);
-    yo_table_def_col(&table, "Color", yo_rel(1));
-    yo_table_def_col(&table, "Rating", yo_px(100));
-    yo_table_def_col(&table, "Misc", yo_rel(1));
-    yo_table_def_col(&table, "Misc", yo_rel(1));
-
-    yo_table_begin(&table);
-
-    for (uint32_t row_idx = 0; row_idx < countof(rows_values); row_idx++)
-    {
-        static bool b = false;
-
-        yo_table_begin_row(&table);
-        yo_table_cell_text(&table, rows_values[row_idx].name);
-        yo_set_fill(YO_GREEN);
-        yo_table_cell_text(&table, "fixed");
-        yo_set_fill(YO_CYAN);
-        yo_table_cell_format_text(&table, "val: %f", f);
-        yo_set_fill(YO_BLUE);
-        yo_table_cell_checkbox(&table, rows_values[row_idx].name2, &b);
-        yo_set_fill(YO_MAGENTA);
-        yo_table_end_row(&table);
-    }
-    yo_table_end(&table);
-
-    yo_layout_x();
-    yo_set_align_x(YO_ALIGN_CENTER);
-    YO_CHILD_SCOPE()
-    {
-        yo_debug_show_atlas_partitions();
-        yo_debug_show_atlas_texture();
-    }
-#endif
 }
 #elif 0
 void build_ui()

@@ -593,6 +593,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
             yo_set_dim_a(yo_rel(1.0f), style->axis);
             yo_set_dim_a(yo_px(10), !style->axis);
             yo_set_margin_a(2, 2, style->axis);
+            yo_set_align_a(YO_ALIGN_CENTER, style->axis);
         }
 
         //
@@ -609,6 +610,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
 
                 yo_set_dim_x(yo_px(style->thumb_container_dim_x));
                 yo_set_dim_y(yo_px(style->thumb_container_dim_y));
+                yo_set_align_a(YO_ALIGN_CENTER, style->axis);
 
                 bool thumb_hot    = circle_container_signal.hovered;
                 bool thumb_active = signal.is_active;

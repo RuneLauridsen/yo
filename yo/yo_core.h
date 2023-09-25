@@ -563,6 +563,7 @@ YO_API void             yo_set_on_top(bool on_top);
 YO_API void             yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis);
 YO_API void             yo_set_overflow_x(yo_overflow_t overflow);
 YO_API void             yo_set_overflow_y(yo_overflow_t overflow);
+YO_API void             yo_set_align(yo_align_t align_x, yo_align_t align_y);
 YO_API void             yo_set_align_a(yo_align_t align, yo_axis_t axis);
 YO_API void             yo_set_align_x(yo_align_t align);
 YO_API void             yo_set_align_y(yo_align_t align);
