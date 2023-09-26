@@ -57,14 +57,31 @@ struct yo_perf_timing
     double millis;
 };
 
-typedef struct yo_measured_text yo_measured_text_t;
-struct yo_measured_text
+// TODO(rune): Can we make this more compact? Use only 2 floats instead of 4 in yo_rectf2_t.
+typedef struct yo_laid_out_codepoint yo_laid_out_codepoint_t;
+struct yo_laid_out_codepoint
 {
-    yo_v2f_t dim;
+    uint32_t u32;
+    yo_rectf2_t rect;
+};
 
-    int32_t ascent;
-    int32_t descent;
-    int32_t line_gap;
+typedef struct yo_laid_out_text_chunk yo_laid_out_text_chunk_t;
+struct yo_laid_out_text_chunk
+{
+    yo_laid_out_codepoint_t codepoints[64];
+    uint32_t codepoint_count;
+
+    yo_laid_out_text_chunk_t *next;
+};
+
+typedef struct yo_laid_out_text yo_laid_out_text_t;
+struct yo_laid_out_text
+{
+    yo_slist(yo_laid_out_text_chunk_t) chunks;
+
+    yo_font_id_t font;
+    uint32_t font_size;
+    yo_v2f_t dim;
 };
 
 typedef uint32_t yo_scaled_element_type_t;
@@ -164,7 +181,6 @@ struct yo_box
         struct
         {
             yo_v2f_t content_size;
-            yo_measured_text_t measured_text;
         };
 
         // NOTE(rune): Calculated during arrange pass.
@@ -178,6 +194,7 @@ struct yo_box
     // NOTE(rune): New layout system
     struct
     {
+        yo_laid_out_text_t laid_out_text;
         yo_v2f_t pref_dim;
         yo_rectf2_t layout_rect; // NOTE(rune): Relative to parent top-left.
     };

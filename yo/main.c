@@ -301,6 +301,20 @@ void build_ui(void)
 #elif 1
 void build_ui(void)
 {
+    yo_box(0, 0);
+    yo_set_fill(YO_RED);
+    //yo_set_layout(YO_LAYOUT_STACK_X);
+    yo_set_dim(yo_px(195), yo_px(100));
+    yo_set_padding(5, 5, 5, 5);
+    YO_CHILD_SCOPE()
+    {
+        yo_text("I am the Walrus. gg! Lots of text that needswraapping asdgha gdga sdgahsdg J!JHgasgd gahsgd");
+        yo_set_fill(YO_ORANGE);
+    }
+}
+#elif 1
+void build_ui(void)
+{
     static float f = 0.0f;
 
     yo_layout_y();

@@ -165,6 +165,7 @@ static uint64_t yo_glyph_key(yo_font_id_t font, uint32_t codepoint, uint16_t fon
     return key;
 }
 
+// TODO(rune): Just return by value? Profile.
 static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, yo_atlas_t *atlas, uint32_t codepoint, uint32_t font_size, bool rasterize)
 {
     yo_atlas_node_t *ret = NULL;
@@ -548,31 +549,83 @@ static void yo_anim_box(yo_box_t *box)
 //
 ////////////////////////////////////////////////////////////////
 
-static yo_measured_text_t yo_measure_text(yo_string_t text, yo_font_id_t font, uint32_t font_size)
+static yo_laid_out_codepoint_t *yo_alloc_laid_out_codepoint(yo_laid_out_text_t *text)
 {
-    yo_measured_text_t ret = { 0 };
+    yo_laid_out_codepoint_t *ret = NULL;
+    yo_laid_out_text_chunk_t *chunk = text->chunks.last;
+
+    if ((!chunk) || (chunk->codepoint_count < countof(chunk->codepoints)))
+    {
+        chunk = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_laid_out_text_chunk_t, true);
+        if (chunk)
+        {
+            yo_slist_add(&text->chunks, chunk);
+        }
+    }
+
+    if (chunk)
+    {
+        ret = &chunk->codepoints[chunk->codepoint_count++];
+    }
+
+    return ret;
+}
+
+static yo_laid_out_text_t yo_layout_text(yo_string_t text, yo_text_flags_t flags, yo_v2f_t wrap, yo_font_id_t font, uint32_t font_size)
+{
+    yo_laid_out_text_t ret = { 0 };
+    ret.font = font;
+    ret.font_size = font_size;
+
     yo_font_metrics_t font_metrics = yo_font_metrics(font, font_size);
+    yo_v2f_t pos = yo_v2f(0, 0);
+
+    float height = font_metrics.line_gap;
+    float baseline = font_metrics.ascent;
 
     for (uint32_t codepoint = yo_utf8_codepoint_advance(&text);
          codepoint;
          codepoint = yo_utf8_codepoint_advance(&text))
     {
-        yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, false);
-        if (glyph)
+        yo_laid_out_codepoint_t *u = yo_alloc_laid_out_codepoint(&ret);
+        if (u)
         {
-            ret.dim.x += glyph->advance_x;
-            ret.dim.y = font_metrics.line_gap;
+            yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, false);
+            if (glyph)
+            {
+                if (pos.x + glyph->advance_x > wrap.x)
+                {
+                    if ((flags & YO_TEXT_WRAP) && (pos.y + height < wrap.y))
+                    {
+                        pos.x = 0.0f;
+                        pos.y += height;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
 
-            ret.ascent   = (int32_t)font_metrics.ascent;
-            ret.descent  = (int32_t)font_metrics.descent;
-            ret.line_gap = (int32_t)font_metrics.line_gap;
+                yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
+                yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + baseline);
+
+                u->u32       = codepoint;
+                u->rect.p0 = yo_v2f_add(pos, offset);
+                u->rect.p1 = yo_v2f_add(pos, yo_v2f_add(offset, dim));
+
+                pos.x += glyph->advance_x;
+
+                ret.dim.x = YO_MAX(ret.dim.x, pos.x);
+                ret.dim.y = YO_MAX(ret.dim.y, pos.y);
+            }
         }
         else
         {
-            // NOTE(rune): Not enough space on glyph atlas
-            __nop();
+            break;
         }
     }
+
+    ret.dim.y += height;
 
     return ret;
 }
@@ -591,7 +644,7 @@ struct yo_range_f32
     float min, max;
 };
 
-static  float yo_align(yo_align_t alignment, float pref_dim, float avail_dim)
+static float yo_align(yo_align_t alignment, float pref_dim, float avail_dim)
 {
     float ret = { 0 };
 
@@ -812,9 +865,11 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
     {
         if (box->text)
         {
-            yo_measured_text_t measured = yo_measure_text(yo_from_cstring(box->text), box->font, box->font_size);
-            ret.x = measured.dim.x;
-            ret.y = (float)(measured.ascent - measured.descent);
+            yo_string_t string = yo_from_cstring(box->text);
+            box->laid_out_text = yo_layout_text(string, YO_TEXT_WRAP, avail_for_children_max, box->font, box->font_size);
+
+            ret.x = box->laid_out_text.dim.x;
+            ret.y = box->laid_out_text.dim.y;
         }
     }
 
@@ -979,158 +1034,46 @@ static void yo_draw_aabb(yo_draw_aabb_t draw)
     }
 }
 
-static void yo_draw_text(yo_string_t text,
-                         yo_v2f_t p0, yo_v2f_t p1,
-                         yo_v2f_t clip_p0, yo_v2f_t clip_p1,
-                         yo_font_id_t font, uint32_t font_size, yo_v4f_t font_color,
-                         yo_measured_text_t measured_text,
-                         yo_text_field_state_t *text_field_state)
+static void yo_draw_laid_out_text(yo_laid_out_text_t laid_out, yo_v2f_t p0, yo_v2f_t p1)
 {
-    YO_PROFILE_BEGIN(yo_draw_text);
+    // TODO(rune): Cursor + selection
 
-    YO_UNUSED(p1);
-    YO_UNUSED(measured_text);
-
-    uint32_t index = 0;
-
-    uint32_t highlight_begin = 0;
-    uint32_t highlight_end   = 0;
-    float highlight_x0       = 0;
-    float highlight_x1       = 0;
-    float cursor_x           = 0;
-
-    if (text_field_state)
+    for (yo_slist_each(yo_laid_out_text_chunk_t *, chunk, laid_out.chunks.first))
     {
-        highlight_begin = YO_MIN(text_field_state->cursor, text_field_state->marker);
-        highlight_end   = YO_MAX(text_field_state->cursor, text_field_state->marker);
-    }
-
-    float baseline_y = p1.y + measured_text.descent;
-
-    yo_string_t remaining = text;
-
-    for (uint32_t codepoint = yo_utf8_codepoint_advance(&remaining);
-         codepoint;
-         codepoint = yo_utf8_codepoint_advance(&remaining))
-    {
-        yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, true);
-        if (glyph)
+        for (uint32_t i = 0; i < chunk->codepoint_count; i++)
         {
-            YO_PROFILE_BEGIN(yo_draw_text_1);
-            yo_v2f_t glyph_p0 = yo_v2f((p0.x + glyph->bearing_x),
-                                       (baseline_y + glyph->bearing_y));
-
-            yo_v2f_t glyph_p1 = yo_v2f((p0.x + glyph->bearing_x + glyph->rect.w),
-                                       (baseline_y + glyph->bearing_y + glyph->rect.h));
-
-            YO_PROFILE_END(yo_draw_text_1);
-
-#if 0
-            if ((pGlyph1.x >= p1.x) || (pGlyph1.y >= p1.y))
+            yo_laid_out_codepoint_t codepoint = chunk->codepoints[i];
+            yo_atlas_node_t *glyph_node = yo_glyph_get(laid_out.font, &yo_ctx->atlas, codepoint.u32, laid_out.font_size, true);
+            if (glyph_node)
             {
-                break;
+                yo_rectf2_t uv = yo_atlas_node_uv(&yo_ctx->atlas, glyph_node);
+
+                yo_draw_aabb_t draw =
+                {
+                    .p0         = yo_v2f_add(p0, codepoint.rect.p0),
+                    .p1         = yo_v2f_add(p0, codepoint.rect.p1),
+                    .clip_p0    = p0,
+                    .clip_p1    = p1,
+                    .color      = { YO_WHITE, YO_WHITE, YO_WHITE, YO_WHITE}, // TODO(rune): Text color.
+                    .texture_id = 42, // TODO(rune): Hardcoded texture id
+                    .uv0        = uv.p0,
+                    .uv1        = uv.p1,
+                };
+
+                // TODO(rune): Support sub-pixel anti aliasing for text.
+                draw.p0.x      = roundf(draw.p0.x);
+                draw.p1.x      = roundf(draw.p1.x);
+                draw.clip_p0.x = roundf(draw.clip_p0.x);
+                draw.clip_p0.x = roundf(draw.clip_p0.x);
+                draw.p0.y      = roundf(draw.p0.y);
+                draw.p1.y      = roundf(draw.p1.y);
+                draw.clip_p0.y = roundf(draw.clip_p0.y);
+                draw.clip_p0.y = roundf(draw.clip_p0.y);
+
+                yo_draw_aabb(draw);
             }
-#endif
-
-            YO_PROFILE_BEGIN(yo_draw_text_2);
-            if (text_field_state)
-            {
-                if (index == highlight_begin)          highlight_x0 = p0.x;
-                if (index == highlight_end - 1)        highlight_x1 = p0.x + glyph->advance_x;
-                if (index == text_field_state->cursor) cursor_x     = p0.x;
-            }
-            YO_PROFILE_END(yo_draw_text_2);
-
-            YO_PROFILE_BEGIN(yo_draw_text_3);
-            yo_rectf2_t uv = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
-            YO_PROFILE_END(yo_draw_text_3);
-
-            YO_PROFILE_BEGIN(yo_draw_text_4);
-            yo_draw_aabb_t draw =
-            {
-                .p0         = glyph_p0,
-                .p1         = glyph_p1,
-                .clip_p0    = clip_p0,
-                .clip_p1    = clip_p1,
-                .color      = { font_color, font_color, font_color, font_color },
-                .texture_id = 42, // TODO(rune): Hardcoded texture id
-                .uv0        = uv.p0,
-                .uv1        = uv.p1,
-            };
-
-            // TODO(rune): Support sub-pixel anti aliasing for text.
-            draw.p0.x      = roundf(draw.p0.x);
-            draw.p1.x      = roundf(draw.p1.x);
-            draw.clip_p0.x = roundf(draw.clip_p0.x);
-            draw.clip_p0.x = roundf(draw.clip_p0.x);
-            draw.p0.y      = roundf(draw.p0.y);
-            draw.p1.y      = roundf(draw.p1.y);
-            draw.clip_p0.y = roundf(draw.clip_p0.y);
-            draw.clip_p0.y = roundf(draw.clip_p0.y);
-            YO_PROFILE_END(yo_draw_text_4);
-
-            YO_PROFILE_BEGIN(yo_draw_text_5);
-            yo_draw_aabb(draw);
-            YO_PROFILE_END(yo_draw_text_5);
-
-            p0.x += glyph->advance_x;
         }
-        else
-        {
-            // NOTE(rune): Not enough space on glyph atlas
-            __nop();
-        }
-
-        index++;
     }
-
-    if (text_field_state)
-    {
-        if (text_field_state->cursor == text.length)    cursor_x = p0.x;
-
-        //
-        // Draw highlight for selected text
-        //
-        if (highlight_begin != highlight_end)
-        {
-            yo_v2f_t highlight_p0 = yo_v2f(highlight_x0, baseline_y - measured_text.ascent);
-            yo_v2f_t highlight_p1 = yo_v2f(highlight_x1, baseline_y - measured_text.descent);
-            yo_v4f_t highlight_color = yo_rgba(0x88, 0x88, 0xff, 0x80);
-            yo_draw_aabb_t draw =
-            {
-                .p0      = highlight_p0,
-                .p1      = highlight_p1,
-                .clip_p0 = highlight_p0,
-                .clip_p1 = highlight_p1,
-                .color   = { highlight_color, highlight_color, highlight_color, highlight_color },
-            };
-            yo_draw_aabb(draw);
-        }
-
-        //
-        // Draw cursor
-        //
-#if 1
-        if (cursor_x)
-        {
-            yo_v2f_t cursor_p0 = yo_v2f(cursor_x + 0, baseline_y - measured_text.ascent);
-            yo_v2f_t cursor_p1 = yo_v2f(cursor_x + 1, baseline_y - measured_text.descent);
-            yo_v4f_t cursor_color = yo_rgba(0xff, 0xff, 0xff, 0xff);
-            yo_draw_aabb_t draw =
-            {
-                .p0      = cursor_p0,
-                .p1      = cursor_p1,
-                .clip_p0 = cursor_p0,
-                .clip_p1 = cursor_p1,
-                .color = { cursor_color, cursor_color, cursor_color, cursor_color }
-            };
-
-            yo_draw_aabb(draw);
-        }
-#endif
-    }
-
-    YO_PROFILE_END(yo_draw_text);
 }
 
 static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool on_top)
@@ -1212,6 +1155,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
         // Draw content
         //
 
+#if 0
         if (box->text)
         {
             yo_text_field_state_t *text_field_state = NULL;
@@ -1221,6 +1165,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
             }
 
             yo_draw_text(yo_from_cstring(box->text),
+                         0, 0,
                          p0, p1, clip_p0, clip_p1,
                          box->font,
                          box->font_size,
@@ -1228,7 +1173,12 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
                          box->measured_text,
                          text_field_state);
         }
-
+#else
+        if (box->laid_out_text.chunks.first)
+        {
+            yo_draw_laid_out_text(box->laid_out_text, p0, p1);
+        }
+#endif
         //
         // Draw scaled elems
         //

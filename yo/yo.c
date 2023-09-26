@@ -1,7 +1,7 @@
 
 #pragma once
 
-#if 1
+#if 0
 #define YO_FONT_BACKEND_STB
 #else
 #define YO_FONT_BACKEND_FREETYPE

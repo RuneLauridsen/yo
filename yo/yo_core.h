@@ -230,6 +230,12 @@ enum yo_modifier
     YO_MODIFIER_COUNT,
 };
 
+typedef enum uint32_t yo_text_flags_t;
+enum yo_text_flags
+{
+    YO_TEXT_WRAP = 1,
+};
+
 typedef uint32_t yo_frame_flags_t;
 enum yo_frame_flags
 {
