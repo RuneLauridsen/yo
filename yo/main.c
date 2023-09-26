@@ -59,114 +59,18 @@
 #include "impl/yo_backend_opengl.c"
 #include "impl/yo_platform_win32.h"
 #include "impl/yo_platform_win32.c"
-#include "impl/yo_impl_win32_opengl.h"
-#include "impl/yo_impl_win32_opengl.c"
 
 static void build_ui(void);
 
-int main()
+static void yo_platform_win32_app_main()
 {
-    yo_impl_win32_opengl_t impl = { 0 };
-    yo_impl_win32_opengl_startup(&impl, 800, 600);
 
-    int i = 0;
-
-    while (impl.platform.running)
-    {
-        i++;
-
-        yo_impl_win32_opengl_begin_frame(&impl);
-
-        YO_PROFILE_BEGIN(ui_build);
-
-#if 0
-        yo_box(0, 0);
-        yo_set_layout(YO_LAYOUT_HORIZONTAL_FLEX);
-        yo_set_dim_x(yo_rel(1.0f));
-        yo_set_padding(5, 5, 5, 5);
-        yo_set_fill(yo_rgb(128, 128, 128));
-        YO_CHILD_SCOPE()
-        {
-            yo_box(0, 0);
-            yo_set_fill(YO_RED);
-            yo_set_text("its 123");
-
-            yo_box(0, 0);
-            yo_set_fill(YO_BLUE);
-            yo_set_text("and it goes 123");
-        }
-#endif
-
-#if 0
-        {
-            yo_box(0, 0);
-            yo_set_layout(YO_LAYOUT_HORIZONTAL_FLEX);
-            yo_set_padding(10, 10, 10, 10);
-            yo_set_fill(yo_rgb(50, 50, 50));
-            YO_CHILD_SCOPE()
-            {
-                yo_box(0, 0);
-                yo_set_font_color(YO_BLACK);
-                yo_set_fill(YO_CYAN);
-                yo_set_text("123");
-
-                yo_box(0, 0);
-                yo_set_font_color(YO_YELLOW);
-                yo_set_fill(YO_BLUE);
-                yo_set_text("i am the walrus");
-                yo_set_dim_x(yo_rel(2.0f));
-                yo_set_dim_y(yo_rel(0.7f));
-
-                yo_box(0, 0);
-                yo_set_layout(YO_LAYOUT_VERTICAL);
-                yo_set_fill(YO_MAGENTA);
-                //yo_set_dim_x(yo_rel(1.0f));
-
-                YO_CHILD_SCOPE()
-                {
-                    yo_box(0, 0);
-                    yo_set_fill(YO_RED);
-                    yo_set_text("redredred");
-
-                    yo_box(0, 0);
-                    yo_set_fill(YO_ORANGE);
-                    yo_set_text("i love oranges!");
-                }
-            }
-        }
-#endif
-
-#if 0
-        yo_layout_x();
-        yo_set_dim_x(yo_rel(1.0f));
-        YO_CHILD_SCOPE()
-        {
-            static float f = 0.0f;
-            yo_slider(yo_id("hello"), &f, 0.0f, 10.0f);
-        }
-#endif
-        build_ui();
-
-        YO_PROFILE_END(ui_build);
-
-        yo_impl_win32_opengl_end_frame(&impl);
-
-        YO_PROFILE_FRAME_MARK();
-    }
-
-    //
-    // Platform cleanup
-    //
-
-    yo_impl_win32_opengl_shutdown(&impl);
-
-    // idk_print_tracked_allocations(true, true);
 }
 
 int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     YO_UNUSED(hInstance, hPrevInstance, lpCmdLine, nShowCmd);
-    main();
+    //main();
 }
 
 #define countof(x) (sizeof(x) / sizeof(x[0]))
@@ -258,29 +162,17 @@ for (yo_range32(it, 0, 1000))
 yo_end_scroll_area();
 
 }
-#elif 0
+#elif 1
 void build_ui(void)
 {
-    static int i = 0;
+    yo_layout_y();
+    yo_begin_children();
 
-    yo_align_t a[] = { YO_ALIGN_LEFT,  YO_ALIGN_CENTER,  YO_ALIGN_RIGHT };
+    yo_button("Button 1");
+    yo_button("Button 2");
+    yo_button("Button 3");
 
-    yo_box(0, 0);
-    yo_set_fill(YO_RED);
-    yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
-    YO_CHILD_SCOPE()
-    {
-        int j = (i / 60) % countof(a);
-        int k = (i / (60*3)) % countof(a);
-
-        yo_box(0, 0);
-        yo_set_fill(YO_BLUE);
-        yo_set_dim(yo_px(100), yo_px(100));
-        yo_set_align_x(a[j]);
-        yo_set_align_y(a[k]);
-    }
-
-    i++;
+    yo_end_children();
 }
 #elif 0
 void build_ui(void)
@@ -298,7 +190,7 @@ void build_ui(void)
         yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
     }
 }
-#elif 1
+#elif 0
 void build_ui(void)
 {
     yo_box(0, 0);

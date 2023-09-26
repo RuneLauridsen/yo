@@ -1712,7 +1712,7 @@ YO_API void yo_end_frame(yo_render_info_t *info)
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void yo_input_begin(void)
+YO_API void yo_input_clear(void)
 {
     yo_ctx->this_frame->scroll = yo_v2f(0, 0);
     yo_array_reset(&yo_ctx->this_frame->events, false);
@@ -1783,16 +1783,6 @@ YO_API void yo_input_char(char c, yo_modifier_t modifiers)
 YO_API void yo_input_unicode(uint32_t codepoint, yo_modifier_t modifiers)
 {
     yo_input_key(codepoint, modifiers);
-}
-
-YO_API void yo_input_end(void)
-{
-    // TODO(rune): Since yo_input_end() doesn't do any thing, maybe the api should be more like:
-    //  yo_input_clear()
-    //  ...
-    //  yo_begin_frame()
-    //  ...
-    //  yo_end_frame()
 }
 
 YO_API yo_v2i_t yo_query_mouse_pos()

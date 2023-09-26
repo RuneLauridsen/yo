@@ -74,12 +74,6 @@
     <ClInclude Include="impl\yo_backend_opengl.c">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="impl\yo_impl_win32_opengl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="impl\yo_impl_win32_opengl.c">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="yo.h">
       <Filter>Header Files</Filter>
     </ClInclude>

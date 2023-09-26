@@ -190,6 +190,7 @@ enum yo_anim_flags
     YO_ANIM_BORDER = YO_ANIM_BORDER_COLOR|YO_ANIM_BORDER_THICKNESS|YO_ANIM_BORDER_RADIUS
 };
 
+// TODO(rune): Why not just use flags like in yo_modifier_t?
 typedef uint32_t yo_mouse_button_t;
 enum yo_mouse_button
 {
@@ -502,14 +503,13 @@ YO_API void             yo_end_frame(yo_render_info_t *buffer);
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void             yo_input_begin(void);
+YO_API void             yo_input_clear(void);
 YO_API void             yo_input_mouse_state(bool buttons[YO_MOUSE_BUTTON_COUNT], uint32_t x, uint32_t y);
 YO_API void             yo_input_mouse_click(yo_mouse_button_t button, uint32_t x, uint32_t y, yo_modifier_t modifiers);
 YO_API void             yo_input_scroll(float x, float y);
 YO_API void             yo_input_key(yo_keycode_t key, yo_modifier_t modifiers);
 YO_API void             yo_input_char(char c, yo_modifier_t modifiers);
 YO_API void             yo_input_unicode(uint32_t codepoint, yo_modifier_t modifiers);
-YO_API void             yo_input_end(void);
 
 YO_API yo_v2i_t         yo_query_mouse_pos(void);
 YO_API bool             yo_query_mouse_button(yo_mouse_button_t button);      // NOTE(m2dx): Was mouse button down during frame?

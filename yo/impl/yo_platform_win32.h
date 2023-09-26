@@ -20,9 +20,14 @@ struct yo_platform_win32
     uint64_t             tick_current;
     uint64_t             tick_freq;
     HCURSOR              cursor;
+
+    HGLRC                opengl_context;
+
+    DWORD                app_thread_id;
+
+    yo_backend_opengl_t  backend;
 };
 
-static void yo_platform_win32_startup(yo_platform_win32_t *platform, uint32_t window_width, uint32_t window_heigth);
-static void yo_platform_win32_shutdown(yo_platform_win32_t *platform);
-static void yo_platform_win32_begin_frame(yo_platform_win32_t *platform);
-static void yo_platform_win32_end_frame(yo_platform_win32_t *platform);
+// NOTE(rune): Implemented by user. yo_platform_win32_startup launches as separate user thread,
+// which calls yo_platform_win32_app_main.
+static void yo_platform_win32_app_main();

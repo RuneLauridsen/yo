@@ -140,63 +140,9 @@ static char *yo_opengl_fs_source =
 "}                                                                                                                     \n"
 ;
 
-#if 0
-static bool yo_backend_opengl_win32_load_shader_file(char *file_name, char **content, size_t *content_size)
-{
-    bool ret = false;
-
-    HANDLE file =  CreateFileA(file_name,
-                               FILE_READ_ACCESS,
-                               FILE_SHARE_READ,
-                               NULL,
-                               OPEN_EXISTING,
-                               FILE_ATTRIBUTE_NORMAL,
-                               NULL);
-
-    if (file != INVALID_HANDLE_VALUE)
-    {
-        DWORD file_size =  GetFileSize(file, NULL);
-        if (file_size != INVALID_FILE_SIZE)
-        {
-            void *file_content_buffer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, file_size);
-            if (file_content_buffer)
-            {
-                DWORD bytes_read = 0;
-                if (ReadFile(file, file_content_buffer, file_size, &bytes_read, NULL))
-                {
-                    *content      = file_content_buffer;
-                    *content_size = bytes_read;
-                    ret = true;
-                }
-                else
-                {
-                    printf("ReadFile failed (%i)\n", GetLastError());
-                }
-            }
-            else
-            {
-                printf("HeapAlloc failed (%i)\n", GetLastError());
-            }
-        }
-        else
-        {
-            printf("GetFileSize failed (%i)\n", GetLastError());
-        }
-    }
-    else
-    {
-        printf("CreateFileA failed (%i)\n", GetLastError());
-    }
-
-    CloseHandle(file);
-
-    return ret;
-}
-#endif
-
 static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
 {
-    // TODO(rune): Error handling
+        // TODO(rune): Error handling
     yo_array_create(&backend->vertex_array, 256, true);
     yo_array_create(&backend->index_array, 256, false);
 
@@ -584,43 +530,37 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
     // Render
     //
 
-    YO_PROFILE_BEGIN(glViewport);
-    glViewport(0, 0, info->w, info->h);
-    YO_PROFILE_END(glViewport);
-
-    YO_PROFILE_BEGIN(glCleaColor);
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    YO_PROFILE_END(glCleaColor);
-
-    YO_PROFILE_BEGIN(glClear_GL_COLOR_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
-    YO_PROFILE_END(glClear_GL_COLOR_BUFFER_BIT);
-
-    YO_PROFILE_BEGIN(glClearColor);
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-    YO_PROFILE_END(glClearColor);
-
-    YO_PROFILE_BEGIN(glClear_GL_DEPTH_BUFFER_BIT);
     glClear(GL_DEPTH_BUFFER_BIT);
-    YO_PROFILE_END(glClear_GL_DEPTH_BUFFER_BIT);
-
-    YO_PROFILE_BEGIN(glClearDepth);
     glClearDepth(1.0f);
-    YO_PROFILE_END(glClearDepth);
 
-    YO_PROFILE_BEGIN(glUseProgram);
+    glViewport(0, 0, info->w, info->h);
+
+#if 1
     backend->glUseProgram(backend->program);
-    YO_PROFILE_END(glUseProgram);
-
-    YO_PROFILE_BEGIN(glUniform2f);
     backend->glUniform2f(backend->program_u_resolution, (float)(info->w), (float)(info->h));
-    YO_PROFILE_END(glUniform2f);
 
-    YO_PROFILE_BEGIN(opengl_draw_elements);
     glBindTexture(GL_TEXTURE_2D, 42);
     backend->glBindVertexArray(backend->VAO);
     glDrawElements(GL_TRIANGLES, (int32_t)(backend->index_array.count), GL_UNSIGNED_INT, 0);
-    YO_PROFILE_END(opengl_draw_elements);
+
+#else
+    glLoadIdentity();
+
+    glBegin(GL_TRIANGLES);
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glVertex3f(-1.0f,  1.0f, 0.0f);
+    glVertex3f(-1.0f, -1.0f, 0.0f);
+    glVertex3f( 1.0f,  1.0f, 0.0f);
+
+    glColor3f(0.0f, 1.0f, 1.0f);
+    glVertex3f( 1.0f, -1.0f, 0.0f);
+    glVertex3f( 1.0f,  1.0f, 0.0f);
+    glVertex3f(-1.0f, -1.0f, 0.0f);
+    glEnd();
+#endif
 
     YO_PROFILE_END(yo_backend_opengl_render_frame);
 }

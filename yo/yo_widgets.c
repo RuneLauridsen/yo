@@ -396,6 +396,12 @@ YO_API  yo_signal_t yo_button(char *text)
         yo_set_border_s(style.hot.border);
     }
 
+    if (signal.is_hot && yo_query_mouse_button(YO_MOUSE_BUTTON_LEFT))
+    {
+        yo_set_fill(yo_rgb(40, 40, 40)); // TODO(rune): User configurable styling
+        yo_set_anim_rate(40.0f);
+    }
+
     return signal;
 }
 

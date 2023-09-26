@@ -28,7 +28,6 @@
     <ClInclude Include="colors.h" />
     <ClInclude Include="impl\yo_impl_win32_gdi.h" />
     <ClInclude Include="impl\yo_platform_win32.h" />
-    <ClInclude Include="impl\yo_impl_win32_opengl.h" />
     <ClInclude Include="impl\yo_platform_win32.c" />
     <ClInclude Include="impl\yo_backend_gdi.h" />
     <ClInclude Include="impl\yo_backend_gdi.c" />
@@ -50,7 +49,6 @@
     <ClInclude Include="yo_font_table.h" />
     <ClInclude Include="yo_font_table.c" />
     <ClInclude Include="yo_memory.c" />
-    <ClInclude Include="impl\yo_impl_win32_opengl.c" />
     <ClInclude Include="yo_string.c" />
     <ClInclude Include="yo_styles.h" />
     <ClInclude Include="yo_svg.h" />

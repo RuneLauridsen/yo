@@ -144,6 +144,7 @@ struct yo_box
             struct { yo_length_t dim_x, dim_y; };
             struct { yo_length_t dim_a[2]; };
         };
+
         union
         {
             struct { yo_align_t align_x, align_y; };
@@ -163,7 +164,7 @@ struct yo_box
     // NOTE(rune): Determines the box's input behaviour, rendering and more.
     yo_box_flags_t flags;
 
-    // NOTE(rune): Hierarchy
+    // NOTE(rune): Hierarchy.
     yo_box_t *parent;
     yo_box_t *next;
     yo_slist(yo_box_t) children;
@@ -171,10 +172,10 @@ struct yo_box
     // NOTE(rune): Scaled draw commands, whose sizes are calculated after the measure + arrange pass.
     yo_scaled_element_t *scaled_elements;
 
-    // NOTE(rune): Hashtable
+    // NOTE(rune): Hashtable.
     yo_box_t *next_hash;
 
-    struct // TODO(rune): Remove, old layout system
+    struct // TODO(rune): Remove, old layout system.
     {
 
         // NOTE(rune): Calculated during measure pass.
@@ -191,7 +192,7 @@ struct yo_box
         };
     };
 
-    // NOTE(rune): New layout system
+    // NOTE(rune): New layout system.
     struct
     {
         yo_laid_out_text_t laid_out_text;
@@ -262,24 +263,24 @@ struct yo_context
     yo_arena_t  persist;
     yo_array(yo_draw_cmd_t) draw_cmds;
 
-    // NOTE(m2dx): Frame state pointers are swapped every frame, similar to a gpu swap chain works.
+    // NOTE(m2dx): Frame state pointers are swapped every frame, similar to a gpu swap chain.
     // Every frame persistent state pr. box is copied from prev_frame to this_frame, and animation
     // state is interpolated between prev_frame and this_frame.
     yo_frame_t frame_states[2];
     yo_frame_t *this_frame;
     yo_frame_t *prev_frame;
 
-    // NOTE(rune): Data for building current frame hierarchy
+    // NOTE(rune): Data for building current frame hierarchy.
     yo_box_t *root;
     yo_box_t *latest_child;
     yo_array(yo_box_ptr_t) parent_stack;
     yo_array(yo_id_t)  id_stack;
 
-    // NOTE(rune): Popups
+    // NOTE(rune): Popups.
     yo_array(yo_popup_t) popups;            // NOTE(rune): Tracks yo_open_popup calls across frames.
     yo_array(yo_id_t)    popup_build_stack; // NOTE(rune): Tracks yo_begin_popup/yo_end_popup calls. Cleared every frame.
 
-    // NOTE(rune): Fonts
+    // NOTE(rune): Fonts.
     yo_atlas_t  atlas;
     yo_font_id_t default_font;
 
