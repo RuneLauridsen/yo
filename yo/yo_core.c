@@ -580,48 +580,84 @@ static yo_laid_out_text_t yo_layout_text(yo_string_t text, yo_text_flags_t flags
     yo_font_metrics_t font_metrics = yo_font_metrics(font, font_size);
     yo_v2f_t pos = yo_v2f(0, 0);
 
-    float height = font_metrics.line_gap;
+    float height   = font_metrics.line_gap;
     float baseline = font_metrics.ascent;
 
+    float space_advance_x = 0.0f;
+    yo_atlas_node_t *space_node = yo_glyph_get(font, &yo_ctx->atlas, ' ', font_size, false);
+    if (space_node) space_advance_x = space_node->advance_x;
+
+    bool exit = false;
+
     for (uint32_t codepoint = yo_utf8_codepoint_advance(&text);
-         codepoint;
+         codepoint && (pos.y + height < wrap.y) && (!exit);
          codepoint = yo_utf8_codepoint_advance(&text))
     {
-        yo_laid_out_codepoint_t *u = yo_alloc_laid_out_codepoint(&ret);
-        if (u)
+        switch (codepoint)
         {
-            yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, false);
-            if (glyph)
+            case '\n':
             {
-                if (pos.x + glyph->advance_x > wrap.x)
+                if ((flags & YO_TEXT_WRAP) && (pos.y + height < wrap.y))
                 {
-                    if ((flags & YO_TEXT_WRAP) && (pos.y + height < wrap.y))
+                    pos.x = 0.0f;
+                    pos.y += height;
+                }
+            } break;
+
+            case '\r':
+            {
+                if (flags & YO_TEXT_WRAP)
+                {
+                    pos.x = 0.0f;
+                }
+            } break;
+
+            case '\t':
+            {
+                pos.x += space_advance_x * 8.0f;
+            } break;
+
+            case ' ':
+            {
+                pos.x += space_advance_x;
+            } break;
+
+            default:
+            {
+                yo_laid_out_codepoint_t *u = yo_alloc_laid_out_codepoint(&ret);
+                if (u)
+                {
+                    yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, false);
+                    if (glyph)
                     {
-                        pos.x = 0.0f;
-                        pos.y += height;
-                    }
-                    else
-                    {
-                        break;
+                        if (pos.x + glyph->advance_x > wrap.x)
+                        {
+                            if (flags & YO_TEXT_WRAP)
+                            {
+                                pos.x = 0.0f;
+                                pos.y += height;
+                            }
+                        }
+
+                        yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
+                        yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + baseline);
+
+                        u->u32       = codepoint;
+                        u->rect.p0 = yo_v2f_add(pos, offset);
+                        u->rect.p1 = yo_v2f_add(pos, yo_v2f_add(offset, dim));
+
+                        pos.x += glyph->advance_x;
+
+                        ret.dim.x = YO_MAX(ret.dim.x, pos.x);
+                        ret.dim.y = YO_MAX(ret.dim.y, pos.y);
                     }
                 }
-
-                yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
-                yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + baseline);
-
-                u->u32       = codepoint;
-                u->rect.p0 = yo_v2f_add(pos, offset);
-                u->rect.p1 = yo_v2f_add(pos, yo_v2f_add(offset, dim));
-
-                pos.x += glyph->advance_x;
-
-                ret.dim.x = YO_MAX(ret.dim.x, pos.x);
-                ret.dim.y = YO_MAX(ret.dim.y, pos.y);
+                else
+                {
+                    // NOTE(rune): No point in continuing if we are out of memory.
+                    exit = true;
+                }
             }
-        }
-        else
-        {
-            break;
         }
     }
 
