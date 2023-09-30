@@ -211,134 +211,214 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, uint32_t font_size, yo_a
 //
 ////////////////////////////////////////////////////////////////
 
-static yo_text_layout_chunk_t *yo_text_layout_chunk(yo_text_layout_t *layout)
-{
-    yo_text_layout_chunk_t *ret = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_chunk_t, true);
-
-    if (ret)
-    {
-        yo_dlist_add(&layout->chunks, ret);
-
-        // NOTE(rune): Assume we are continuing on the same line.
-        if (ret->prev) ret->origin.y = ret->prev->origin.y;
-    }
-
-    return ret;
-}
-
+#if 0
 static yo_text_layout_char_t *yo_text_layout_char(yo_text_layout_t *layout)
 {
     yo_text_layout_char_t *ret = NULL;
-    yo_text_layout_chunk_t *chunk = layout->chunks.last;
+    yo_text_layout_line_t *line = layout->lines.last;
+    yo_text_layout_chunk_t *chunk = line->chunks.last;
 
-    bool enough_space_in_chunk = chunk && chunk->chars_count < countof(chunk->chars);
+    bool enough_space_in_chunk = chunk && chunk->count < countof(chunk->data);
     if (!enough_space_in_chunk)
     {
-        chunk = yo_text_layout_chunk(layout);
+        chunk = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_chunk_t, true);
+        if (chunk)
+        {
+            yo_slist_add(&line->chunks, chunk);
+        }
     }
 
-    if (chunk)
+    if (line)
     {
-        ret = &chunk->chars[chunk->chars_count++];
+        ret = &chunk->data[chunk->count++];
     }
 
     return ret;
 }
+#endif
 
-static yo_text_layout_chunk_t *yo_text_layout_new_line(yo_text_layout_t *layout)
+static void yo_text_layout_commit_chunk(yo_text_layout_t *l)
 {
-    layout->current.x = 0.0f;
-    layout->current.y += layout->font_metrics.line_gap;
-
-    yo_text_layout_chunk_t *chunk = yo_text_layout_chunk(layout);
-
-    if (chunk)
+    if (l->current_chunk.string.length > 0)
     {
-        chunk->advance_sum   = layout->current.x;
-        chunk->origin.x      = 0.0f;
-        chunk->origin.y      = layout->current.y;
+        yo_text_layout_chunk_t *chunk = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_chunk_t, true);
+        if (chunk)
+        {
+            *chunk = l->current_chunk;
+            yo_slist_add(&l->current_line.chunks, chunk);
+            l->current_line.chunk_count++;
+        }
     }
 
-    return chunk;
+    l->current_line.advance_x += l->current_chunk.advance_x;
+
+    l->current_chunk.string.data   = NULL;
+    l->current_chunk.string.length = 0;
+    l->current_chunk.start_x       = 0.0f;
+    l->current_chunk.advance_x     = 0.0f;
 }
 
+static void yo_text_layout_commit_line(yo_text_layout_t *l, bool wrapped)
+{
+    yo_text_layout_line_t *line = l->lines.last;
 
-static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo_string_t text, yo_text_flags_t flags, yo_v2f_t wrap)
+    line = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_line_t, true);
+
+    if (line)
+    {
+        *line = l->current_line;
+        line->wrapped = wrapped;
+        yo_slist_add(&l->lines, line);
+    }
+
+    l->current_chunk.start_x     = 0.0f;
+    l->current_line.start_x      = 0.0f;
+    l->current_line.start_y     += l->font_metrics.line_gap;
+    l->current_line.advance_x    = 0.0;
+    l->current_line.chunks.first = NULL;
+    l->current_line.chunks.last  = NULL;
+    l->current_line.chunk_count  = 0;
+}
+
+static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo_string_t text,
+                                       yo_text_align_t align, yo_text_flags_t flags, yo_v2f_t wrap)
 {
     YO_PROFILE_BEGIN(yo_text_layout);
 
-    yo_text_layout_t ret = { 0 };
-    ret.font = font;
-    ret.font_size = font_size;
-    ret.font_metrics = yo_font_metrics(font, font_size);
+    yo_text_layout_t l = { 0 };
+
+    l.font             = font;
+    l.font_size        = font_size;
+    l.font_metrics     = yo_font_metrics(font, font_size);
 
     yo_atlas_node_t *space_glyph = yo_glyph_get(font, font_size, &yo_ctx->atlas, ' ', false);
     float space_advance = space_glyph ? space_glyph->advance_x : 0.0f;
-    YO_UNUSED(space_advance);
 
-    bool exit = false;
+    //
+    // NOTE(rune): Divide text into chunks and lines.
+    //
 
-    for (yo_decoded_codepoint_t decoded = yo_utf8_decode_codepoint(text);
-         decoded.codepoint && !exit;
-         decoded = yo_utf8_decode_codepoint(text))
+    YO_PROFILE_BEGIN(yo_text_layout_first_pass);
     {
-        switch (decoded.codepoint)
+        yo_decoded_codepoint_t decoded = { 0 };
+        while (yo_utf8_advance_codepoint(&text, &decoded))
         {
-            case '\n':
+            switch (decoded.codepoint)
             {
-                if (flags & YO_TEXT_WRAP)
-                {
-                    yo_text_layout_new_line(&ret);
-                }
-            } break;
-
-            case '\r':
-            {
-                if (flags & YO_TEXT_WRAP)
-                {
-                    ret.current.x = 0.0f;
-                }
-            } break;
-
-            case '\t':
-            {
-                ret.current.x += space_advance * 8.0f;
-            } break;
-
-            case ' ':
-            {
-                ret.current.x += space_advance;
-            } break;
-
-            default:
-            {
-                yo_atlas_node_t *glyph = yo_glyph_get(font, font_size, &yo_ctx->atlas, decoded.codepoint, false);
-
-                if (ret.current.x + glyph->advance_x > wrap.x)
+                case '\n':
                 {
                     if (flags & YO_TEXT_WRAP)
                     {
-                        yo_text_layout_new_line(&ret);
+                        yo_text_layout_commit_chunk(&l);
+                        yo_text_layout_commit_line(&l, false);
                     }
-                }
+                } break;
 
-                yo_text_layout_char_t *c = yo_text_layout_char(&ret);
-                c->u32 = decoded.codepoint;
-                c->x = ret.current.x;
+                case '\r':
+                {
+                    if (flags & YO_TEXT_WRAP)
+                    {
+                        yo_text_layout_commit_chunk(&l);
+                        l.current_line.advance_x = 0.0f;
+                    }
+                } break;
 
-                ret.current.x += glyph->advance_x;
-            } break;
+                case '\t':
+                {
+                    yo_text_layout_commit_chunk(&l);
+                    l.current_line.advance_x += space_advance * 8.0f;
+                } break;
+
+                case ' ':
+                {
+                    yo_text_layout_commit_chunk(&l);
+                    l.current_line.advance_x += space_advance;
+                } break;
+
+                default:
+                {
+                    if (l.current_chunk.string.data)
+                    {
+                        l.current_chunk.string.length += decoded.byte_length;
+                    }
+                    else
+                    {
+                        l.current_chunk.start_x       = l.current_line.advance_x;
+                        l.current_chunk.string.length = decoded.byte_length;;
+                        l.current_chunk.string.data   = text.data - decoded.byte_length;
+                    }
+
+                    yo_atlas_node_t *glyph = yo_glyph_get(font, font_size, &yo_ctx->atlas, decoded.codepoint, false);
+                    l.current_chunk.advance_x     += glyph->advance_x;
+
+                    if (l.current_line.advance_x + l.current_chunk.advance_x > wrap.x)
+                    {
+                        if (flags & YO_TEXT_WRAP)
+                        {
+                            yo_text_layout_commit_line(&l, true);
+                            yo_text_layout_commit_chunk(&l);
+                        }
+                    }
+
+                } break;
+            }
+
+            l.dim.x = YO_MAX(l.dim.x, l.current_line.advance_x);
         }
 
-        text.data           += decoded.byte_length;
-        text.length         -= decoded.byte_length;
-
-        ret.dim.x = YO_MAX(ret.dim.x, ret.current.x);
+        l.dim.y = l.current_line.start_y + l.font_metrics.line_gap;
     }
+    YO_PROFILE_END(yo_text_layout_first_pass);
 
-    ret.dim.y = ret.current.y + ret.font_metrics.line_gap;
+    //
+    // NOTE(rune): Align chunks within each line.
+    //
+
+    YO_PROFILE_BEGIN(yo_text_layout_second_pass);
+    {
+        for (yo_slist_each(yo_text_layout_line_t *, line, l.lines.first))
+        {
+            float extra = wrap.x - line->advance_x;
+
+            switch (align)
+            {
+                default:
+                case YO_TEXT_ALIGN_LEFT:
+                {
+                    line->start_x = 0.0f;
+                } break;
+
+                case YO_TEXT_ALIGN_RIGHT:
+                {
+                    line->start_x = extra;
+                } break;
+
+                case YO_TEXT_ALIGN_CENTER:
+                {
+                    line->start_x = extra / 2.0f;
+                } break;
+
+                case YO_TEXT_ALIGN_JUSTIFY:
+                {
+                    if (line->wrapped)
+                    {
+                        float per_chunk = extra / (line->chunk_count - 1);
+                        uint32_t i = 0;
+                        for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
+                        {
+                            chunk->start_x += per_chunk * i;
+                            i++;
+                        }
+                    }
+                } break;
+            }
+        }
+    }
+    YO_PROFILE_END(yo_text_layout_second_pass);
 
     YO_PROFILE_END(yo_text_layout);
 
-    return ret;
+    // NOTE(rune): Because Visual Studio :(
+    yo_text_layout_t *l2 = &l;
+    return *l2;
 }

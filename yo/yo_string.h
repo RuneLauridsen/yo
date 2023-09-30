@@ -68,7 +68,7 @@ struct yo_decoded_codepoint
 };
 
 static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s);
-static yo_decoded_codepoint_t yo_utf8_advance_codepoint(yo_string_t *s);
+static bool                   yo_utf8_advance_codepoint(yo_string_t *s, yo_decoded_codepoint_t *decoded);
 
 ////////////////////////////////////////////////////////////////
 //

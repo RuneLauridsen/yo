@@ -365,10 +365,14 @@ static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s)
     return ret;
 }
 
-static yo_decoded_codepoint_t yo_utf8_advance_codepoint(yo_string_t *s)
+static bool yo_utf8_advance_codepoint(yo_string_t *s, yo_decoded_codepoint_t *decoded)
 {
-    yo_decoded_codepoint_t ret = yo_utf8_decode_codepoint(*s);
-    *s = yo_substring(*s, ret.byte_length);
+    *decoded = yo_utf8_decode_codepoint(*s);
+
+    s->data   += decoded->byte_length;
+    s->length -= decoded->byte_length;
+
+    bool ret = decoded->byte_length > 0;
     return ret;
 }
 

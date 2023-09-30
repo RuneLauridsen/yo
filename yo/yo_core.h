@@ -231,10 +231,19 @@ enum yo_modifier
     YO_MODIFIER_COUNT,
 };
 
-typedef enum uint32_t yo_text_flags_t;
+typedef uint32_t yo_text_flags_t;
 enum yo_text_flags
 {
     YO_TEXT_WRAP = 1,
+};
+
+typedef uint32_t yo_text_align_t;
+enum yo_text_align
+{
+    YO_TEXT_ALIGN_LEFT,
+    YO_TEXT_ALIGN_RIGHT,
+    YO_TEXT_ALIGN_CENTER,
+    YO_TEXT_ALIGN_JUSTIFY,
 };
 
 typedef uint32_t yo_frame_flags_t;

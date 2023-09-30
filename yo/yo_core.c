@@ -649,7 +649,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
         if (box->text)
         {
             yo_string_t string = yo_from_cstring(box->text);
-            box->text_layout = yo_text_layout(box->font, box->font_size, string, YO_TEXT_WRAP, avail_for_children_max);
+            box->text_layout = yo_text_layout(box->font, box->font_size, string, YO_TEXT_ALIGN_JUSTIFY, YO_TEXT_WRAP, avail_for_children_max);
 
             ret.x = box->text_layout.dim.x;
             ret.y = box->text_layout.dim.y;
@@ -825,44 +825,52 @@ static void yo_draw_text_layout(yo_text_layout_t laid_out, yo_v2f_t p0, yo_v2f_t
 
     yo_font_metrics_t font_metrics = yo_font_metrics(laid_out.font, laid_out.font_size);
 
-    for (yo_slist_each(yo_text_layout_chunk_t *, chunk, laid_out.chunks.first))
+    for (yo_slist_each(yo_text_layout_line_t *, line, laid_out.lines.first))
     {
-        for (uint32_t i = 0; i < chunk->chars_count; i++)
+        for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
         {
-            yo_text_layout_char_t c = chunk->chars[i];
-            yo_atlas_node_t *glyph = yo_glyph_get(laid_out.font, laid_out.font_size, &yo_ctx->atlas, c.u32, true);
+            yo_string_t remaining = chunk->string;
+            yo_decoded_codepoint_t decoded = { 0 };
+            float x = chunk->start_x;
 
-            if (glyph)
+            while(yo_utf8_advance_codepoint(&remaining, &decoded))
             {
-                yo_v2f_t pos    = yo_v2f(c.x, chunk->origin.y);
-                yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
-                yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
+                yo_atlas_node_t *glyph = yo_glyph_get(laid_out.font, laid_out.font_size, &yo_ctx->atlas, decoded.codepoint, true);
 
-                yo_rectf2_t uv = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
-
-                yo_draw_aabb_t draw =
+                if (glyph)
                 {
-                    .p0         = yo_v2f_add(pos, offset),
-                    .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
-                    .clip_p0    = p0,
-                    .clip_p1    = p1,
-                    .color      = { YO_WHITE, YO_WHITE, YO_WHITE, YO_WHITE}, // TODO(rune): Text color.
-                    .texture_id = 42, // TODO(rune): Hardcoded texture id
-                    .uv0        = uv.p0,
-                    .uv1        = uv.p1,
-                };
+                    yo_v2f_t pos    = yo_v2f(line->start_x + x, line->start_y);
+                    yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
+                    yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
 
-                // TODO(rune): Support sub-pixel anti aliasing for text.
-                draw.p0.x      = roundf(draw.p0.x);
-                draw.p1.x      = roundf(draw.p1.x);
-                draw.clip_p0.x = roundf(draw.clip_p0.x);
-                draw.clip_p0.x = roundf(draw.clip_p0.x);
-                draw.p0.y      = roundf(draw.p0.y);
-                draw.p1.y      = roundf(draw.p1.y);
-                draw.clip_p0.y = roundf(draw.clip_p0.y);
-                draw.clip_p0.y = roundf(draw.clip_p0.y);
+                    yo_rectf2_t uv = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
 
-                yo_draw_aabb(draw);
+                    yo_draw_aabb_t draw =
+                    {
+                        .p0         = yo_v2f_add(pos, offset),
+                        .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
+                        .clip_p0    = p0,
+                        .clip_p1    = p1,
+                        .color      = { YO_WHITE, YO_WHITE, YO_WHITE, YO_WHITE}, // TODO(rune): Text color.
+                        .texture_id = 42, // TODO(rune): Hardcoded texture id
+                        .uv0        = uv.p0,
+                        .uv1        = uv.p1,
+                    };
+
+                    // TODO(rune): Support sub-pixel anti aliasing for text.
+                    draw.p0.x      = roundf(draw.p0.x);
+                    draw.p1.x      = roundf(draw.p1.x);
+                    draw.clip_p0.x = roundf(draw.clip_p0.x);
+                    draw.clip_p0.x = roundf(draw.clip_p0.x);
+                    draw.p0.y      = roundf(draw.p0.y);
+                    draw.p1.y      = roundf(draw.p1.y);
+                    draw.clip_p0.y = roundf(draw.clip_p0.y);
+                    draw.clip_p0.y = roundf(draw.clip_p0.y);
+
+                    yo_draw_aabb(draw);
+
+                    x += glyph->advance_x;
+                }
             }
         }
     }
@@ -966,7 +974,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
                          text_field_state);
         }
 #else
-        if (box->text_layout.chunks.first)
+        if (box->text_layout.lines.first)
         {
             yo_draw_text_layout(box->text_layout, p0, p1);
         }

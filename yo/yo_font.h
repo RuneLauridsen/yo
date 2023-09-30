@@ -75,42 +75,54 @@ static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size);
 //
 ////////////////////////////////////////////////////////////////
 
-typedef struct yo_text_layout_char yo_text_layout_char_t;
-struct yo_text_layout_char
-{
-    // NOTE(m2dx): Unicode codepoint.
-    uint32_t u32;
-
-    // NOTE(m2dx): Add bearing_x to get glyph quad left coord.
-    float x;
-};
-
 typedef struct yo_text_layout_chunk yo_text_layout_chunk_t;
 struct yo_text_layout_chunk
 {
-    yo_text_layout_char_t chars[64];
-    uint32_t chars_count;
+    yo_string_t string;
 
-    float advance_sum;
+    float start_x;
+    float advance_x;
 
-    // NOTE(m2dx): Add bearing_y to get glyph quad top coord.
-    yo_v2f_t origin;
+    yo_text_layout_chunk_t *next;
+};
 
-    yo_text_layout_chunk_t *next, *prev;
+typedef struct yo_text_layout_line yo_text_layout_line_t;
+struct yo_text_layout_line
+{
+    yo_slist(yo_text_layout_chunk_t) chunks;
+
+    uint16_t chunk_count;
+    bool wrapped;
+
+    float start_x;
+    float start_y;
+    float advance_x;
+
+    yo_text_layout_line_t *next;
 };
 
 typedef struct yo_text_layout yo_text_layout_t;
 struct yo_text_layout
 {
-    yo_dlist(yo_text_layout_chunk_t) chunks;
+    // NOTE(rune): Result data.
+    struct
+    {
+        yo_dlist(yo_text_layout_line_t) lines;
 
-    yo_font_id_t      font;
-    uint32_t          font_size;
-    yo_font_metrics_t font_metrics;
+        yo_font_id_t      font;
+        uint32_t          font_size;
+        yo_font_metrics_t font_metrics;
 
-    yo_v2f_t dim;
+        yo_v2f_t dim;
+    };
 
-    yo_v2f_t current;
+    // NOTE(rune): Layout calculation state.
+    struct
+    {
+        yo_text_layout_line_t  current_line;
+        yo_text_layout_chunk_t current_chunk;
+    };
 };
 
-static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo_string_t text, yo_text_flags_t flags, yo_v2f_t wrap);
+static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo_string_t text,
+                                       yo_text_align_t align, yo_text_flags_t flags, yo_v2f_t wrap);
