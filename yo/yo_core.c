@@ -134,143 +134,15 @@ static void yo_add_box_to_hash(yo_box_t *box, yo_frame_t *frame)
     YO_SLSTACK_PUSH(frame->hash_table[slot_idx], next_hash, box);
 }
 
-////////////////////////////////////////////////////////////////
-//
-//
-// Font
-//
-//
-////////////////////////////////////////////////////////////////
-
-static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size)
-{
-    yo_font_metrics_t ret = { 0 };
-    yo_font_slot_t *slot = yo_font_table_slot_find(font);
-    if (slot)
-    {
-        ret = yo_font_backend_get_font_metrics(&yo_ctx->font_backend, &slot->backend_info, font_size);
-    }
-    return ret;
-}
-
-static uint64_t yo_glyph_key(yo_font_id_t font, uint32_t codepoint, uint16_t font_size)
-{
-    uint64_t key = (((uint64_t)(codepoint)          << 0)  |
-                    ((uint64_t)(font_size)          << 32) |
-                    ((uint64_t)(font.u64 & 0xffff)  << 48));
-
-    // NOTE(rune): Only the first 16 bits of font.u16 specify the font_slot.
-    // TODO(rune): If we increase the glyph key to 128-bits, we can skip this masking step.
-
-    return key;
-}
-
-// TODO(rune): Just return by value? Profile.
-static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, yo_atlas_t *atlas, uint32_t codepoint, uint32_t font_size, bool rasterize)
-{
-    yo_atlas_node_t *ret = NULL;
-    yo_font_slot_t *slot = yo_font_table_slot_find(font);
-
-    if (slot)
-    {
-        // yo_font_metrics_t slot_metrics = yo_font_backend_get_font_metrics(&yo_ctx->font_backend, &slot->backend_info, font_size);
-
-        // TODO(rune): Store font_size as uint16_t?
-        uint64_t key = yo_glyph_key(font, codepoint, (uint16_t)font_size);
-
-        ret = yo_atlas_node_find(atlas, key);
-        if (!ret)
-        {
-            yo_glyph_metrics_t metrics = yo_font_backend_get_glyph_metrics(&yo_ctx->font_backend,
-                                                                           &slot->backend_info,
-                                                                           codepoint,
-                                                                           font_size);
-
-            //
-            // Allocate atlas region
-            //
-
-            ret = yo_atlas_node_new(atlas, yo_v2i(metrics.dim.x, metrics.dim.y));
-
-            if (ret)
-            {
-                ret->key       = key;
-                ret->bearing_y = metrics.bearing_y;
-                ret->bearing_x = metrics.bearing_x;
-                ret->advance_x = metrics.advance_x;
-            }
-            else
-            {
-                __nop(); // NOTE(rune): Not enough space in glyph atlas
-            }
-        }
-
-        //
-        // Rasterize
-        //
-
-        if (ret)
-        {
-            // TODO(rune): We could just make rasterization a separate function, e.g. with at yo_font_rasterize_pending() function.
-            if (rasterize && !ret->rasterized)
-            {
-                int32_t stride = atlas->dim.x;
-                uint8_t *pixel = atlas->pixels + (ret->rect.x + ret->rect.y * stride);
-
-                YO_PROFILE_BEGIN(yo_font_backend_rasterize);
-                yo_font_backend_rasterize(&yo_ctx->font_backend, &slot->backend_info,
-                                          codepoint, font_size, pixel, yo_v2i(ret->rect.w, ret->rect.h), stride);
-
-                YO_PROFILE_END(yo_font_backend_rasterize);
-
-                ret->rasterized = true;
-                atlas->dirty    = true;
-            }
-        }
-    }
-
-    return ret;
-}
-
-// NOTE(rune): The default is loaded in yo_create_context(), so we can't rely on the
-// yo_ctx global variable being set yet.
-static yo_font_id_t yo_font_load_ctx(void *data, size_t data_size, yo_context_t *ctx)
-{
-    yo_font_id_t ret     = yo_font_id_none();
-    yo_font_slot_t *slot = NULL;
-    bool ok = false;
-
-    if (data)
-    {
-        slot = yo_font_table_slot_alloc();
-        if (slot)
-        {
-            if (yo_font_backend_load_font(&ctx->font_backend, &slot->backend_info, data, data_size))
-            {
-                ret = slot->font_id;
-                ok = true;
-            }
-        }
-    }
-
-    if (!ok)
-    {
-        yo_font_table_slot_free(slot);
-    }
-
-    return ret;
-}
-
 YO_API yo_font_id_t yo_font_load(void *data, size_t data_size)
 {
-    yo_font_id_t ret = yo_font_load_ctx(data, data_size, yo_ctx);
+    yo_font_id_t ret = yo_font_load_(data, data_size, &yo_ctx->font_backend);
     return ret;
 }
 
 YO_API void yo_font_unload(yo_font_id_t font)
 {
-    yo_font_slot_t *slot = yo_font_table_slot_find(font);
-    yo_font_table_slot_free(slot);
+    yo_font_unload_(font, &yo_ctx->font_backend);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -544,131 +416,6 @@ static void yo_anim_box(yo_box_t *box)
 ////////////////////////////////////////////////////////////////
 //
 //
-// Measure
-//
-//
-////////////////////////////////////////////////////////////////
-
-static yo_laid_out_codepoint_t *yo_alloc_laid_out_codepoint(yo_laid_out_text_t *text)
-{
-    yo_laid_out_codepoint_t *ret = NULL;
-    yo_laid_out_text_chunk_t *chunk = text->chunks.last;
-
-    if ((!chunk) || (chunk->codepoint_count < countof(chunk->codepoints)))
-    {
-        chunk = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_laid_out_text_chunk_t, true);
-        if (chunk)
-        {
-            yo_slist_add(&text->chunks, chunk);
-        }
-    }
-
-    if (chunk)
-    {
-        ret = &chunk->codepoints[chunk->codepoint_count++];
-    }
-
-    return ret;
-}
-
-static yo_laid_out_text_t yo_layout_text(yo_string_t text, yo_text_flags_t flags, yo_v2f_t wrap, yo_font_id_t font, uint32_t font_size)
-{
-    yo_laid_out_text_t ret = { 0 };
-    ret.font = font;
-    ret.font_size = font_size;
-
-    yo_font_metrics_t font_metrics = yo_font_metrics(font, font_size);
-    yo_v2f_t pos = yo_v2f(0, 0);
-
-    float height   = font_metrics.line_gap;
-    float baseline = font_metrics.ascent;
-
-    float space_advance_x = 0.0f;
-    yo_atlas_node_t *space_node = yo_glyph_get(font, &yo_ctx->atlas, ' ', font_size, false);
-    if (space_node) space_advance_x = space_node->advance_x;
-
-    bool exit = false;
-
-    for (uint32_t codepoint = yo_utf8_codepoint_advance(&text);
-         codepoint && (pos.y + height < wrap.y) && (!exit);
-         codepoint = yo_utf8_codepoint_advance(&text))
-    {
-        switch (codepoint)
-        {
-            case '\n':
-            {
-                if ((flags & YO_TEXT_WRAP) && (pos.y + height < wrap.y))
-                {
-                    pos.x = 0.0f;
-                    pos.y += height;
-                }
-            } break;
-
-            case '\r':
-            {
-                if (flags & YO_TEXT_WRAP)
-                {
-                    pos.x = 0.0f;
-                }
-            } break;
-
-            case '\t':
-            {
-                pos.x += space_advance_x * 8.0f;
-            } break;
-
-            case ' ':
-            {
-                pos.x += space_advance_x;
-            } break;
-
-            default:
-            {
-                yo_laid_out_codepoint_t *u = yo_alloc_laid_out_codepoint(&ret);
-                if (u)
-                {
-                    yo_atlas_node_t *glyph = yo_glyph_get(font, &yo_ctx->atlas, codepoint, font_size, false);
-                    if (glyph)
-                    {
-                        if (pos.x + glyph->advance_x > wrap.x)
-                        {
-                            if (flags & YO_TEXT_WRAP)
-                            {
-                                pos.x = 0.0f;
-                                pos.y += height;
-                            }
-                        }
-
-                        yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
-                        yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + baseline);
-
-                        u->u32       = codepoint;
-                        u->rect.p0 = yo_v2f_add(pos, offset);
-                        u->rect.p1 = yo_v2f_add(pos, yo_v2f_add(offset, dim));
-
-                        pos.x += glyph->advance_x;
-
-                        ret.dim.x = YO_MAX(ret.dim.x, pos.x);
-                        ret.dim.y = YO_MAX(ret.dim.y, pos.y);
-                    }
-                }
-                else
-                {
-                    // NOTE(rune): No point in continuing if we are out of memory.
-                    exit = true;
-                }
-            }
-        }
-    }
-
-    ret.dim.y += height;
-
-    return ret;
-}
-
-////////////////////////////////////////////////////////////////
-//
-//
 // Layout
 //
 //
@@ -902,10 +649,10 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
         if (box->text)
         {
             yo_string_t string = yo_from_cstring(box->text);
-            box->laid_out_text = yo_layout_text(string, YO_TEXT_WRAP, avail_for_children_max, box->font, box->font_size);
+            box->text_layout = yo_text_layout(box->font, box->font_size, string, YO_TEXT_WRAP, avail_for_children_max);
 
-            ret.x = box->laid_out_text.dim.x;
-            ret.y = box->laid_out_text.dim.y;
+            ret.x = box->text_layout.dim.x;
+            ret.y = box->text_layout.dim.y;
         }
     }
 
@@ -1070,24 +817,33 @@ static void yo_draw_aabb(yo_draw_aabb_t draw)
     }
 }
 
-static void yo_draw_laid_out_text(yo_laid_out_text_t laid_out, yo_v2f_t p0, yo_v2f_t p1)
+static void yo_draw_text_layout(yo_text_layout_t laid_out, yo_v2f_t p0, yo_v2f_t p1)
 {
+    YO_UNUSED(p0, p1);
+
     // TODO(rune): Cursor + selection
 
-    for (yo_slist_each(yo_laid_out_text_chunk_t *, chunk, laid_out.chunks.first))
+    yo_font_metrics_t font_metrics = yo_font_metrics(laid_out.font, laid_out.font_size);
+
+    for (yo_slist_each(yo_text_layout_chunk_t *, chunk, laid_out.chunks.first))
     {
-        for (uint32_t i = 0; i < chunk->codepoint_count; i++)
+        for (uint32_t i = 0; i < chunk->chars_count; i++)
         {
-            yo_laid_out_codepoint_t codepoint = chunk->codepoints[i];
-            yo_atlas_node_t *glyph_node = yo_glyph_get(laid_out.font, &yo_ctx->atlas, codepoint.u32, laid_out.font_size, true);
-            if (glyph_node)
+            yo_text_layout_char_t c = chunk->chars[i];
+            yo_atlas_node_t *glyph = yo_glyph_get(laid_out.font, laid_out.font_size, &yo_ctx->atlas, c.u32, true);
+
+            if (glyph)
             {
-                yo_rectf2_t uv = yo_atlas_node_uv(&yo_ctx->atlas, glyph_node);
+                yo_v2f_t pos    = yo_v2f(c.x, chunk->origin.y);
+                yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
+                yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
+
+                yo_rectf2_t uv = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
 
                 yo_draw_aabb_t draw =
                 {
-                    .p0         = yo_v2f_add(p0, codepoint.rect.p0),
-                    .p1         = yo_v2f_add(p0, codepoint.rect.p1),
+                    .p0         = yo_v2f_add(pos, offset),
+                    .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
                     .clip_p0    = p0,
                     .clip_p1    = p1,
                     .color      = { YO_WHITE, YO_WHITE, YO_WHITE, YO_WHITE}, // TODO(rune): Text color.
@@ -1210,9 +966,9 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
                          text_field_state);
         }
 #else
-        if (box->laid_out_text.chunks.first)
+        if (box->text_layout.chunks.first)
         {
-            yo_draw_laid_out_text(box->laid_out_text, p0, p1);
+            yo_draw_text_layout(box->text_layout, p0, p1);
         }
 #endif
         //
@@ -1517,7 +1273,7 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
             //
 
             yo_font_backend_startup(&ret->font_backend);
-            ret->default_font = yo_font_load_ctx(yo_default_font_data, sizeof(yo_default_font_data), ret);
+            ret->default_font = yo_font_load_(yo_default_font_data, sizeof(yo_default_font_data), &ret->font_backend);
 
             ok = true;
         }

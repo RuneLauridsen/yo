@@ -15,7 +15,7 @@
 // Tracy
 //
 
-#if 0
+#if 1
 #   define TRACY_ENABLE
 #   include "thirdparty/tracy/tracy/TracyC.h"
 #   define YO_PROFILE_FRAME_MARK() TracyCFrameMark

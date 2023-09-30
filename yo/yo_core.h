@@ -441,7 +441,7 @@ struct yo_config
 //
 ////////////////////////////////////////////////////////////////
 
-typedef struct yo_font_id yo_font_id_t; // TODO(rune): Just make it a struct { uint64_t u64; };
+typedef struct yo_font_id yo_font_id_t;
 struct yo_font_id
 {
     uint64_t u64;

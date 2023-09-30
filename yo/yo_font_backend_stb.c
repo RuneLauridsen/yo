@@ -13,7 +13,7 @@ static void yo_font_backend_shutdown(yo_font_backend_t *backend)
     YO_UNUSED(backend);
 }
 
-static bool yo_font_backend_load_font(yo_font_backend_t *backend, yo_font_backend_info_t *info, void *data, size_t data_size)
+static bool yo_font_backend_load(yo_font_backend_t *backend, yo_font_backend_info_t *info, void *data, size_t data_size)
 {
     YO_UNUSED(backend, data_size);
 
@@ -32,6 +32,13 @@ static bool yo_font_backend_load_font(yo_font_backend_t *backend, yo_font_backen
     }
 
     return ret;
+}
+
+static void yo_font_backend_unload(yo_font_backend_t *backend, yo_font_backend_info_t *info)
+{
+    YO_UNUSED(backend, info);
+
+    // NOTE(rune): no-op
 }
 
 static yo_font_metrics_t yo_font_backend_get_font_metrics(yo_font_backend_t *backend, yo_font_backend_info_t *info, uint32_t fontsize)

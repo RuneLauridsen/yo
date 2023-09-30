@@ -40,14 +40,14 @@
     <ClInclude Include="impl\yo_impl_win32_gdi.c" />
     <ClInclude Include="yo_file.h" />
     <ClInclude Include="yo_file.c" />
+    <ClInclude Include="yo_font.h" />
+    <ClInclude Include="yo_font.c" />
     <ClInclude Include="yo_font_backend.h" />
     <ClInclude Include="yo_font_backend_freetype.c" />
     <ClInclude Include="yo_font_backend_freetype.h" />
     <ClInclude Include="yo_font_backend_stb.h" />
     <ClInclude Include="yo_font_backend_stb.c" />
     <ClInclude Include="yo_font_data.h" />
-    <ClInclude Include="yo_font_table.h" />
-    <ClInclude Include="yo_font_table.c" />
     <ClInclude Include="yo_memory.c" />
     <ClInclude Include="yo_string.c" />
     <ClInclude Include="yo_styles.h" />

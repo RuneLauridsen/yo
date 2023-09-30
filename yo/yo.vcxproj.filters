@@ -122,12 +122,6 @@
     <ClInclude Include="yo_font_backend_stb.c">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="yo_font_table.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="yo_font_table.c">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="yo_font_backend_freetype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -135,6 +129,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="yo_file.c">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="yo_font.c">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

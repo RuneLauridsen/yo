@@ -60,7 +60,15 @@ static bool         yo_ends_with(yo_string_t s, yo_string_t suffix);
 //
 ////////////////////////////////////////////////////////////////
 
-static uint32_t     yo_utf8_codepoint_advance(yo_string_t *s);
+typedef struct yo_decoded_codepoint yo_decoded_codepoint_t;
+struct yo_decoded_codepoint
+{
+    uint32_t codepoint;
+    uint32_t byte_length;
+};
+
+static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s);
+static yo_decoded_codepoint_t yo_utf8_advance_codepoint(yo_string_t *s);
 
 ////////////////////////////////////////////////////////////////
 //

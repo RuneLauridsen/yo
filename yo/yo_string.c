@@ -266,10 +266,8 @@ static bool yo_ends_with(yo_string_t s, yo_string_t suffix)
 //
 ////////////////////////////////////////////////////////////////
 
-static uint32_t yo_utf8_codepoint_advance(yo_string_t *s)
+static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s)
 {
-    YO_PROFILE_BEGIN(yo_utf8_codepoint_advance);
-
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
 
     // NOTE(rune): Table generated with:
@@ -306,70 +304,71 @@ static uint32_t yo_utf8_codepoint_advance(yo_string_t *s)
         3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0,
     };
 
-    uint32_t ret = 0;
+    yo_decoded_codepoint_t ret = { 0 };
 
     //
     // 1-byte encoding
     //
 
-    if ((s->length >= 1) &&
-        (table[s->data[0]] == 1))
+    if ((s.length >= 1) &&
+        (table[s.data[0]] == 1))
     {
-        ret = s->data[0];
-
-        *s = yo_substring(*s, 1);
+        ret.byte_length = 1;
+        ret.codepoint = s.data[0];
     }
 
     //
     // 2-byte encoding
     //
 
-    if ((s->length >= 2) &&
-        (table[s->data[0]] == 2) &&
-        (table[s->data[1]] == 0))
+    if ((s.length >= 2) &&
+        (table[s.data[0]] == 2) &&
+        (table[s.data[1]] == 0))
     {
-        ret = (((s->data[0] & 0b0001'1111) << 6) |
-               ((s->data[1] & 0b0011'1111) << 0));
-
-        *s = yo_substring(*s, 2);
+        ret.byte_length = 2;
+        ret.codepoint = (((s.data[0] & 0b0001'1111) << 6) |
+                         ((s.data[1] & 0b0011'1111) << 0));
     }
 
     //
     // 3-byte encoding
     //
 
-    if ((s->length >= 3) &&
-        (table[s->data[0]] == 3) &&
-        (table[s->data[1]] == 0) &&
-        (table[s->data[2]] == 0))
+    if ((s.length >= 3) &&
+        (table[s.data[0]] == 3) &&
+        (table[s.data[1]] == 0) &&
+        (table[s.data[2]] == 0))
     {
-        ret = (((s->data[0] & 0b0000'1111) << 12) |
-               ((s->data[1] & 0b0011'1111) <<  6) |
-               ((s->data[2] & 0b0011'1111) <<  0));
-
-        *s = yo_substring(*s, 3);
+        ret.byte_length = 3;
+        ret.codepoint = (((s.data[0] & 0b0000'1111) << 12) |
+                         ((s.data[1] & 0b0011'1111) <<  6) |
+                         ((s.data[2] & 0b0011'1111) <<  0));
     }
 
     //
     // 4-byte encoding
     //
 
-    if ((s->length >= 4) &&
-        (table[s->data[0]] == 4) &&
-        (table[s->data[1]] == 0) &&
-        (table[s->data[2]] == 0) &&
-        (table[s->data[3]] == 0))
+    if ((s.length >= 4) &&
+        (table[s.data[0]] == 4) &&
+        (table[s.data[1]] == 0) &&
+        (table[s.data[2]] == 0) &&
+        (table[s.data[3]] == 0))
     {
-        ret = (((s->data[0] & 0b0000'0111) << 18) |
-               ((s->data[1] & 0b0011'1111) << 12) |
-               ((s->data[2] & 0b0011'1111) <<  6) |
-               ((s->data[3] & 0b0011'1111) <<  0));
-
-        *s = yo_substring(*s, 4);
+        ret.byte_length = 4;
+        ret.codepoint = (((s.data[0] & 0b0000'0111) << 18) |
+                         ((s.data[1] & 0b0011'1111) << 12) |
+                         ((s.data[2] & 0b0011'1111) <<  6) |
+                         ((s.data[3] & 0b0011'1111) <<  0));
     }
 
-    YO_PROFILE_END(yo_utf8_codepoint_advance);
+    return ret;
+}
 
+static yo_decoded_codepoint_t yo_utf8_advance_codepoint(yo_string_t *s)
+{
+    yo_decoded_codepoint_t ret = yo_utf8_decode_codepoint(*s);
+    *s = yo_substring(*s, ret.byte_length);
     return ret;
 }
 
