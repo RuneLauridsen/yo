@@ -99,6 +99,7 @@ struct yo_box
     {
         char           *tag;
         char           *text;
+        yo_text_align_t text_align;
         yo_layout_t     child_layout;
         yo_border_t     border;
         yo_v4f_t        fill;

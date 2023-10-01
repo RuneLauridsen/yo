@@ -209,8 +209,22 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
         //
 
         yo_begin_frame((tick_current - tick_start) / 1000.0f, 0);
+#if 0
         yo_rectangle(0, YO_RED, yo_rel(1.0f), yo_rel(1.0f));
         yo_text(lorem);
+        yo_set_text_align(YO_TEXT_ALIGN_JUSTIFY);
+        yo_set_font_color(YO_MAGENTA);
+        yo_set_fill(YO_YELLOW);
+#endif
+
+#if 1
+        yo_demo();
+#endif
+
+#if 0
+        yo_button("a");
+#endif
+
         yo_end_frame(&global_platform->render_info);
 
         //

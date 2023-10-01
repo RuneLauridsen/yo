@@ -757,6 +757,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
 
     yo_box_t *area = yo_box(id, 0);
     yo_set_layout(YO_LAYOUT_STACK_X);
+    yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
 
     bool mouse_hover = yo_get_signal(area).hovered;
     float scroll_delta_y = 0.0f;

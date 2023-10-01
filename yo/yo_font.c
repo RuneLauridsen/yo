@@ -211,32 +211,6 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, uint32_t font_size, yo_a
 //
 ////////////////////////////////////////////////////////////////
 
-#if 0
-static yo_text_layout_char_t *yo_text_layout_char(yo_text_layout_t *layout)
-{
-    yo_text_layout_char_t *ret = NULL;
-    yo_text_layout_line_t *line = layout->lines.last;
-    yo_text_layout_chunk_t *chunk = line->chunks.last;
-
-    bool enough_space_in_chunk = chunk && chunk->count < countof(chunk->data);
-    if (!enough_space_in_chunk)
-    {
-        chunk = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_chunk_t, true);
-        if (chunk)
-        {
-            yo_slist_add(&line->chunks, chunk);
-        }
-    }
-
-    if (line)
-    {
-        ret = &chunk->data[chunk->count++];
-    }
-
-    return ret;
-}
-#endif
-
 static void yo_text_layout_commit_chunk(yo_text_layout_t *l)
 {
     if (l->current_chunk.string.length > 0)
@@ -272,6 +246,9 @@ static void yo_text_layout_commit_line(yo_text_layout_t *l, bool wrapped)
     }
 
     l->current_chunk.start_x     = 0.0f;
+
+    l->dim.x = YO_MAX(l->dim.x, l->current_line.advance_x);
+
     l->current_line.start_x      = 0.0f;
     l->current_line.start_y     += l->font_metrics.line_gap;
     l->current_line.advance_x    = 0.0;
@@ -362,12 +339,14 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
 
                 } break;
             }
-
-            l.dim.x = YO_MAX(l.dim.x, l.current_line.advance_x);
         }
 
-        l.dim.y = l.current_line.start_y + l.font_metrics.line_gap;
+        yo_text_layout_commit_chunk(&l);
+        yo_text_layout_commit_line(&l, false);
+
+        l.dim.y = l.current_line.start_y;
     }
+
     YO_PROFILE_END(yo_text_layout_first_pass);
 
     //

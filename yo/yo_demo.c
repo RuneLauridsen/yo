@@ -1,6 +1,6 @@
 #pragma once
 
-static void yo_demo_header(char *header)
+static void yo_demo_header(char *header_text)
 {
     yo_layout_y();
     YO_CHILD_SCOPE()
@@ -10,7 +10,7 @@ static void yo_demo_header(char *header)
         yo_fill(LINE_COLOR);
         yo_set_dim_y(yo_px(2));
 
-        yo_text(header);
+        yo_text(header_text);
         yo_set_padding_xy(10, 5);
         yo_set_font_size(30);
         yo_set_font_color(yo_rgb(100, 230, 250));
@@ -45,10 +45,12 @@ YO_API void yo_demo(void)
 
     yo_box(0, 0);
     yo_set_fill(pallette.background);
+    yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
 
     yo_begin_scroll_area_ex(yo_id("demo_scroller"), 20.f, state.scroll_smooth_rate);
 
     yo_box(0, 0);
+    yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
     yo_set_layout(YO_LAYOUT_STACK_Y);
     yo_set_padding(10, 10, 10, 10);
 

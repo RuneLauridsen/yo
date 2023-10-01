@@ -649,7 +649,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
         if (box->text)
         {
             yo_string_t string = yo_from_cstring(box->text);
-            box->text_layout = yo_text_layout(box->font, box->font_size, string, YO_TEXT_ALIGN_JUSTIFY, YO_TEXT_WRAP, avail_for_children_max);
+            box->text_layout = yo_text_layout(box->font, box->font_size, string, box->text_align, YO_TEXT_WRAP, avail_for_children_max);
 
             ret.x = box->text_layout.dim.x;
             ret.y = box->text_layout.dim.y;
@@ -817,15 +817,15 @@ static void yo_draw_aabb(yo_draw_aabb_t draw)
     }
 }
 
-static void yo_draw_text_layout(yo_text_layout_t laid_out, yo_v2f_t p0, yo_v2f_t p1)
+static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p1, yo_v4f_t color)
 {
     YO_UNUSED(p0, p1);
 
     // TODO(rune): Cursor + selection
 
-    yo_font_metrics_t font_metrics = yo_font_metrics(laid_out.font, laid_out.font_size);
+    yo_font_metrics_t font_metrics = yo_font_metrics(layout.font, layout.font_size);
 
-    for (yo_slist_each(yo_text_layout_line_t *, line, laid_out.lines.first))
+    for (yo_slist_each(yo_text_layout_line_t *, line, layout.lines.first))
     {
         for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
         {
@@ -835,11 +835,11 @@ static void yo_draw_text_layout(yo_text_layout_t laid_out, yo_v2f_t p0, yo_v2f_t
 
             while(yo_utf8_advance_codepoint(&remaining, &decoded))
             {
-                yo_atlas_node_t *glyph = yo_glyph_get(laid_out.font, laid_out.font_size, &yo_ctx->atlas, decoded.codepoint, true);
+                yo_atlas_node_t *glyph = yo_glyph_get(layout.font, layout.font_size, &yo_ctx->atlas, decoded.codepoint, true);
 
                 if (glyph)
                 {
-                    yo_v2f_t pos    = yo_v2f(line->start_x + x, line->start_y);
+                    yo_v2f_t pos    = yo_v2f(p0.x + line->start_x + x, p0.y + line->start_y);
                     yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
                     yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
 
@@ -851,7 +851,7 @@ static void yo_draw_text_layout(yo_text_layout_t laid_out, yo_v2f_t p0, yo_v2f_t
                         .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
                         .clip_p0    = p0,
                         .clip_p1    = p1,
-                        .color      = { YO_WHITE, YO_WHITE, YO_WHITE, YO_WHITE}, // TODO(rune): Text color.
+                        .color      = { color, color, color, color},
                         .texture_id = 42, // TODO(rune): Hardcoded texture id
                         .uv0        = uv.p0,
                         .uv1        = uv.p1,
@@ -976,7 +976,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
 #else
         if (box->text_layout.lines.first)
         {
-            yo_draw_text_layout(box->text_layout, p0, p1);
+            yo_draw_text_layout(box->text_layout, p0, p1, box->font_color);
         }
 #endif
         //
@@ -1993,6 +1993,11 @@ YO_API yo_v2f_t yo_get_content_dim(yo_box_t *box)
 
 YO_API void  yo_set_tag(char *tag)                                              { yo_ctx->latest_child->tag = tag; }
 YO_API void  yo_set_text(char *text)                                            { yo_ctx->latest_child->text = text; }
+YO_API void  yo_set_text_align(yo_text_align_t text_align)                      { yo_ctx->latest_child->text_align = text_align; }
+YO_API void  yo_set_text_align_left()                                           { yo_ctx->latest_child->text_align = YO_TEXT_ALIGN_LEFT; }
+YO_API void  yo_set_text_align_right()                                          { yo_ctx->latest_child->text_align = YO_TEXT_ALIGN_RIGHT; }
+YO_API void  yo_set_text_align_center()                                         { yo_ctx->latest_child->text_align = YO_TEXT_ALIGN_CENTER; }
+YO_API void  yo_set_text_align_justify()                                        { yo_ctx->latest_child->text_align = YO_TEXT_ALIGN_JUSTIFY; }
 YO_API void  yo_set_layout(yo_layout_t layout)                                  { yo_ctx->latest_child->child_layout = layout; }
 YO_API void  yo_set_fill(yo_v4f_t fill)                                         { yo_ctx->latest_child->fill = fill; }
 YO_API void  yo_set_border_s(yo_border_t border)                                { yo_ctx->latest_child->border = border; }
