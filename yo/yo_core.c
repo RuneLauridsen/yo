@@ -446,6 +446,13 @@ static float yo_align(yo_align_t alignment, float pref_dim, float avail_dim)
 
 static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t avail_max)
 {
+    // DEBUG(rune):
+
+    if (yo_cstring_equal(box->tag, "scroll_container"))
+    {
+        __nop();
+    }
+
     yo_v2f_t ret = { 0.0f, 0.0f };
 
     //
@@ -471,6 +478,17 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
     yo_v2f_sub_assign(&avail_for_children_min, box->margin.p[1]);
     yo_v2f_sub_assign(&avail_for_children_max, box->margin.p[0]);
     yo_v2f_sub_assign(&avail_for_children_max, box->margin.p[1]);
+
+    //
+    // NOTE(rune): Overflow.
+    //
+
+    if (box->overflow_x == YO_OVERFLOW_SCROLL) avail_for_children_max.x = YO_FLOAT32_MAX;
+    if (box->overflow_y == YO_OVERFLOW_SCROLL) avail_for_children_max.y = YO_FLOAT32_MAX;
+
+    //
+    // NOTE(rune): Child layout.
+    //
 
     if (box->children.first)
     {
@@ -612,27 +630,29 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                     }
                 }
 
-
-
                 //
                 // NOTE(rune): Place children.
                 //
 
                 yo_v2f_clamp_assign(&ret, avail_for_children_min, avail_for_children_max);
+
                 float space = YO_CLAMP_LOW(remaining_min.v[axis], 0.0f) / (child_count + 1);
-                float pos = space;
+                float pos = space - box->scroll_offset.v[axis];
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
                 {
-                    child->layout_rect.p0.v[axis] = pos;
-                    child->layout_rect.p1.v[axis] = pos + child->pref_dim.v[axis];
+                    // NOTE(rune): If child had overflow, child->pref_dim will be larger than available space.
+                    yo_v2f_t clamped_pref_dim = yo_v2f_min(child->pref_dim, avail_for_children_max);
 
-                    float aligned_orto = yo_align(child->align_a[orto], child->pref_dim.v[orto], ret.v[orto]);
+                    child->layout_rect.p0.v[axis] = pos;
+                    child->layout_rect.p1.v[axis] = pos + clamped_pref_dim.v[axis];
+
+                    float aligned_orto = yo_align(child->align_a[orto], clamped_pref_dim.v[orto], ret.v[orto]);
 
                     child->layout_rect.p0.v[orto] = aligned_orto;
-                    child->layout_rect.p1.v[orto] = aligned_orto + child->pref_dim.v[orto];
+                    child->layout_rect.p1.v[orto] = aligned_orto + clamped_pref_dim.v[orto];
 
-                    pos += child->pref_dim.v[axis];
+                    pos += clamped_pref_dim.v[axis];
                     pos += space;
                 }
 
@@ -670,7 +690,8 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
     // NOTE(rune): Obey constraints given by parent.
     //
 
-    yo_v2f_clamp_assign(&ret, avail_min, avail_max);
+    if (box->overflow_x != YO_OVERFLOW_SCROLL) YO_CLAMP_ASSIGN(&ret.x, avail_min.x, avail_max.x);
+    if (box->overflow_y != YO_OVERFLOW_SCROLL) YO_CLAMP_ASSIGN(&ret.y, avail_min.y, avail_max.y);
 
     return ret;
 }
@@ -1996,7 +2017,7 @@ YO_API yo_v2f_t yo_get_content_dim(yo_box_t *box)
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
         if (prev)
         {
-            ret = yo_rectf_dim(prev->layout_rect);
+            ret = prev->pref_dim;
         }
     }
     else

@@ -50,7 +50,6 @@ YO_API void yo_demo(void)
     yo_begin_scroll_area_ex(yo_id("demo_scroller"), 20.f, state.scroll_smooth_rate);
 
     yo_box(0, 0);
-    yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
     yo_set_layout(YO_LAYOUT_STACK_Y);
     yo_set_padding(10, 10, 10, 10);
 

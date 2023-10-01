@@ -8,13 +8,20 @@
 //
 ////////////////////////////////////////////////////////////////
 
-#define YO_MAX(a,b)                ((a)>(b)?(a):(b))
 #define YO_MIN(a,b)                ((a)<(b)?(a):(b))
+#define YO_MAX(a,b)                ((a)>(b)?(a):(b))
 
 #define YO_CLAMP(x,l,h)            YO_MIN(YO_MAX((x),(l)),(h))
 #define YO_CLAMP_LOW(x,l)          YO_MAX((x),(l))
 #define YO_CLAMP_HIGH(x,h)         YO_MIN((x),(h))
 #define YO_CLAMP01(x)              YO_CLAMP(x, 0, 1)
+
+#define YO_MIN_ASSIGN(a,b)         ((*a) = YO_MIN((*a), (b)))
+#define YO_MAX_ASSIGN(a,b)         ((*a) = YO_MAX((*a), (b)))
+#define YO_CLAMP_ASSIGN(x,l,h)     ((*x) = YO_CLAMP((*x), (l), (h)))
+#define YO_CLAMP_LOW_ASSIGN(x,l)   YO_MAX_ASSIGN((x),(l))
+#define YO_CLAMP_HIGH_ASSIGN(x,h)  YO_MIN_ASSIGN((x),(h))
+#define YO_CLAMP01_ASSIGN(x)       ((*x) = YO_CLAMP(x, 0, 1))
 
 ////////////////////////////////////////////////////////////////
 //

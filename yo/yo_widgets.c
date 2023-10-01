@@ -756,6 +756,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
     if (!anim_rate)   anim_rate   = 20.f;
 
     yo_box_t *area = yo_box(id, 0);
+    yo_set_tag("yo_scroll_area");
     yo_set_layout(YO_LAYOUT_STACK_X);
     yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
 
