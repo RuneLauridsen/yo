@@ -584,7 +584,6 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
     yo_box_t *bounding_box = yo_box(id, YO_BOX_ACTIVATE_ON_HOLD);
     yo_set_tag("TAG_SLIDER_MAIN");
     yo_set_dim_a(yo_rel(1.0f), style->axis);
-    yo_set_fill(YO_MAGENTA); // DEBUG(rune):
     yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, thumb_dim, bounding_box);
     YO_CHILD_SCOPE()
     {

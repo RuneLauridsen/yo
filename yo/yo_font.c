@@ -170,10 +170,6 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, uint32_t font_size, yo_a
                 ret->bearing_x = metrics.bearing_x;
                 ret->advance_x = metrics.advance_x;
             }
-            else
-            {
-                __nop(); // NOTE(rune): Not enough space in glyph atlas
-            }
         }
 
         //

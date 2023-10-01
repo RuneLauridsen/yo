@@ -114,22 +114,12 @@ static yo_box_t *yo_get_box_by_id_this_frame(yo_id_t id)
 
 static yo_box_t *yo_get_box_by_id_prev_frame(yo_id_t id)
 {
-    if (id == 5696385795564432402)
-    {
-        __nop();
-    }
-
     yo_box_t *ret = yo_get_box_by_id_(id, yo_ctx->prev_frame);
     return ret;
 }
 
 static void yo_add_box_to_hash(yo_box_t *box, yo_frame_t *frame)
 {
-    if (box->id == 5696385795564432402)
-    {
-        __nop();
-    }
-
     size_t slot_idx = box->id % countof(frame->hash_table);
     YO_SLSTACK_PUSH(frame->hash_table[slot_idx], next_hash, box);
 }
@@ -446,13 +436,6 @@ static float yo_align(yo_align_t alignment, float pref_dim, float avail_dim)
 
 static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t avail_max)
 {
-    // DEBUG(rune):
-
-    if (yo_cstring_equal(box->tag, "scroll_container"))
-    {
-        __nop();
-    }
-
     yo_v2f_t ret = { 0.0f, 0.0f };
 
     //
@@ -902,18 +885,6 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
 
     yo_anim_box(box);
 
-#if 1
-    if (yo_cstring_equal(box->tag, "ABCDEF"))
-    {
-        __nop();
-    }
-
-    if (yo_cstring_equal(box->text, "31"))
-    {
-        __nop();
-    }
-#endif
-
     yo_rectf_t rect = box->screen_rect;
 
     yo_v2f_t p0 = yo_v2f(rect.x0, rect.y0);
@@ -975,30 +946,10 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
         // Draw content
         //
 
-#if 0
-        if (box->text)
-        {
-            yo_text_field_state_t *text_field_state = NULL;
-            if ((box->id == yo_ctx->this_frame->active_id) && (box->flags & YO_BOX_DRAW_TEXT_CURSOR))
-            {
-                text_field_state = &box->text_field_state;
-            }
-
-            yo_draw_text(yo_from_cstring(box->text),
-                         0, 0,
-                         p0, p1, clip_p0, clip_p1,
-                         box->font,
-                         box->font_size,
-                         box->font_color,
-                         box->measured_text,
-                         text_field_state);
-        }
-#else
         if (box->text_layout.lines.first)
         {
             yo_draw_text_layout(box->text_layout, yo_v2f_add(p0, box->padding.p[0]), p1, box->font_color);
         }
-#endif
         //
         // Draw scaled elems
         //
