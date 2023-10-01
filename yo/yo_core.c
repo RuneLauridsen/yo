@@ -996,7 +996,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
 #else
         if (box->text_layout.lines.first)
         {
-            yo_draw_text_layout(box->text_layout, p0, p1, box->font_color);
+            yo_draw_text_layout(box->text_layout, yo_v2f_add(p0, box->padding.p[0]), p1, box->font_color);
         }
 #endif
         //
