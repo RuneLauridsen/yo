@@ -154,8 +154,8 @@ struct yo_box
     {
         yo_text_layout_t text_layout;
         yo_v2f_t pref_dim;
-        yo_rectf2_t layout_rect; // NOTE(rune): Relative to parent top-left.
-        yo_rectf2_t screen_rect; // NOTE(rune): Relative to screen top-left.
+        yo_rectf_t layout_rect; // NOTE(rune): Relative to parent top-left.
+        yo_rectf_t screen_rect; // NOTE(rune): Relative to screen top-left.
     };
 
     // NOTE(rune): Persistent userdata. Copied from previous frame.

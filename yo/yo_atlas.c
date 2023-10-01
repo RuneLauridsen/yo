@@ -98,9 +98,9 @@ static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
     return ret;
 }
 
-static yo_rectf2_t yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node)
+static yo_rectf_t yo_atlas_node_uv(yo_atlas_t *atlas, yo_atlas_node_t *node)
 {
-    yo_rectf2_t ret = { 0 };
+    yo_rectf_t ret = { 0 };
 
     if (node)
     {

@@ -701,8 +701,8 @@ static void yo_post_layout_recurse(yo_box_t *box, yo_v2f_t parent_top_left)
 
 static inline yo_v2f_t yo_scaled_space_to_pixel_space(yo_v2f_t scaled_point, yo_rectf_t pixel_rect)
 {
-    yo_v2f_t ret = yo_v2f(pixel_rect.x + (pixel_rect.w * scaled_point.x),
-                          pixel_rect.y + (pixel_rect.h * scaled_point.y));
+    yo_v2f_t ret = yo_v2f(pixel_rect.x0 + ((pixel_rect.x1 - pixel_rect.x0) * scaled_point.x),
+                          pixel_rect.y0 + ((pixel_rect.y1 - pixel_rect.y0) * scaled_point.y));
 
     return ret;
 }
@@ -842,8 +842,7 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p
                     yo_v2f_t pos    = yo_v2f(p0.x + line->start_x + x, p0.y + line->start_y);
                     yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
                     yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
-
-                    yo_rectf2_t uv = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
+                    yo_rectf_t uv   = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
 
                     yo_draw_aabb_t draw =
                     {
@@ -894,7 +893,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     }
 #endif
 
-    yo_rectf2_t rect = box->screen_rect;
+    yo_rectf_t rect = box->screen_rect;
 
     yo_v2f_t p0 = yo_v2f(rect.x0, rect.y0);
     yo_v2f_t p1 = yo_v2f(rect.x1, rect.y1);
@@ -992,7 +991,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
                 {
                     case YO_SCALED_ELEMENT_TYPE_TRIANGLE:
                     {
-                        yo_rectf_t map_rect = { p0.x, p0.y, p1.x - p0.x, p1.y - p0.y };
+                        yo_rectf_t map_rect = yo_rectf(p0, p1);
 
                         elm->triangle.p0 = yo_scaled_space_to_pixel_space(elm->triangle.p0, map_rect);
                         elm->triangle.p1 = yo_scaled_space_to_pixel_space(elm->triangle.p1, map_rect);
@@ -1885,7 +1884,7 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
 {
     yo_signal_t ret = { 0 };
 
-    yo_rectf2_t hit_test_rect = yo_rectf2(yo_v2f(0, 0), yo_v2f(9999, 9999));
+    yo_rectf_t hit_test_rect = yo_rectf(yo_v2f(0, 0), yo_v2f(9999, 9999));
 
     if (box)
     {
@@ -1948,9 +1947,9 @@ YO_API yo_v2f_t yo_get_screen_dim(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_rectf2_t yo_get_screen_rect(yo_box_t *box)
+YO_API yo_rectf_t yo_get_screen_rect(yo_box_t *box)
 {
-    yo_rectf2_t ret = { 0 };
+    yo_rectf_t ret = { 0 };
 
     if (box && box->id)
     {
@@ -1968,9 +1967,9 @@ YO_API yo_rectf2_t yo_get_screen_rect(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_rectf2_t yo_get_layout_rect(yo_box_t *box)
+YO_API yo_rectf_t yo_get_layout_rect(yo_box_t *box)
 {
-    yo_rectf2_t ret = { 0 };
+    yo_rectf_t ret = { 0 };
 
     if (box && box->id)
     {

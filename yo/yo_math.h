@@ -29,12 +29,7 @@
 #define yo_v3f(x,y,z)       ((yo_v3f_t){x,y,z})
 #define yo_v4f(x,y,z,w)     ((yo_v4f_t){x,y,z,w})
 #define yo_recti(x,y,w,h)   ((yo_recti_t){x,y,w,h})
-#if 0
 #define yo_rectf(p0,p1)     ((yo_rectf_t){p0,p1})
-#else
-#define yo_rectf(x,y,w,h)   ((yo_rectf_t){x,y,w,h})
-#endif
-#define yo_rectf2(p0,p1)    ((yo_rectf2_t){p0,p1})
 #define yo_rgba(r,g,b,a)    ((yo_v4f_t){(float)(r)/255.0f, (float)(g)/255.0f, (float)(b)/255.0f, (float)(a)/255.0f})
 #define yo_rgba32(r,g,b,a)  ((((uint32_t)(r) << 0)) | (((uint32_t)(g) << 8)) | (((uint32_t)(b) << 16)) | (((uint32_t)(a) << 24)))
 
@@ -131,7 +126,7 @@ static inline void yo_v2f_clamp_assign(yo_v2f_t *a, yo_v2f_t low, yo_v2f_t high)
 //
 ////////////////////////////////////////////////////////////////
 
-// TODO(rune): Should use (p0, p1) instead like rectf
+// TODO(rune): Should use (p0, p1) instead like rectf?
 typedef union yo_recti yo_recti_t;
 typedef union yo_recti yo_recti;
 union yo_recti
@@ -156,32 +151,6 @@ union yo_recti
 typedef union yo_rectf yo_rectf_t;
 union yo_rectf
 {
-#if 0
-    struct { yo_v2f_t p0, p1; };
-    struct { yo_v2f_t p[2]; };
-#else
-    struct
-    {
-        float x, y;
-        float w, h;
-    };
-    struct
-    {
-        float left, top;
-        float dim_x, dim_y;
-    };
-    struct
-    {
-        float pos[2];
-        float dim_a[2];
-    };
-#endif
-};
-
-// TODO(rune): Completely switch over to yo_rectf2_t
-typedef union yo_rectf2 yo_rectf2_t;
-union yo_rectf2
-{
     struct { yo_v2f_t p0, p1; };
     struct { yo_v2f_t p[2]; };
     struct { float x0, y0, x1, y1; };
@@ -198,17 +167,7 @@ static inline bool yo_clips_rect(yo_recti_t rect, yo_v2i_t point)
     return ret;
 }
 
-static inline bool yo_clips_rectf(yo_rectf_t rect, yo_v2f_t point)
-{
-    bool ret = ((point.x >= rect.x) &&
-                (point.x < (rect.x + rect.w)) &&
-                (point.y >= rect.y) &&
-                (point.y < (rect.y + rect.h)));
-
-    return ret;
-}
-
-static inline bool yo_clips_rectf2(yo_rectf2_t rect, yo_v2f_t point)
+static inline bool yo_clips_rectf2(yo_rectf_t rect, yo_v2f_t point)
 {
     bool ret = ((point.x >= rect.x0) &&
                 (point.x <= rect.x1) &&
@@ -234,11 +193,11 @@ static inline bool yo_recti_equal(yo_recti_t a, yo_recti_t b)
 }
 
 // TODO(rune): yo_recti_intersection
-static inline int32_t   yo_recti_width(yo_recti rect)       { return rect.w; }
-static inline int32_t   yo_recti_height(yo_recti rect)      { return rect.h; }
-static inline float     yo_rectf_width(yo_rectf2_t rect)    { return rect.x1 - rect.x0; }
-static inline float     yo_rectf_height(yo_rectf2_t rect)   { return rect.y1 - rect.y0; }
-static inline yo_v2f_t  yo_rectf_dim(yo_rectf2_t rect)      { return yo_v2f_sub(rect.p1, rect.p0); }
+static inline int32_t   yo_recti_width(yo_recti rect)      { return rect.w; }
+static inline int32_t   yo_recti_height(yo_recti rect)     { return rect.h; }
+static inline float     yo_rectf_width(yo_rectf_t rect)    { return rect.x1 - rect.x0; }
+static inline float     yo_rectf_height(yo_rectf_t rect)   { return rect.y1 - rect.y0; }
+static inline yo_v2f_t  yo_rectf_dim(yo_rectf_t rect)      { return yo_v2f_sub(rect.p1, rect.p0); }
 
 ////////////////////////////////////////////////////////////////
 //
