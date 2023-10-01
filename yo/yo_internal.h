@@ -149,32 +149,14 @@ struct yo_box
     // NOTE(rune): Hashtable.
     yo_box_t *next_hash;
 
-    struct // TODO(rune): Remove, old layout system.
-    {
-
-        // NOTE(rune): Calculated during measure pass.
-        struct
-        {
-            yo_v2f_t content_size;
-        };
-
-        // NOTE(rune): Calculated during arrange pass.
-        struct
-        {
-            bool arranged;
-            yo_rectf_t arranged_rect; // NOTE(rune): Relative to parent top-left.
-        };
-    };
-
-    // NOTE(rune): New layout system.
+    // NOTE(rune): Layout.
     struct
     {
         yo_text_layout_t text_layout;
         yo_v2f_t pref_dim;
         yo_rectf2_t layout_rect; // NOTE(rune): Relative to parent top-left.
+        yo_rectf2_t screen_rect; // NOTE(rune): Relative to screen top-left.
     };
-
-    yo_rectf2_t screen_rect;
 
     // NOTE(rune): Persistent userdata. Copied from previous frame.
     struct

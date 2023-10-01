@@ -558,9 +558,10 @@ YO_API yo_id_t          yo_pop_id(void);
 
 YO_API yo_box_t *       yo_box(yo_id_t id, yo_box_flags_t flags);
 YO_API yo_signal_t      yo_get_signal(yo_box_t *box);
-YO_API yo_rectf_t       yo_get_screen_rect(yo_box_t *box);
-YO_API yo_rectf_t       yo_get_arranged_rect(yo_box_t *box);
-YO_API yo_v2f_t         yo_get_content_dim(yo_box_t *box);
+YO_API yo_v2f_t         yo_get_screen_dim(yo_box_t *box);   // NOTE(rune): Post-layout dimensions, relative to screen top-left.
+YO_API yo_rectf2_t      yo_get_screen_rect(yo_box_t *box);  // NOTE(rune): Post-layout rect, relative to screen top-left.
+YO_API yo_rectf2_t      yo_get_layout_rect(yo_box_t *box);  // NOTE(rune): Post-layout rect, relative to parent top-left.
+YO_API yo_v2f_t         yo_get_content_dim(yo_box_t *box);  // NOTE(rune): Post-layout content dimensions.
 YO_API void             yo_set_tag(char *tag);
 YO_API void             yo_set_text(char *text);
 YO_API void             yo_set_text_align(yo_text_align_t text_align);

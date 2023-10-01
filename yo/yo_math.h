@@ -154,7 +154,6 @@ union yo_recti
 };
 
 typedef union yo_rectf yo_rectf_t;
-typedef union yo_rectf yo_rectf;
 union yo_rectf
 {
 #if 0
@@ -234,19 +233,12 @@ static inline bool yo_recti_equal(yo_recti_t a, yo_recti_t b)
     }
 }
 
-static inline int32_t yo_recti_width(yo_recti rect)
-{
-    int32_t ret = rect.dim_x;
-    return ret;
-}
-
-static inline int32_t yo_recti_height(yo_recti rect)
-{
-    int32_t ret = rect.dim_y;
-    return ret;
-}
-
 // TODO(rune): yo_recti_intersection
+static inline int32_t   yo_recti_width(yo_recti rect)       { return rect.w; }
+static inline int32_t   yo_recti_height(yo_recti rect)      { return rect.h; }
+static inline float     yo_rectf_width(yo_rectf2_t rect)    { return rect.x1 - rect.x0; }
+static inline float     yo_rectf_height(yo_rectf2_t rect)   { return rect.y1 - rect.y0; }
+static inline yo_v2f_t  yo_rectf_dim(yo_rectf2_t rect)      { return yo_v2f_sub(rect.p1, rect.p0); }
 
 ////////////////////////////////////////////////////////////////
 //

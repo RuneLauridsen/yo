@@ -490,8 +490,7 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
                 yo_circle(yo_id("circle"), 16, yo_rgb(64, 64, 64), 0, yo_v4f(0, 0, 0, 0), 0);
             }
 
-            yo_set_align_y(YO_ALIGN_CENTER);
-            yo_set_align_x(YO_ALIGN_CENTER);
+            yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
             yo_set_anim(YO_ANIM_FILL|YO_ANIM_BORDER, 20.0f);
 
 
@@ -504,6 +503,7 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
             if (*selected_index == index)
             {
                 yo_circle(0, 6, yo_rgb(200, 200, 200), 0, yo_v4f(0, 0, 0, 0), 0);
+                yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
             }
 
         }
@@ -553,13 +553,13 @@ YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_a
 
     *value = YO_CLAMP(*value, min, max);
 
-    yo_signal_t signal      = yo_get_signal(bounding_box);
-    yo_rectf_t  screen_rect = yo_get_screen_rect(bounding_box);
+    yo_signal_t signal  = yo_get_signal(bounding_box);
+    yo_v2f_t screen_dim = yo_get_screen_dim(bounding_box);
 
     if (signal.is_active && yo_query_mouse_button(YO_MOUSE_BUTTON_LEFT))
     {
         float fx = (float)(signal.mouse_pos.axis[axis]);
-        float fw = (float)(screen_rect.dim_a[axis]);
+        float fw = (float)(screen_dim.v[axis]);
 
         float offset = (fx - thumb_dim / 2) / (fw - thumb_dim);
         *value = yo_lerp(min, max, offset);
@@ -759,10 +759,10 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
     yo_set_layout(YO_LAYOUT_STACK_X);
     yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
 
-    bool mouse_hover = yo_get_signal(area).hovered;
     float scroll_delta_y = 0.0f;
 
-    if (mouse_hover)
+    yo_signal_t area_signal = yo_get_signal(area);
+    if (area_signal.hovered)
     {
         yo_v2f_t scroll = yo_query_scroll();
         scroll_delta_y = scroll.y * -scroll_rate;
@@ -781,22 +781,22 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         yo_set_overflow_y(YO_OVERFLOW_SCROLL);
         yo_set_anim(YO_ANIM_SCROLL, anim_rate);
 
-        yo_v2f_t *offset = yo_get_userdata(sizeof(yo_v2f_t));
+        yo_v2f_t *userdata = yo_get_userdata(sizeof(yo_v2f_t));
 
         //
         // Scroll behaviour
         //
 
-        float content_dim_y       = yo_get_content_dim(content_container).y;
-        float content_dim_avail_y = yo_get_arranged_rect(content_container).h;
+        float content_dim_y = yo_get_content_dim(content_container).y;
+        float screen_dim_y  = yo_get_screen_dim(content_container).y;
 
         float offset_min = 0.0f;
-        float offset_max = YO_MAX(content_dim_y - content_dim_avail_y, 0.0f);
+        float offset_max = YO_MAX(content_dim_y - screen_dim_y, 0.0f);
 
-        float content_ratio = content_dim_avail_y * YO_CLAMP01(content_dim_avail_y / content_dim_y);
+        float content_ratio = screen_dim_y * YO_CLAMP01(screen_dim_y / content_dim_y);
 
-        offset->y = YO_CLAMP(offset->y + scroll_delta_y, offset_min, offset_max);
-        yo_set_scroll(*offset);
+        userdata->y = YO_CLAMP(userdata->y + scroll_delta_y, offset_min, offset_max);
+        yo_set_scroll(*userdata);
 
         //
         // Scroll bar
@@ -824,7 +824,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
             slider_style.thumb_active     = thumb_style_hot;
             slider_style.thumb_hot        = thumb_style_hot;
 
-            yo_slider_ex(yo_id("vert slider"), &offset->y, offset_min, offset_max, &slider_style);
+            yo_slider_ex(yo_id("vert slider"), &userdata->y, offset_min, offset_max, &slider_style);
         }
 
         yo_begin_children_of(content_container);

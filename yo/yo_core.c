@@ -1928,21 +1928,16 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_rectf_t yo_get_screen_rect(yo_box_t *box)
+YO_API yo_v2f_t yo_get_screen_dim(yo_box_t *box)
 {
-    yo_rectf_t ret = { 0 };
+    yo_v2f_t ret = { 0 };
 
     if (box && box->id)
     {
-        yo_box_t *from_prev_frame = yo_get_box_by_id_prev_frame(box->id);
-        if (from_prev_frame)
+        yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
+        if (prev)
         {
-            // TODO(rune): Return in floating point.
-            ret.x = from_prev_frame->screen_rect.x0;
-            ret.y = from_prev_frame->screen_rect.y0;
-            ret.w = from_prev_frame->screen_rect.x1 - ret.x;
-            ret.h = from_prev_frame->screen_rect.y1 - ret.y;
-
+            ret = yo_rectf_dim(prev->screen_rect);
         }
     }
     else
@@ -1953,14 +1948,37 @@ YO_API yo_rectf_t yo_get_screen_rect(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_rectf_t yo_get_arranged_rect(yo_box_t *box)
+YO_API yo_rectf2_t yo_get_screen_rect(yo_box_t *box)
 {
-    yo_rectf_t ret = { 0 };
+    yo_rectf2_t ret = { 0 };
 
     if (box && box->id)
     {
-        yo_box_t *from_prev_frame = yo_get_box_by_id_prev_frame(box->id);
-        if (from_prev_frame) ret = from_prev_frame->arranged_rect;
+        yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
+        if (prev)
+        {
+            ret = prev->screen_rect;
+        }
+    }
+    else
+    {
+        YO_ASSERT(false); // NOTE(rune): Box was missing an id
+    }
+
+    return ret;
+}
+
+YO_API yo_rectf2_t yo_get_layout_rect(yo_box_t *box)
+{
+    yo_rectf2_t ret = { 0 };
+
+    if (box && box->id)
+    {
+        yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
+        if (prev)
+        {
+            ret = prev->layout_rect;
+        }
     }
     else
     {
@@ -1976,11 +1994,10 @@ YO_API yo_v2f_t yo_get_content_dim(yo_box_t *box)
 
     if (box && box->id)
     {
-        yo_box_t *from_prev_frame = yo_get_box_by_id_prev_frame(box->id);
-        if (from_prev_frame)
+        yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
+        if (prev)
         {
-            ret.x = from_prev_frame->content_size.x;
-            ret.y = from_prev_frame->content_size.y;
+            ret = yo_rectf_dim(prev->layout_rect);
         }
     }
     else
@@ -2068,6 +2085,8 @@ YO_API void *yo_get_userdata(size_t size)
     void *ret = box->userdata;
     return ret;
 }
+
+#define yo_get_userdata_struct(T) (T *)yo_get_userdata(sizeof(T))
 
 ////////////////////////////////////////////////////////////////
 //
