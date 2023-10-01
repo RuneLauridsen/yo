@@ -436,6 +436,8 @@ static float yo_align(yo_align_t alignment, float pref_dim, float avail_dim)
 
 static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t avail_max)
 {
+    yo_anim_box(box);
+
     yo_v2f_t ret = { 0.0f, 0.0f };
 
     //
@@ -882,8 +884,6 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p
 static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool on_top)
 {
     YO_PROFILE_BEGIN(yo_render_recurse);
-
-    yo_anim_box(box);
 
     yo_rectf_t rect = box->screen_rect;
 
