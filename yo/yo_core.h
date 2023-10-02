@@ -295,7 +295,6 @@ typedef union yo_sides_f32 yo_sides_f32_t;
 union yo_sides_f32
 {
     struct { float left, top, right, bottom; };
-    struct { float forward[2], backward[2]; };
     struct { float side[4]; };
     struct { yo_v2f_t p[2]; };
 };
@@ -599,7 +598,7 @@ YO_API void             yo_set_dim_x(yo_length_t dim);
 YO_API void             yo_set_dim_y(yo_length_t dim);
 YO_API void             yo_set_margin(float left, float top, float right, float bottom);
 YO_API void             yo_set_margin_xy(float x, float y);
-YO_API void             yo_set_margin_a(float forward, float backward, yo_axis_t axis);
+YO_API void             yo_set_margin_a(float front, float back, yo_axis_t axis);
 YO_API void             yo_set_margin_left(float left);
 YO_API void             yo_set_margin_top(float top);
 YO_API void             yo_set_margin_right(float right);

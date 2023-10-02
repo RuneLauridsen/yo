@@ -428,39 +428,38 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
     yo_v2f_t ret = { 0.0f, 0.0f };
 
-    //
-    // NOTE(rune): Obey fixed sized constraints.
-    //
-
-    yo_v2f_max_assign(&avail_min, yo_v2f(box->dim_x.min, box->dim_y.min));
-    yo_v2f_min_assign(&avail_max, yo_v2f(box->dim_x.max, box->dim_y.max));
+    yo_v2f_t margin  = yo_v2f_add(box->margin.p[0], box->margin.p[1]);
+    yo_v2f_t padding = yo_v2f_add(box->padding.p[0], box->padding.p[1]);
 
     //
-    // NOTE(rune): Padding and margin gives less room for children.
+    // (rune): Obey fixed sized constraints.
+    //
+
+    yo_v2f_max_assign(&avail_min, yo_v2f(box->dim_x.min + margin.x, box->dim_y.min + margin.y));
+    yo_v2f_min_assign(&avail_max, yo_v2f(box->dim_x.max + margin.x, box->dim_y.max + margin.y));
+
+    //
+    // (rune): Margin and padding gives less room for children.
     //
 
     yo_v2f_t avail_for_children_min = avail_min;
     yo_v2f_t avail_for_children_max = avail_max;
 
-    yo_v2f_sub_assign(&avail_for_children_min, box->padding.p[0]);
-    yo_v2f_sub_assign(&avail_for_children_min, box->padding.p[1]);
-    yo_v2f_sub_assign(&avail_for_children_max, box->padding.p[0]);
-    yo_v2f_sub_assign(&avail_for_children_max, box->padding.p[1]);
+    yo_v2f_sub_assign(&avail_for_children_max, margin);
+    yo_v2f_sub_assign(&avail_for_children_max, margin);
 
-    yo_v2f_sub_assign(&avail_for_children_min, box->margin.p[0]);
-    yo_v2f_sub_assign(&avail_for_children_min, box->margin.p[1]);
-    yo_v2f_sub_assign(&avail_for_children_max, box->margin.p[0]);
-    yo_v2f_sub_assign(&avail_for_children_max, box->margin.p[1]);
+    yo_v2f_sub_assign(&avail_for_children_min, padding);
+    yo_v2f_sub_assign(&avail_for_children_max, padding);
 
     //
-    // NOTE(rune): Overflow.
+    // (rune): Overflow.
     //
 
     if (box->overflow_x == YO_OVERFLOW_SCROLL) avail_for_children_max.x = YO_FLOAT32_MAX;
     if (box->overflow_y == YO_OVERFLOW_SCROLL) avail_for_children_max.y = YO_FLOAT32_MAX;
 
     //
-    // NOTE(rune): Child layout.
+    // (rune): Child layout.
     //
 
     if (box->children.first)
@@ -529,7 +528,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 float    total_rel       = 0.0f;
 
                 //
-                // NOTE(rune): Measure fixed sized children, and calculate sum of children rel.
+                // (rune): Measure fixed sized children, and calculate sum of children rel.
                 //
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
@@ -650,14 +649,11 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
     }
 
     //
-    // (rune): Padding + margin means parent needs to allocate more space for box.
+    // (rune): Margin + padding means parent needs to allocate more space for box.
     //
 
-    yo_v2f_add_assign(&ret, box->padding.p[0]);
-    yo_v2f_add_assign(&ret, box->padding.p[1]);
-
-    yo_v2f_add_assign(&ret, box->margin.p[0]);
-    yo_v2f_add_assign(&ret, box->margin.p[1]);
+    yo_v2f_add_assign(&ret, margin);
+    yo_v2f_add_assign(&ret, padding);
 
     //
     // (rune): Obey constraints given by parent.
@@ -671,10 +667,8 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
 static void yo_post_layout_recurse(yo_box_t *box, yo_v2f_t parent_top_left)
 {
-    box->screen_rect.x0 = box->layout_rect.x0 + parent_top_left.x + box->margin.p[0].x;
-    box->screen_rect.y0 = box->layout_rect.y0 + parent_top_left.y + box->margin.p[0].y;
-    box->screen_rect.x1 = box->layout_rect.x1 + parent_top_left.x + box->margin.p[0].x;
-    box->screen_rect.y1 = box->layout_rect.y1 + parent_top_left.y + box->margin.p[0].y;
+    box->screen_rect.p1 = yo_v2f_sub(yo_v2f_add(box->layout_rect.p1, parent_top_left), box->margin.p[1]);
+    box->screen_rect.p0 = yo_v2f_add(yo_v2f_add(box->layout_rect.p0, parent_top_left), box->margin.p[0]);
 
     parent_top_left.x = box->screen_rect.x0 + box->padding.p[0].x;
     parent_top_left.y = box->screen_rect.y0 + box->padding.p[0].y;
@@ -2009,7 +2003,7 @@ YO_API void  yo_set_dim_x(yo_length_t dim)                                      
 YO_API void  yo_set_dim_y(yo_length_t dim)                                      { yo_ctx->latest_child->dim_y = dim; }
 YO_API void  yo_set_margin(float left, float top, float right, float bottom)    { yo_ctx->latest_child->margin = yo_margin(left, top, right, bottom); }
 YO_API void  yo_set_margin_xy(float x, float y)                                 { yo_ctx->latest_child->margin = yo_margin_xy(x, y); }
-YO_API void  yo_set_margin_a(float forward, float backward, yo_axis_t axis)     { yo_ctx->latest_child->margin.forward[axis] = forward; yo_ctx->latest_child->margin.backward[axis] = backward; }
+YO_API void  yo_set_margin_a(float front, float back, yo_axis_t axis)           { yo_ctx->latest_child->margin.p[0].v[axis] = front; yo_ctx->latest_child->margin.p[1].v[axis] = back; }
 YO_API void  yo_set_margin_left(float left)                                     { yo_ctx->latest_child->margin.left = left; }
 YO_API void  yo_set_margin_top(float top)                                       { yo_ctx->latest_child->margin.top = top; }
 YO_API void  yo_set_margin_right(float right)                                   { yo_ctx->latest_child->margin.right = right; }
