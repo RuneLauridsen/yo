@@ -6,7 +6,7 @@ struct yo_atlas_node
     yo_recti rect;
     uint64_t key;
     uint64_t last_accessed_generation;
-    yo_atlas_node_t *next, *prev;
+    yo_atlas_node_t *next;
 
     // NOTE(rune): Glyph metrics
     // TODO(rune): Can the metrics be stored elsewhere? Not all texture atlases are for glyphs.

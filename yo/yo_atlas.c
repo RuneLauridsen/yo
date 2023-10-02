@@ -286,7 +286,7 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim)
         ret = yo_atlas_alloc_node(atlas);
         if (ret)
         {
-            yo_dlist_add(&best_shelf->node_list, ret);
+            yo_slist_add(&best_shelf->node_list, ret);
             ret->rect.x = best_shelf->used_x;
             ret->rect.y = best_shelf->base_y;
             ret->rect.w = dim.x;
