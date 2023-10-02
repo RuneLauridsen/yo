@@ -8,14 +8,14 @@
 #endif
 
 //
-// Fasthash
+// (rune): Fasthash
 //
 
 #include "thirdparty/fasthash.h"
 #include "thirdparty/fasthash.c"
 
 //
-// Font backend
+// (rune): Font backend
 //
 
 #include "yo_font_backend.h"
@@ -35,13 +35,13 @@
 #endif
 
 //
-// Static data
+// (rune): Static data
 //
 
 #include "yo_font_data.h"
 
 //
-// Internal headers
+// (rune): Internal headers
 //
 
 #include "yo_memory.h"
@@ -52,7 +52,7 @@
 #include "yo_internal.h"
 
 //
-// Implementation
+// (rune): Implementation
 //
 
 #include "yo_memory.c"

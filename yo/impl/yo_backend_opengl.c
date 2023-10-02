@@ -148,7 +148,7 @@ static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
 
 
     //
-    // Compile vertex shader
+    // (rune): Compile vertex shader
     //
     {
         backend->vs = backend->glCreateShader(GL_VERTEX_SHADER);
@@ -167,7 +167,7 @@ static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
     }
 
     //
-    // Compile fragment shader
+    // (rune): Compile fragment shader
     //
     {
         backend->fs = backend->glCreateShader(GL_FRAGMENT_SHADER);
@@ -186,7 +186,7 @@ static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
     }
 
     //
-    // Create program
+    // (rune): Create program
     //
     {
         backend->program = backend->glCreateProgram();
@@ -212,7 +212,7 @@ static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
 
 
     //
-    // Create buffers
+    // (rune): Create buffers
     //
     {
         backend->glGenVertexArrays(1, &backend->VAO);
@@ -224,41 +224,41 @@ static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
         backend->glBindBuffer(GL_ARRAY_BUFFER, backend->VBO);
         backend->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, backend->EBO);
 
-        // aRect[0]
+        // (rune): aRect[0]
         backend->glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, rect_p0)));
         backend->glEnableVertexAttribArray(0);
 
-        // aRect[1]
+        // (rune): aRect[1]
         backend->glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, rect_p1)));
         backend->glEnableVertexAttribArray(1);
 
-        // aCorner
+        // (rune): aCorner
         backend->glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner)));
         backend->glEnableVertexAttribArray(2);
 
-        // aCornerColor
+        // (rune): aCornerColor
         backend->glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner_color)));
         backend->glEnableVertexAttribArray(3);
 
-        // aCornerColor
+        // (rune): aCornerColor
         backend->glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, corner_radius)));
         backend->glEnableVertexAttribArray(4);
 
-        // aTexCoord
+        // (rune): aTexCoord
         backend->glVertexAttribPointer(5, 2, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, tex_coord)));
         backend->glEnableVertexAttribArray(5);
 
-        // aBorderThickness
+        // (rune): aBorderThickness
         backend->glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, border_thickness)));
         backend->glEnableVertexAttribArray(6);
 
-        // aBorderColor
+        // (rune): aBorderColor
         backend->glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(yo_vert_t), (void *)(offsetof(yo_vert_t, border_color)));
         backend->glEnableVertexAttribArray(7);
     }
 
     //
-    // Blending
+    // (rune): Blending
     //
     {
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -266,7 +266,7 @@ static void yo_backend_opengl_startup(yo_backend_opengl_t *backend)
     }
 
     //
-    // Z buffer
+    // (rune): Z buffer
     //
     {
         glEnable(GL_DEPTH_TEST);
@@ -317,12 +317,20 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
         {
             case YO_DRAW_CMD_AABB:
             {
+                //
+                // (rune): Allocate vertices and indicies
+                //
+
                 yo_vert_t *vertices = NULL;
                 yo_idx_t *indices = NULL;
                 if (!yo_backend_opengl_reserve_vert_idx(backend, 4, 6, &vertices, &indices))
                 {
                     break;
                 }
+
+                //
+                // (rune): Clipping
+                //
 
                 yo_v2f_t clipped_p0 = yo_v2f(YO_MAX(cmd->aabb.p0.x, cmd->aabb.clip_p0.x), YO_MAX(cmd->aabb.p0.y, cmd->aabb.clip_p0.y));
                 yo_v2f_t clipped_p1 = yo_v2f(YO_MIN(cmd->aabb.p1.x, cmd->aabb.clip_p1.x), YO_MIN(cmd->aabb.p1.y, cmd->aabb.clip_p1.y));
@@ -355,7 +363,7 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
                 }
 
                 //
-                // Vertices
+                // (rune): Vertices
                 //
 
                 // NOTE(rune): Set attributes which are the same on all 4 vertices
@@ -393,7 +401,7 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
                 vertices[3].tex_coord     = yo_v2f(cmd->aabb.uv1.x, cmd->aabb.uv1.y);
 
                 //
-                // Indices
+                // (rune): Indices
                 //
 
                 indices[0] = backend->idx + 0;
@@ -482,7 +490,7 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
 
 
     //
-    // Upload vertex and index buffers
+    // (rune): Upload vertex and index buffers
     //
 
     YO_PROFILE_BEGIN(opengl_upload_vertices);
@@ -496,7 +504,7 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
     YO_PROFILE_END(opengl_upload_indicies);
 
     //
-    // Upload texture
+    // (rune): Upload texture
     //
 
     YO_PROFILE_BEGIN(opengl_upload_texture);
@@ -527,7 +535,7 @@ static void yo_backend_opengl_render_frame(yo_backend_opengl_t *backend, yo_rend
     YO_PROFILE_END(opengl_upload_texture);
 
     //
-    // Render
+    // (rune): Render
     //
 
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);

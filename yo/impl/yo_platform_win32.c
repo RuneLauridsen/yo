@@ -23,7 +23,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
     YO_UNUSED(param);
 
     //
-    // Set OpenGL context.
+    // (rune): Set OpenGL context.
     //
 
     HDC dc = GetDC(global_platform->window);
@@ -31,13 +31,13 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
     ReleaseDC(global_platform->window, dc);
 
     //
-    // Compile shaders, create buffers, etc.
+    // (rune): Compile shaders, create buffers, etc.
     //
 
     yo_backend_opengl_startup(&global_platform->backend);
 
     //
-    // Set yo context
+    // (rune): Set yo context
     //
 
     yo_context_t *yo = yo_create_context(0);
@@ -45,7 +45,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
     global_platform->ctx = yo;
 
     //
-    // Input state
+    // (rune): Input state
     //
 
     yo_modifier_t modifiers = 0;
@@ -56,7 +56,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
     uint64_t tick_prev = 0;
 
     //
-    // Main application loop.
+    // (rune): Main application loop.
     //
 
     while (global_platform->running)
@@ -64,7 +64,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
         uint64_t tick_current = GetTickCount64();
 
         //
-        // Get window client rect
+        // (rune): Get window client rect
         //
 
         RECT client_rect = { 0 };
@@ -73,7 +73,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
         global_platform->render_info.h = client_rect.bottom - client_rect.top;
 
         //
-        // Receive messages from main thread.
+        // (rune): Receive messages from main thread.
         //
 
         yo_input_clear();
@@ -169,7 +169,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
         yo_input_mouse_state(mouse_button, mouse_pos.x, mouse_pos.y);
 
         //
-        // Build UI
+        // (rune): Build UI
         //
 
         yo_begin_frame((tick_current - tick_start) / 1000.0f, 0);
@@ -177,7 +177,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
         yo_end_frame(&global_platform->render_info);
 
         //
-        // Render
+        // (rune): Render
         //
 
         dc = GetDC(global_platform->window);
@@ -195,7 +195,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
     return 0;
 }
 
-static void yo_platform_win32_poll_events()
+static void yo_platform_win32_poll_events(void)
 {
 }
 
@@ -228,7 +228,7 @@ int main()
     platform.running = true;
 
     //
-    // Window creation
+    // (rune): Window creation
     //
 
     WNDCLASSA window_class = { 0 };
@@ -254,7 +254,7 @@ int main()
     ShowWindow(platform.window, SW_SHOW);
 
     //
-    // Pixel format
+    // (rune): Pixel format
     //
 
     HDC window_dc = GetDC(platform.window);
@@ -274,14 +274,14 @@ int main()
     SetPixelFormat(window_dc, suggested_pixel_format_index, &suggestedPixelFormat);
 
     //
-    // OpenGL context
+    // (rune): OpenGL context
     //
 
     platform.opengl_context = wglCreateContext(window_dc);
     wglMakeCurrent(window_dc, platform.opengl_context);
 
     //
-    // Load OpenGL extensions
+    // (rune): Load OpenGL extensions
     //
 
     platform.backend.glGenBuffers                = (PFNGLGENBUFFERSPROC)(yo_platform_win32_opengl_load_function("glGenBuffers"));
@@ -309,27 +309,27 @@ int main()
     platform.backend.glUniform1i                 = (PFNGLUNIFORM1IPROC)(yo_platform_win32_opengl_load_function("glUniform1i"));
 
     //
-    // V-Sync
+    // (rune): V-Sync
     //
 
     PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)yo_platform_win32_opengl_load_function("wglSwapIntervalEXT");
     wglSwapIntervalEXT(1);
 
     //
-    // Cleanup
+    // (rune): Cleanup
     //
 
     wglMakeCurrent(window_dc, NULL);
     ReleaseDC(platform.window, window_dc);
 
     //
-    // App thread
+    // (rune): App thread
     //
 
     CreateThread(0, 0, yo_platform_win32_app_thread, 0, 0, &platform.app_thread_id);
 
     //
-    // Message loop
+    // (rune): Message loop
     //
 
     MSG msg = { 0 };
@@ -396,11 +396,11 @@ int main()
                 if (vk_code == VK_BACK)                yo_input_key(YO_KEYCODE_BACKSPACE, modifiers);
                 if (vk_code == VK_SPACE)               yo_input_key(YO_KEYCODE_SPACE, modifiers);
                 if (vk_code == VK_RETURN)              yo_input_key(YO_KEYCODE_RETURN, modifiers);
-            } break;
+        } break;
 #endif
-        }
+    }
 
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
-    }
+}
 }

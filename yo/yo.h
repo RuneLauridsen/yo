@@ -1,7 +1,7 @@
 #pragma once
 
 //
-// Public headers
+// (rune): Public headers
 //
 
 #include "yo_math.h"

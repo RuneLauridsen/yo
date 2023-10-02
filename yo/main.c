@@ -1,7 +1,7 @@
 ﻿#define _CRT_SECURE_NO_WARNINGS
 
 //
-// Standard library
+// (rune): Standard library
 //
 
 #include <stdint.h>
@@ -12,7 +12,7 @@
 #include <assert.h>
 
 //
-// Tracy
+// (rune): Tracy
 //
 
 #if 1
@@ -28,7 +28,7 @@
 #endif
 
 //
-// Windows & OpenGL
+// (rune): Windows & OpenGL
 //
 
 #include <windows.h>
@@ -43,7 +43,7 @@
 #pragma comment ( lib, "gdi32.lib" )
 
 //
-// yo
+// (rune): yo
 //
 
 #define YO_API static
@@ -51,7 +51,7 @@
 #include "yo.c"
 
 //
-// Platform & backend
+// (rune): Platform & backend
 //
 
 #define YO_PLATFORM_API static
@@ -75,94 +75,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
 #define countof(x) (sizeof(x) / sizeof(x[0]))
 
-#if 0
-void build_ui(void)
-{
-    yo_v_layout();
-
-    YO_CHILD_SCOPE()
-    {
-        yo_text("a");
-        yo_text("a");
-        yo_text("a");
-    }
-
-}
-#elif 0
-void build_ui(void)
-{
-    static uint32_t i = 0;
-    yo_v_layout();
-    yo_new()->tag = "ABCDEF";
-    yo_new()->fill =  yo_palette_dark().background;
-    YO_CHILD_SCOPE()
-    {
-        float offset = (i % 240) > 120 ? 50.0f : 150.0f;
-
-        yo_button("Standard button");
-        yo_new()->margin = yo_margin(offset, 0, 0, 0);
-        yo_new()->anim |= YO_ANIM_MARGIN;
-        yo_new()->anim_rate = 10.0f;
-
-        yo_container(0);
-        yo_new()->h_dim = yo_px(200);
-        yo_new()->v_dim = yo_px(300);
-        yo_new()->fill  = yo_palette_dark().background_1;
-        YO_CHILD_SCOPE()
-        {
-            yo_begin_scroll_area(yo_id("my_scroll_area"));
-
-            for (int j = 0; j < 100; j++)
-            {
-                yo_format_text("%i", j);
-            }
-
-            yo_end_scroll_area();
-        }
-    }
-
-    i++;
-}
-
-#elif 0
-void build_ui(void)
-{
-    static char buffer[128] = { 'y', 'o', 'y', 'o', 'y', 'o', '\0' };
-
-    yo_v_layout();
-    YO_CHILD_SCOPE()
-    {
-        yo_text_field(buffer, sizeof(buffer));
-        yo_new()->fill       = yo_rgb(30, 30, 30);
-        yo_new()->font_color = yo_rgb(210, 210, 210);
-        yo_new()->font_size  = 20;
-
-        yo_text("static text");
-        yo_new()->font_color = yo_rgb(210, 210, 255);
-
-        yo_debug_show_atlas_partitions();
-
-        yo_slider(yo_id("a"), 0, 0, 1);
-    }
-}
-#elif 0
-yo_placement_t p = {
-  .h_dim = yo_px(200),
-  .v_dim = yo_px(150)
-};
-
-yo_begin_scroll_area(yo_id("hello"), p);
-
-for (yo_range32(it, 0, 1000))
-{
-    yo_format_text("%i", it);
-    yo_new()->font_color = YO_RED;
-}
-
-yo_end_scroll_area();
-
-}
-#elif 1
+#if 1
 void build_ui(void)
 {
     yo_layout_y();
@@ -296,16 +209,4 @@ void build_ui(void)
 
     yo_end_children();
 }
-#elif 0
-void build_ui()
-{
-    yo_text("A");
-    yo_new()->h_align = YO_ALIGN_LEFT;
-    yo_new()->v_align = YO_ALIGN_TOP;
-    //yo_new()->h_dim = yo_px(200);
-    //yo_new()->v_dim = yo_px(200);
-    yo_new()->font_color = YO_RED;
-    yo_new()->font_size = 200;
-}
-
 #endif

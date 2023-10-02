@@ -19,7 +19,6 @@ static char *error_message_table[YO_ERROR_COUNT] =
     [YO_ERROR_OUT_OF_PERSITENT_MEMORY]  = "Out of persistent memory",
     [YO_ERROR_OUT_OF_TEMPORARY_MEMORY]  = "Out of temporary memory",
     [YO_ERROR_PARENT_STACK_UNDERFLOW]   = "Mismatched yo_begin_children/yo_end_children",
-    [YO_ERROR_STYLE_STACK_UNDERFLOW]    = "Style stack underflow",
     [YO_ERROR_ID_COLLISION]             = "Id collision"
 };
 
@@ -124,17 +123,6 @@ static void yo_add_box_to_hash(yo_box_t *box, yo_frame_t *frame)
     YO_SLSTACK_PUSH(frame->hash_table[slot_idx], next_hash, box);
 }
 
-YO_API yo_font_id_t yo_font_load(void *data, size_t data_size)
-{
-    yo_font_id_t ret = yo_font_load_(data, data_size, &yo_ctx->font_backend);
-    return ret;
-}
-
-YO_API void yo_font_unload(yo_font_id_t font)
-{
-    yo_font_unload_(font, &yo_ctx->font_backend);
-}
-
 ////////////////////////////////////////////////////////////////
 //
 //
@@ -192,20 +180,20 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
     if (id)
     {
         //
-        // Check id collision
+        // (rune): Check id collision.
         //
 
         yo_box_t *already_in_hash = yo_get_box_by_id_this_frame(id);
         YO_ASSERT(already_in_hash == NULL && "Id collision");
 
         //
-        // Store in hash
+        // (rune): Store in hash.
         //
 
         yo_add_box_to_hash(box, yo_ctx->this_frame);
 
         //
-        // Copy persistent state from previous frame
+        // (rune): Copy persistent state from previous frame.
         //
 
         yo_box_t *box_prev = yo_get_box_by_id_prev_frame(id);
@@ -227,7 +215,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
 
 
     //
-    // Setup per frame parameters
+    // (rune): Setup per frame parameters.
     //
 
     box->flags      = flags;
@@ -241,7 +229,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
     box->font_size  = 20;
 
     //
-    // Hierarchy
+    // (rune): Hierarchy
     //
 
     if (yo_ctx->parent_stack.count > 0)
@@ -251,7 +239,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
     }
 
     //
-    // Persistent state
+    // (rune): Persistent state
     //
 
     if (id)
@@ -260,7 +248,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
         yo_signal_t signal = yo_get_signal(box);
 
         //
-        // Popup
+        // (rune): Popup
         //
 
         for (size_t i = 0; i < yo_array_count(&yo_ctx->popup_build_stack); i++)
@@ -282,7 +270,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
         }
 
         //
-        // Input flags
+        // (rune): Input flags
         //
 
         if ((box->flags & YO_BOX_HOT_ON_HOVER) &&
@@ -494,7 +482,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
             case YO_LAYTOUT_NONE:
             {
                 //
-                // NOTE(rune): Measure children.
+                // (rune): Measure children.
                 //
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
@@ -513,7 +501,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 yo_v2f_clamp_assign(&ret, avail_for_children_min, avail_for_children_max);
 
                 //
-                // NOTE(rune): Place children.
+                // (rune): Place children.
                 //
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
@@ -581,7 +569,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 remaining_min.y = YO_CLAMP_LOW(remaining_min.y, 0.0f);
 
                 //
-                // NOTE(rune): Measure relative sized children.
+                // (rune): Measure relative sized children.
                 //
 
                 for (yo_slist_each(yo_box_t *, child, box->children.first))
@@ -616,7 +604,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 }
 
                 //
-                // NOTE(rune): Place children.
+                // (rune): Place children.
                 //
 
                 yo_v2f_clamp_assign(&ret, avail_for_children_min, avail_for_children_max);
@@ -662,7 +650,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
     }
 
     //
-    // NOTE(rune): Padding + margin means parent needs to allocate more space for box.
+    // (rune): Padding + margin means parent needs to allocate more space for box.
     //
 
     yo_v2f_add_assign(&ret, box->padding.p[0]);
@@ -672,7 +660,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
     yo_v2f_add_assign(&ret, box->margin.p[1]);
 
     //
-    // NOTE(rune): Obey constraints given by parent.
+    // (rune): Obey constraints given by parent.
     //
 
     if (box->overflow_x != YO_OVERFLOW_SCROLL) YO_CLAMP_ASSIGN(&ret.x, avail_min.x, avail_max.x);
@@ -839,7 +827,7 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p
             yo_decoded_codepoint_t decoded = { 0 };
             float x = chunk->start_x;
 
-            while(yo_utf8_advance_codepoint(&remaining, &decoded))
+            while (yo_utf8_advance_codepoint(&remaining, &decoded))
             {
                 yo_atlas_node_t *glyph = yo_glyph_get(layout.font, layout.font_size, &yo_ctx->atlas, decoded.codepoint, true);
 
@@ -911,8 +899,9 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     if (box->on_top == on_top && box->id != YO_ID_ROOT)
     {
         //
-        // Draw fill and border
+        // (rune): Draw fill and border
         //
+
         {
             yo_corners_v4f_t corner_background = { box->fill, box->fill, box->fill, box->fill };
             yo_draw_aabb_t draw =
@@ -937,21 +926,22 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
             yo_draw_aabb(draw);
         }
 
-        p0.axis[YO_AXIS_X] += (int32_t)(box->border.thickness);
-        p0.axis[YO_AXIS_Y] += (int32_t)(box->border.thickness);
-        p1.axis[YO_AXIS_X] -= (int32_t)(box->border.thickness);
-        p1.axis[YO_AXIS_Y] -= (int32_t)(box->border.thickness);
+        p0.v[YO_AXIS_X] += (int32_t)(box->border.thickness);
+        p0.v[YO_AXIS_Y] += (int32_t)(box->border.thickness);
+        p1.v[YO_AXIS_X] -= (int32_t)(box->border.thickness);
+        p1.v[YO_AXIS_Y] -= (int32_t)(box->border.thickness);
 
         //
-        // Draw content
+        // (rune): Draw content
         //
 
         if (box->text_layout.lines.first)
         {
             yo_draw_text_layout(box->text_layout, yo_v2f_add(p0, box->padding.p[0]), p1, box->font_color);
         }
+
         //
-        // Draw scaled elems
+        // (rune): Draw scaled elems
         //
 
         {
@@ -982,7 +972,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     }
 
     //
-    // Draw content
+    // (rune): Draw content
     //
 
     for (yo_box_t *child = box->children.first;
@@ -1073,9 +1063,9 @@ static void yo_debug_print_hierarchy(yo_box_t *box, uint32_t depth)
     YO_UNUSED(depth);
 
 #if 1
-    if (depth == 0)
     {
-        yo_debug_print_divider();
+        if (depth == 0)
+            yo_debug_print_divider();
     }
 
     yo_debug_print("(%4i, %4i)-(%4i, %4i)       (%4i, %4i) (%4i x %4i) ",
@@ -1241,14 +1231,14 @@ YO_API yo_context_t *yo_create_context(yo_config_t *user_config)
             *ret = context_on_stack;
 
             //
-            // Frame state
+            // (rune): Frame state
             //
 
             ret->this_frame = &ret->frame_states[0];
             ret->prev_frame = &ret->frame_states[1];
 
             //
-            // Font backend
+            // (rune): Font backend
             //
 
             yo_font_backend_startup(&ret->font_backend);
@@ -1302,7 +1292,7 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
     YO_PROFILE_BEGIN(yo_begin_frame);
 
     //
-    // Lazy input / animations
+    // (rune): Lazy input / animations
     //
 
     if ((flags & YO_FRAME_FLAG_LAZY) && (yo_ctx->frame_count > 4))
@@ -1328,7 +1318,7 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
     }
 
     //
-    // Setup per-frame builder data
+    // (rune): Setup per-frame builder data
     //
 
     yo_arena_reset(&yo_ctx->this_frame->arena);
@@ -1349,13 +1339,13 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
     yo_ctx->this_frame->played_anim = false;
 
     //
-    // Update hot id
+    // (rune): Update hot id
     //
 
     yo_ctx->this_frame->hot_id = 0;
 
     //
-    // Update active id
+    // (rune): Update active id
     //
 
     yo_box_t *prev_active_box = yo_get_box_by_id_prev_frame(yo_ctx->prev_frame->active_id);
@@ -1376,7 +1366,7 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
     }
 
     //
-    // Setup perf timing
+    // (rune): Setup perf timing
     //
 
     yo_ctx->timings_index = (yo_ctx->timings_index + 1) % countof(yo_ctx->timings);
@@ -1402,68 +1392,69 @@ YO_API void yo_end_frame(yo_render_info_t *info)
     {
 
         //
-        // Layout
+        // (rune): Layout pass.
         //
-        {
-            YO_PROFILE_BEGIN(layout_pass);
-            yo_v2f_t layout_dim = yo_v2f((float)info->w, (float)info->h);
-            yo_ctx->root->pref_dim = layout_dim;
-            yo_ctx->root->layout_rect.p0 = yo_v2f(0.0f, 0.0f);
-            yo_ctx->root->layout_rect.p1 = layout_dim;
-            yo_layout_recurse(yo_ctx->root, layout_dim, layout_dim);
-            YO_PROFILE_END(layout_pass);
 
-            YO_PROFILE_BEGIN(post_layout_pass);
-            yo_post_layout_recurse(yo_ctx->root, yo_v2f(0.0f, 0.0f));
-            YO_PROFILE_END(post_layout_pass);
-        }
+        YO_PROFILE_BEGIN(layout_pass);
+        yo_v2f_t layout_dim = yo_v2f((float)info->w, (float)info->h);
+        yo_ctx->root->pref_dim = layout_dim;
+        yo_ctx->root->layout_rect.p0 = yo_v2f(0.0f, 0.0f);
+        yo_ctx->root->layout_rect.p1 = layout_dim;
+        yo_layout_recurse(yo_ctx->root, layout_dim, layout_dim);
+        YO_PROFILE_END(layout_pass);
 
         //
-        // Render
+        // (rune): Post layout pass.
         //
-        {
-            YO_PROFILE_BEGIN(render_pass);
 
-            yo_array_reset(&yo_ctx->draw_cmds, true);
-
-            info->tex.id     = 42; // TODO(rune): Hardcoded texture id
-            info->tex.dim   = yo_ctx->atlas.dim;
-            info->tex.pixels = yo_ctx->atlas.pixels;
-            info->tex.dirty  = yo_ctx->atlas.dirty;
-
-            yo_render_recurse(yo_ctx->root, info, false);
-            yo_render_recurse(yo_ctx->root, info, true);
-
-            info->draw_cmds       = yo_ctx->draw_cmds.elems;
-            info->draw_cmds_count = yo_ctx->draw_cmds.count;
-
-            YO_PROFILE_END(render_pass);
-        }
+        YO_PROFILE_BEGIN(post_layout_pass);
+        yo_post_layout_recurse(yo_ctx->root, yo_v2f(0.0f, 0.0f));
+        YO_PROFILE_END(post_layout_pass);
 
         //
-        // Print debug information
+        // (rune): Render pass.
         //
+
+        YO_PROFILE_BEGIN(render_pass);
+
+        yo_array_reset(&yo_ctx->draw_cmds, true);
+
+        info->tex.id     = 42; // TODO(rune): Hardcoded texture id
+        info->tex.dim   = yo_ctx->atlas.dim;
+        info->tex.pixels = yo_ctx->atlas.pixels;
+        info->tex.dirty  = yo_ctx->atlas.dirty;
+
+        yo_render_recurse(yo_ctx->root, info, false);
+        yo_render_recurse(yo_ctx->root, info, true);
+
+        info->draw_cmds       = yo_ctx->draw_cmds.elems;
+        info->draw_cmds_count = yo_ctx->draw_cmds.count;
+
+        YO_PROFILE_END(render_pass);
+
+        //
+        // (rune): Debug information
+        //
+
 #if 0
-        {
-            yo_clear_print_buffer();
+        yo_clear_print_buffer();
 
-            yo_debug_print_clear();
-            //yo_debug_print_input();
-            //yo_debug_print_cache(context);
-            yo_debug_print_hierarchy(yo_ctx->root, 0);
-            //yo_debug_print_freelist(context);
-            //yo_debug_print_performance();
-            //yo_debug_print_popups();
-            //yo_debug_svg_atlas(yo_g_context->glyph_atlas);
+        yo_debug_print_clear();
+        //yo_debug_print_input();
+        //yo_debug_print_cache(context);
+        yo_debug_print_hierarchy(yo_ctx->root, 0);
+        //yo_debug_print_freelist(context);
+        //yo_debug_print_performance();
+        //yo_debug_print_popups();
+        //yo_debug_svg_atlas(yo_g_context->glyph_atlas);
 
-            yo_flush_print_buffer();
-        }
+        yo_flush_print_buffer();
 #endif
 
     }
 
     //
-    // Swap frame state
+    // (rune): Swap frame state
     //
 
     {
@@ -2173,6 +2164,27 @@ YO_API void yo_scaled_checkmark(yo_v4f_t color)
     yo_scaled_triangle(yo_v2f(0.35f, 0.90f), yo_v2f(0.35f, 0.62f), yo_v2f(0.97f, 0.16f), color, color, color);
     yo_scaled_triangle(yo_v2f(0.82f, 0.03f), yo_v2f(0.35f, 0.62f), yo_v2f(0.97f, 0.16f), color, color, color);
 }
+
+////////////////////////////////////////////////////////////////
+//
+//
+// Font
+//
+//
+////////////////////////////////////////////////////////////////
+
+YO_API yo_font_id_t yo_font_load(void *data, size_t data_size)
+{
+    yo_font_id_t ret = yo_font_load_(data, data_size, &yo_ctx->font_backend);
+    return ret;
+}
+
+YO_API void yo_font_unload(yo_font_id_t font)
+{
+    yo_font_unload_(font, &yo_ctx->font_backend);
+}
+
+
 
 ////////////////////////////////////////////////////////////////
 //

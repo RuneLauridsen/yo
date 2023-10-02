@@ -158,7 +158,7 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, uint32_t font_size, yo_a
                                                                            font_size);
 
             //
-            // Allocate atlas region
+            // (rune): Allocate atlas region
             //
 
             ret = yo_atlas_node_new(atlas, yo_v2i(metrics.dim.x, metrics.dim.y));
@@ -173,7 +173,7 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_id_t font, uint32_t font_size, yo_a
         }
 
         //
-        // Rasterize
+        // (rune): Rasterize
         //
 
         if (ret)
@@ -268,7 +268,7 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
     float space_advance = space_glyph ? space_glyph->advance_x : 0.0f;
 
     //
-    // NOTE(rune): Divide text into chunks and lines.
+    // (rune): Divide text into chunks and lines.
     //
 
     YO_PROFILE_BEGIN(yo_text_layout_first_pass);
@@ -346,7 +346,7 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
     YO_PROFILE_END(yo_text_layout_first_pass);
 
     //
-    // NOTE(rune): Align chunks within each line.
+    // (rune): Align chunks within each line.
     //
 
     YO_PROFILE_BEGIN(yo_text_layout_second_pass);

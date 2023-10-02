@@ -56,7 +56,7 @@ YO_API void yo_demo(void)
     YO_CHILD_SCOPE()
     {
         //
-        // Section: yo_button()
+        // (rune): Section yo_button()
         //
 
         {
@@ -86,7 +86,7 @@ YO_API void yo_demo(void)
         yo_space_y(yo_px(50));
 
         //
-        // Section: yo_checkbox()
+        // (rune): Section yo_checkbox()
         //
 
         {
@@ -123,7 +123,7 @@ YO_API void yo_demo(void)
         yo_space_y(yo_px(50));
 
         //
-        // Section: yo_slider()
+        // (rune): Section yo_slider()
         //
 
         {
@@ -143,7 +143,7 @@ YO_API void yo_demo(void)
         yo_space_y(yo_px(50));
 
         //
-        // Section yo_text_field()
+        // (rune): Section yo_text_field()
         //
 
         {
@@ -157,7 +157,7 @@ YO_API void yo_demo(void)
         yo_space_y(yo_px(50));
 
         //
-        // Section yo_bullet_item
+        // (rune): Section yo_bullet_item
         //
 
         {
@@ -171,7 +171,7 @@ YO_API void yo_demo(void)
         yo_space_y(yo_px(50));
 
         //
-        // Section: Scrolling
+        // (rune): Section Scrolling
         //
 
         {
@@ -188,7 +188,7 @@ YO_API void yo_demo(void)
         yo_space_y(yo_px(50));
 
         //
-        // Section: Tables
+        // (rune): Section Tables
         //
 
         {

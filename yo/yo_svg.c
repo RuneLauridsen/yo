@@ -77,7 +77,7 @@ static void yo_svg_set_stroke(yo_svg_doc_t *doc, uint32_t stroke, uint32_t strok
 static void yo_svg_draw_rectangle(yo_svg_doc_t *doc, yo_v2i_t p, yo_v2i_t dim)
 {
     yo_svg_printf(doc, "<rect x=\"%i\" y=\"%i\" width=\"%i\" height=\"%i\" fill=\"#%06x\" stroke=\"#%06x\" stroke-width=\"%i\"/>\n",
-                  p.x, p.y, dim.w, dim.h, doc->fill, doc->stroke, doc->stroke_width);
+                  p.x, p.y, dim.x, dim.y, doc->fill, doc->stroke, doc->stroke_width);
 }
 
 static void yo_svg_draw_circle(yo_svg_doc_t *doc, yo_v2i_t c, int32_t r)

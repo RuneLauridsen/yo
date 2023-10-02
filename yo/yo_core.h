@@ -54,10 +54,8 @@ enum yo_error
     YO_ERROR_OUT_OF_PERSITENT_MEMORY,
     YO_ERROR_OUT_OF_TEMPORARY_MEMORY,
 
-    YO_ERROR_PARENT_STACK_UNDERFLOW,    // Mismatched yo_begin_children/yo_end_children calls.
-    YO_ERROR_STYLE_STACK_UNDERFLOW,     // Mismatched yo_PushStyle/yo_PopStyle calls
-
-    YO_ERROR_ID_COLLISION,             // key passed yo_Box was already used this frame
+    YO_ERROR_PARENT_STACK_UNDERFLOW,   // NOTE(rune): Mismatched yo_begin_children()/yo_end_children() calls.
+    YO_ERROR_ID_COLLISION,             // NOTE(rune): key passed yo_box() was already used this frame
 
     YO_ERROR_COUNT,
 };

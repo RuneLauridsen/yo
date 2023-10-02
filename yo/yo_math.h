@@ -48,28 +48,6 @@
 ////////////////////////////////////////////////////////////////
 //
 //
-// Scalars
-//
-//
-////////////////////////////////////////////////////////////////
-
-#if 0
-typedef int8_t   int8_t;
-typedef int16_t  int16_t;
-typedef int32_t  int32_t;
-typedef int64_t  int64_t;
-typedef uint8_t  uint8_t;
-typedef uint16_t uint16_t;
-typedef uint32_t uint32_t;
-typedef uint64_t uint64_t;
-typedef size_t   size_t;
-typedef float    float;
-typedef double   double;
-#endif
-
-////////////////////////////////////////////////////////////////
-//
-//
 // Vectors
 //
 //
@@ -79,7 +57,6 @@ typedef union yo_v2f yo_v2f_t;
 union yo_v2f
 {
     struct { float x, y; };
-    struct { float axis[2]; };
     struct { float v[2]; };
 };
 
@@ -88,7 +65,6 @@ union yo_v3f
 {
     struct { float x, y, z; };
     struct { float r, g, b; };
-    struct { float axis[3]; };
     struct { float v[3]; };
 };
 
@@ -105,9 +81,6 @@ typedef union yo_v2i yo_v2i_t;
 union yo_v2i
 {
     struct { int32_t x, y; };
-    struct { int32_t w, h; }; // TODO(rune): Remove
-    struct { int32_t dim_x, dim_y; };
-    struct { int32_t axis[2]; };
     struct { int32_t v[2]; };
 };
 
@@ -258,7 +231,7 @@ static inline bool yo_is_power_of_two(uint32_t a)
 
 static inline int32_t yo_round_up_to_power_of_two(int32_t a)
 {
-    // TODO(rune): Better implementation, fix infite loop, etc.
+    // TODO(rune): Better implementation, fix infinite loop, etc.
 
     int32_t ret = 1;
     while (ret <= a)

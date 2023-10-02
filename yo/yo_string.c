@@ -270,7 +270,9 @@ static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s)
 {
     // https://en.wikipedia.org/wiki/UTF-8#Encoding
 
+    //
     // NOTE(rune): Table generated with:
+    //
 #if 0
 #include <stdio.h>
     int main()
@@ -307,7 +309,7 @@ static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s)
     yo_decoded_codepoint_t ret = { 0 };
 
     //
-    // 1-byte encoding
+    // (rune): 1-byte encoding
     //
 
     if ((s.length >= 1) &&
@@ -318,7 +320,7 @@ static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s)
     }
 
     //
-    // 2-byte encoding
+    // (rune): 2-byte encoding
     //
 
     if ((s.length >= 2) &&
@@ -331,7 +333,7 @@ static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s)
     }
 
     //
-    // 3-byte encoding
+    // (rune): 3-byte encoding
     //
 
     if ((s.length >= 3) &&
@@ -346,7 +348,7 @@ static yo_decoded_codepoint_t yo_utf8_decode_codepoint(yo_string_t s)
     }
 
     //
-    // 4-byte encoding
+    // (rune): 4-byte encoding
     //
 
     if ((s.length >= 4) &&

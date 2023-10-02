@@ -210,7 +210,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
             uint32_t buffer_strlen = (uint32_t)strlen(buffer);
 
             //
-            // Move cursor
+            // (rune): Move cursor
             //
             {
                 bool cursor_moved = true;
@@ -298,7 +298,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
             size_t selection_strlen = selection_end - selection_begin;
 
             //
-            // Add character
+            // (rune): Add character
             //
             {
                 bool is_letter = box_signal.keycode >= 'A' && box_signal.keycode <= 'Z';
@@ -329,7 +329,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
             }
 
             //
-            // Delete character
+            // (rune): Delete character
             //
             {
                 // TODO(rune): Delete whole words with CTRL
@@ -558,7 +558,7 @@ YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_a
 
     if (signal.is_active && yo_query_mouse_button(YO_MOUSE_BUTTON_LEFT))
     {
-        float fx = (float)(signal.mouse_pos.axis[axis]);
+        float fx = (float)(signal.mouse_pos.v[axis]);
         float fw = (float)(screen_dim.v[axis]);
 
         float offset = (fx - thumb_dim / 2) / (fw - thumb_dim);
@@ -589,7 +589,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
     {
 
         //
-        // Slider line
+        // (rune): Slider line
         //
         {
             yo_box(0, 0);
@@ -603,7 +603,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
         }
 
         //
-        // Slider circle
+        // (rune): Slider circle
         //
         {
             yo_layout_a(style->axis);
@@ -771,7 +771,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
     yo_begin_children();
     {
         //
-        // Content container
+        // (rune): Content container
         //
 
         yo_box_t *content_container     = yo_box(yo_id("scroll_container"), 0);
@@ -784,7 +784,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         yo_v2f_t *userdata = yo_get_userdata(sizeof(yo_v2f_t));
 
         //
-        // Scroll behaviour
+        // (rune): Scroll behaviour
         //
 
         float content_dim_y = yo_get_content_dim(content_container).y;
@@ -799,7 +799,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         yo_set_scroll(*userdata);
 
         //
-        // Scroll bar
+        // (rune): Scroll bar
         //
 
         yo_box(0, 0);
