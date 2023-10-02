@@ -64,8 +64,8 @@ static void              yo_font_unload_(yo_font_id_t font, yo_font_backend_t *b
 ////////////////////////////////////////////////////////////////
 
 static uint64_t          yo_glyph_key(yo_font_id_t font, uint16_t font_size, uint32_t codepoint);
-static yo_atlas_node_t * yo_glyph_get(yo_font_id_t font, uint32_t font_size, yo_atlas_t *atlas, uint32_t codepoint, bool rasterize);
-static yo_font_metrics_t yo_font_metrics(yo_font_id_t font, uint32_t font_size);
+static yo_atlas_node_t * yo_glyph_get(yo_font_slot_t *font, uint32_t font_size, yo_atlas_t *atlas, uint32_t codepoint, bool rasterize);
+static yo_font_metrics_t yo_font_metrics(yo_font_slot_t *font, uint32_t font_size);
 
 ////////////////////////////////////////////////////////////////
 //

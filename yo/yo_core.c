@@ -807,56 +807,58 @@ static void yo_draw_aabb(yo_draw_aabb_t draw)
 
 static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p1, yo_v4f_t color)
 {
-    YO_UNUSED(p0, p1);
-
     // TODO(rune): Cursor + selection
 
-    yo_font_metrics_t font_metrics = yo_font_metrics(layout.font, layout.font_size);
-
-    for (yo_slist_each(yo_text_layout_line_t *, line, layout.lines.first))
+    yo_font_slot_t *slot = yo_font_slot_find(layout.font);
+    if (slot)
     {
-        for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
+        yo_font_metrics_t font_metrics = yo_font_metrics(slot, layout.font_size);
+
+        for (yo_slist_each(yo_text_layout_line_t *, line, layout.lines.first))
         {
-            yo_string_t remaining = chunk->string;
-            yo_decoded_codepoint_t decoded = { 0 };
-            float x = chunk->start_x;
-
-            while (yo_utf8_advance_codepoint(&remaining, &decoded))
+            for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
             {
-                yo_atlas_node_t *glyph = yo_glyph_get(layout.font, layout.font_size, &yo_ctx->atlas, decoded.codepoint, true);
+                yo_string_t remaining = chunk->string;
+                yo_decoded_codepoint_t decoded = { 0 };
+                float x = chunk->start_x;
 
-                if (glyph)
+                while (yo_utf8_advance_codepoint(&remaining, &decoded))
                 {
-                    yo_v2f_t pos    = yo_v2f(p0.x + line->start_x + x, p0.y + line->start_y);
-                    yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
-                    yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
-                    yo_rectf_t uv   = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
+                    yo_atlas_node_t *glyph = yo_glyph_get(slot, layout.font_size, &yo_ctx->atlas, decoded.codepoint, true);
 
-                    yo_draw_aabb_t draw =
+                    if (glyph)
                     {
-                        .p0         = yo_v2f_add(pos, offset),
-                        .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
-                        .clip_p0    = p0,
-                        .clip_p1    = p1,
-                        .color      = { color, color, color, color},
-                        .texture_id = 42, // TODO(rune): Hardcoded texture id
-                        .uv0        = uv.p0,
-                        .uv1        = uv.p1,
-                    };
+                        yo_v2f_t pos    = yo_v2f(p0.x + line->start_x + x, p0.y + line->start_y);
+                        yo_v2f_t dim    = yo_v2f((float)glyph->rect.w, (float)glyph->rect.h);
+                        yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
+                        yo_rectf_t uv   = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
 
-                    // TODO(rune): Support sub-pixel anti aliasing for text.
-                    draw.p0.x      = roundf(draw.p0.x);
-                    draw.p1.x      = roundf(draw.p1.x);
-                    draw.clip_p0.x = roundf(draw.clip_p0.x);
-                    draw.clip_p0.x = roundf(draw.clip_p0.x);
-                    draw.p0.y      = roundf(draw.p0.y);
-                    draw.p1.y      = roundf(draw.p1.y);
-                    draw.clip_p0.y = roundf(draw.clip_p0.y);
-                    draw.clip_p0.y = roundf(draw.clip_p0.y);
+                        yo_draw_aabb_t draw =
+                        {
+                            .p0         = yo_v2f_add(pos, offset),
+                            .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
+                            .clip_p0    = p0,
+                            .clip_p1    = p1,
+                            .color      = { color, color, color, color},
+                            .texture_id = 42, // TODO(rune): Hardcoded texture id
+                            .uv0        = uv.p0,
+                            .uv1        = uv.p1,
+                        };
 
-                    yo_draw_aabb(draw);
+                        // TODO(rune): Support sub-pixel anti aliasing for text.
+                        draw.p0.x      = roundf(draw.p0.x);
+                        draw.p1.x      = roundf(draw.p1.x);
+                        draw.clip_p0.x = roundf(draw.clip_p0.x);
+                        draw.clip_p0.x = roundf(draw.clip_p0.x);
+                        draw.p0.y      = roundf(draw.p0.y);
+                        draw.p1.y      = roundf(draw.p1.y);
+                        draw.clip_p0.y = roundf(draw.clip_p0.y);
+                        draw.clip_p0.y = roundf(draw.clip_p0.y);
 
-                    x += glyph->advance_x;
+                        yo_draw_aabb(draw);
+
+                        x += glyph->advance_x;
+                    }
                 }
             }
         }
