@@ -79,9 +79,9 @@ static yo_atlas_node_t *yo_atlas_node_find(yo_atlas_t *atlas, uint64_t key)
 
     yo_atlas_node_t *ret = NULL;
 
-    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t, shelf, &atlas->shelf_list))
     {
-        for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->node_list))
+        for (yo_dlist_each(yo_atlas_node_t, node, &shelf->node_list))
         {
             if (node->key == key)
             {
@@ -202,7 +202,7 @@ static yo_atlas_shelf_t *yo_atlas_prune_until_enough_y(yo_atlas_t *atlas, int32_
         // sorted by last_accessed_generation.
         stale = NULL;
         stale_last_accessed_generation = atlas->current_generation;
-        for (yo_dlist_each(yo_atlas_shelf_t *, it, &atlas->shelf_list))
+        for (yo_dlist_each(yo_atlas_shelf_t, it, &atlas->shelf_list))
         {
             // NOTE(rune): We assume that called has already checkout empty for space in empty shelves.
             if (it->used_x > 0 && it->last_accessed_generation < stale_last_accessed_generation)
@@ -240,7 +240,7 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim)
     yo_v2i_t rounded_dim                  = yo_v2i(dim.x, dim.y - dim.y % 8 + 8);
 
     // NOTE(rune): Find the shelves where we waste the least amount of y-space.
-    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t, shelf, &atlas->shelf_list))
     {
         int32_t wasted = shelf->dim_y - rounded_dim.y;
         bool fits = yo_atlas_shelf_can_fit(atlas, shelf, rounded_dim);
@@ -306,7 +306,7 @@ static yo_atlas_node_t *yo_atlas_node_new(yo_atlas_t *atlas, yo_v2i_t dim)
 
 static void yo_atlas_reset(yo_atlas_t *atlas)
 {
-    for (yo_dlist_each(yo_atlas_shelf_t *, it, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t, it, &atlas->shelf_list))
     {
         if (it->node_list.first)  yo_slist_queue_join(&atlas->node_freelist, &it->node_list);
     }

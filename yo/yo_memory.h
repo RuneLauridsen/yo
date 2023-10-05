@@ -177,7 +177,7 @@ static void     yo_heap_free(void *p);
 #define yo_slist_queue_push(list,n)       YO_SLQUEUE_PUSH((list)->first, (list)->last, next, n)
 #define yo_slist_queue_pop(list)          YO_SLQUEUE_POP((list)->first, (list)->last, next)
 #define yo_slist_add(list, node)          yo_slist_queue_push(list, node) // NOTE(rune): Just an alias for yo_slist_queue_push.
-#define yo_slist_each(T, it, list)        T it = (list); it; it = it->next
+#define yo_slist_each(T, it, list)        T *it = (list); it; it = it->next
 
 #define yo_slist_stack_push(head, n)      YO_SLSTACK_PUSH(head, next, n)
 #define yo_slist_stack_pop(head)          YO_SLSTACK_POP(head, next)
@@ -189,7 +189,7 @@ static void     yo_heap_free(void *p);
 #define yo_dlist_insert_before(list, node, before) YO_DLIST_INSERT   ((list)->last, (list)->first, prev, next, before, node)
 #define yo_dlist_remove(list, node)       YO_DLIST_REMOVE    ((list)->first, (list)->last, next, prev, node)
 #define yo_dlist_add(list, node)          yo_dlist_push_back(list, node) // NOTE(rune): Just an alias for yo_dlist_push_back.
-#define yo_dlist_each(T, it, list)        T it = (list)->first; it; it = it->next
+#define yo_dlist_each(T, it, list)        T *it = (list)->first; it; it = it->next
 
 #define yo_dlist_stack_push(head, node)   YO_DLIST_STACK_PUSH(head, next, prev, node)
 #define yo_dlist_stack_pop(head)          YO_DLIST_STACK_POP(head, next, prev)

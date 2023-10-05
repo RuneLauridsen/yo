@@ -387,7 +387,7 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
                 l.dim.x = wrap.x;
             }
 
-            for (yo_slist_each(yo_text_layout_line_t *, line, l.lines.first))
+            for (yo_slist_each(yo_text_layout_line_t, line, l.lines.first))
             {
                 float extra = l.dim.x - line->advance_x;
 
@@ -408,7 +408,7 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
                         {
                             float per_chunk = extra / (line->chunk_count - 1);
                             uint32_t i = 0;
-                            for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
+                            for (yo_slist_each(yo_text_layout_chunk_t, chunk, line->chunks.first))
                             {
                                 chunk->start_x += per_chunk * i;
                                 i++;

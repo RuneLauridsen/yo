@@ -486,7 +486,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 // (rune): Measure children.
                 //
 
-                for (yo_slist_each(yo_box_t *, child, box->children.first))
+                for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
                     yo_v2f_t min = yo_v2f(0, 0);
                     yo_v2f_t max = avail_for_children_max;
@@ -505,7 +505,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 // (rune): Place children.
                 //
 
-                for (yo_slist_each(yo_box_t *, child, box->children.first))
+                for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
                     float aligned_x = yo_align(child->align_x, child->pref_dim.x, ret.x);
                     float aligned_y = yo_align(child->align_y, child->pref_dim.y, ret.y);
@@ -533,7 +533,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 // (rune): Measure fixed sized children, and calculate sum of children rel.
                 //
 
-                for (yo_slist_each(yo_box_t *, child, box->children.first))
+                for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
                     if (child->dim_a[axis].is_rel == false)
                     {
@@ -573,7 +573,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 // (rune): Measure relative sized children.
                 //
 
-                for (yo_slist_each(yo_box_t *, child, box->children.first))
+                for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
                     if (child->dim_a[axis].is_rel)
                     {
@@ -613,7 +613,7 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 float space = YO_CLAMP_LOW(remaining_min.v[axis], 0.0f) / (child_count + 1);
                 float pos = space - box->scroll_offset.v[axis];
 
-                for (yo_slist_each(yo_box_t *, child, box->children.first))
+                for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
                     // NOTE(rune): If child had overflow, child->pref_dim will be larger than available space.
                     yo_v2f_t clamped_pref_dim = yo_v2f_min(child->pref_dim, avail_for_children_max);
@@ -680,7 +680,7 @@ static void yo_post_layout_recurse(yo_box_t *box, yo_v2f_t parent_top_left)
     parent_top_left.x = box->screen_rect.x0 + box->padding.p[0].x;
     parent_top_left.y = box->screen_rect.y0 + box->padding.p[0].y;
 
-    for (yo_slist_each(yo_box_t *, child, box->children.first))
+    for (yo_slist_each(yo_box_t, child, box->children.first))
     {
         yo_post_layout_recurse(child, parent_top_left);
     }
@@ -831,9 +831,9 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_text_field_state_t f
         yo_font_metrics_t font_metrics = yo_font_metrics(slot, layout.font_size);
         float x = 0.0f;
 
-        for (yo_slist_each(yo_text_layout_line_t *, line, layout.lines.first))
+        for (yo_slist_each(yo_text_layout_line_t, line, layout.lines.first))
         {
-            for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
+            for (yo_slist_each(yo_text_layout_chunk_t, chunk, line->chunks.first))
             {
                 yo_string_t remaining = chunk->string;
                 yo_decoded_codepoint_t decoded = { 0 };
@@ -1197,7 +1197,7 @@ static void yo_debug_print_hierarchy(yo_box_t *box, uint32_t depth)
     yo_debug_print("%s\n", YO_COALESCE(YO_COALESCE(box->text, box->tag), "no tag"));
 
 
-    for (yo_slist_each(yo_box_t *, child, box->children.first))
+    for (yo_slist_each(yo_box_t, child, box->children.first))
     {
         yo_debug_print_hierarchy(child, depth + 1);
     }
@@ -1283,7 +1283,7 @@ static void yo_debug_print_performance(void)
         yo_debug_print("Error: %s\n", errorMessage);
 #endif
     }
-    }
+}
 
 static void yo_debug_print_popups(void)
 {
@@ -1298,12 +1298,12 @@ static void yo_debug_print_text_layout(yo_text_layout_t layout)
 {
     printf("\033[2J" "\033[H");
 
-    for (yo_slist_each(yo_text_layout_line_t *, line, layout.lines.first))
+    for (yo_slist_each(yo_text_layout_line_t, line, layout.lines.first))
     {
         printf("LINE: chunk_count: %i\tadvance_x: %f\n",
                line->chunk_count, line->advance_x);
 
-        for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
+        for (yo_slist_each(yo_text_layout_chunk_t, chunk, line->chunks.first))
         {
             printf("\tCHUNK: start_x: %f\tadvance_x: %f\tstring: \"%.*s\"\n",
                    chunk->start_x, chunk->advance_x, yo_string_fmt(chunk->string));
@@ -2321,7 +2321,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
     yo_set_fill(yo_rgb(30, 30, 30));
     yo_begin_children();
 
-    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t, shelf, &atlas->shelf_list))
     {
         yo_box(0, 0);
         yo_set_align_y(YO_ALIGN_TOP);
@@ -2331,7 +2331,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
         yo_set_border_color(YO_BLACK);
         yo_set_border_thickness(1);
 
-        for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->node_list))
+        for (yo_dlist_each(yo_atlas_node_t, node, &shelf->node_list))
         {
             yo_box(0, 0);
             yo_set_align_x(YO_ALIGN_LEFT);
@@ -2394,7 +2394,7 @@ static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
     yo_set_fill(yo_rgb(30, 30, 30));
     yo_begin_children();
 
-    for (yo_dlist_each(yo_atlas_shelf_t *, shelf, &atlas->shelf_list))
+    for (yo_dlist_each(yo_atlas_shelf_t, shelf, &atlas->shelf_list))
     {
         yo_box(0, 0);
         yo_set_align_y(YO_ALIGN_TOP);
@@ -2405,7 +2405,7 @@ static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
         yo_set_border_color(YO_CYAN);
         yo_set_border_thickness(1);
 
-        for (yo_dlist_each(yo_atlas_node_t *, node, &shelf->node_list))
+        for (yo_dlist_each(yo_atlas_node_t, node, &shelf->node_list))
         {
             yo_box(0, 0);
             yo_set_align_x(YO_ALIGN_LEFT);
