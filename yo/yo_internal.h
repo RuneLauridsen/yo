@@ -18,6 +18,7 @@
 
 #define YO_COALESCE(a,b)            ((a)?(a):(b))
 #define YO_ZERO(T)                  ((T){0})
+#define YO_HAS_FLAG(a,b)            (bool)(((a)&(b)) != 0)
 
 ////////////////////////////////////////////////////////////////
 //

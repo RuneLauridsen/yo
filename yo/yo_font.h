@@ -82,6 +82,8 @@ struct yo_text_layout_chunk
 
     float start_x;
     float advance_x;
+    float strech;
+    bool  allow_strech;
 
     yo_text_layout_chunk_t *next;
 };
@@ -91,12 +93,12 @@ struct yo_text_layout_line
 {
     yo_slist(yo_text_layout_chunk_t) chunks;
 
-    uint16_t chunk_count;
-    bool wrapped;
-
     float start_x;
     float start_y;
     float advance_x;
+
+    uint16_t chunk_count;
+    bool wrapped;
 
     yo_text_layout_line_t *next;
 };
@@ -119,6 +121,7 @@ struct yo_text_layout
     // NOTE(rune): Layout calculation state.
     struct
     {
+        yo_string_t            remaining;
         yo_text_layout_line_t  current_line;
         yo_text_layout_chunk_t current_chunk;
     };

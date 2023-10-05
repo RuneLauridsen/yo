@@ -212,8 +212,19 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_slot_t *font, uint32_t font_size, y
 //
 ////////////////////////////////////////////////////////////////
 
+static void yo_text_layout_reset_chunk(yo_text_layout_t *l)
+{
+    l->current_chunk.string.data   = l->remaining.data;
+    l->current_chunk.string.length = 0;
+    l->current_chunk.start_x       = l->current_line.advance_x;
+    l->current_chunk.advance_x     = 0.0f;
+    l->current_chunk.strech        = 0.0f;
+    l->current_chunk.allow_strech  = false;
+}
+
 static void yo_text_layout_commit_chunk(yo_text_layout_t *l)
 {
+    // (rune): Add to list of chunks..
     if (l->current_chunk.string.length > 0)
     {
         yo_text_layout_chunk_t *chunk = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_chunk_t, true);
@@ -225,20 +236,26 @@ static void yo_text_layout_commit_chunk(yo_text_layout_t *l)
         }
     }
 
+    // (rune): Increase line total advance_x.
     l->current_line.advance_x += l->current_chunk.advance_x;
 
-    l->current_chunk.string.data   = NULL;
-    l->current_chunk.string.length = 0;
-    l->current_chunk.start_x       = 0.0f;
-    l->current_chunk.advance_x     = 0.0f;
+    // (rune): Begin new chunk.
+    yo_text_layout_reset_chunk(l);
+}
+
+static void yo_text_layout_reset_line(yo_text_layout_t *l)
+{
+    l->current_line.start_x                     = 0.0f;
+    l->current_line.advance_x                   = 0.0;
+    l->current_line.chunks.first                = NULL;
+    l->current_line.chunks.last                 = NULL;
+    l->current_line.chunk_count                 = 0;
 }
 
 static void yo_text_layout_commit_line(yo_text_layout_t *l, bool wrapped)
 {
-    yo_text_layout_line_t *line = l->lines.last;
-
-    line = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_line_t, true);
-
+    // (rune): Add to list of lines.
+    yo_text_layout_line_t *line = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_line_t, true);
     if (line)
     {
         *line = l->current_line;
@@ -246,16 +263,13 @@ static void yo_text_layout_commit_line(yo_text_layout_t *l, bool wrapped)
         yo_slist_add(&l->lines, line);
     }
 
-    l->current_chunk.start_x     = 0.0f;
-
+    // (rune): Total text layout dim is determined by the longest line.
     l->dim.x = YO_MAX(l->dim.x, l->current_line.advance_x);
 
-    l->current_line.start_x      = 0.0f;
-    l->current_line.start_y     += l->font_metrics.line_gap;
-    l->current_line.advance_x    = 0.0;
-    l->current_line.chunks.first = NULL;
-    l->current_line.chunks.last  = NULL;
-    l->current_line.chunk_count  = 0;
+    // (rune): Begin new line.
+    yo_text_layout_reset_line(l);
+    l->current_chunk.start_x = 0.0f;
+    l->current_line.start_y += l->font_metrics.line_gap;
 }
 
 static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo_string_t text,
@@ -263,7 +277,9 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
 {
     YO_PROFILE_BEGIN(yo_text_layout);
 
-    yo_text_layout_t l = { 0 };
+    // (rune): Setup text layout state.
+    yo_text_layout_t l = { .remaining = text };
+    yo_text_layout_commit_chunk(&l);
 
     // TODO(rune): Error handling
     yo_font_slot_t *slot = yo_font_slot_find(font);
@@ -274,7 +290,7 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
         l.font_metrics     = yo_font_metrics(slot, font_size);
 
         yo_atlas_node_t *space_glyph = yo_glyph_get(slot, font_size, &yo_ctx->atlas, ' ', false);
-        float space_advance = space_glyph ? space_glyph->advance_x : 0.0f;
+        float space_advance_x = space_glyph ? space_glyph->advance_x : 0.0f;
 
         //
         // (rune): Divide text into chunks and lines.
@@ -283,7 +299,7 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
         YO_PROFILE_BEGIN(yo_text_layout_first_pass);
         {
             yo_decoded_codepoint_t decoded = { 0 };
-            while (yo_utf8_advance_codepoint(&text, &decoded))
+            while ((decoded = yo_utf8_decode_codepoint(l.remaining)).byte_length > 0)
             {
                 switch (decoded.codepoint)
                 {
@@ -307,43 +323,49 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
 
                     case '\t':
                     {
-                        yo_text_layout_commit_chunk(&l);
-                        l.current_line.advance_x += space_advance * 8.0f;
+
                     } break;
 
                     case ' ':
                     {
-                        yo_text_layout_commit_chunk(&l);
-                        l.current_line.advance_x += space_advance;
+                        // (rune): End chunk of previous characters were non-stretchy.
+                        if (!l.current_chunk.allow_strech) yo_text_layout_commit_chunk(&l);
+                        l.current_chunk.allow_strech = true;
+
+                        l.current_chunk.advance_x += space_advance_x;
+                        l.current_chunk.string.length += decoded.byte_length;
                     } break;
 
                     default:
                     {
-                        if (l.current_chunk.string.data)
-                        {
-                            l.current_chunk.string.length += decoded.byte_length;
-                        }
-                        else
-                        {
-                            l.current_chunk.start_x       = l.current_line.advance_x;
-                            l.current_chunk.string.length = decoded.byte_length;;
-                            l.current_chunk.string.data   = text.data - decoded.byte_length;
-                        }
+                        // (rune): End chunk of previous characters were stretchy.
+                        if (l.current_chunk.allow_strech) yo_text_layout_commit_chunk(&l);
+                        l.current_chunk.allow_strech = false;
 
+                        // (rune): Determine advance_x of current codepoint.
+                        float advance_x = 0.0f;
                         yo_atlas_node_t *glyph = yo_glyph_get(slot, font_size, &yo_ctx->atlas, decoded.codepoint, false);
-                        l.current_chunk.advance_x     += glyph->advance_x;
+                        advance_x = glyph ? glyph->advance_x : space_advance_x;
 
+                        // (rune): Add codepoint to current chunk.
+                        l.current_chunk.advance_x += advance_x;
+                        l.current_chunk.string.length += decoded.byte_length;
+
+                        // (rune): Line wrap if outside wrap_dim.
                         if (l.current_line.advance_x + l.current_chunk.advance_x > wrap.x)
                         {
                             if (flags & YO_TEXT_WRAP)
                             {
                                 yo_text_layout_commit_line(&l, true);
-                                yo_text_layout_commit_chunk(&l);
                             }
                         }
 
                     } break;
                 }
+
+                // (rune): Move to next codepoint.
+                l.remaining.data   += decoded.byte_length;
+                l.remaining.length -= decoded.byte_length;
             }
 
             yo_text_layout_commit_chunk(&l);
@@ -360,30 +382,28 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
 
         YO_PROFILE_BEGIN(yo_text_layout_second_pass);
         {
+            if (align == YO_TEXT_ALIGN_JUSTIFY)
+            {
+                l.dim.x = wrap.x;
+            }
+
             for (yo_slist_each(yo_text_layout_line_t *, line, l.lines.first))
             {
-                float extra = wrap.x - line->advance_x;
+                float extra = l.dim.x - line->advance_x;
 
                 switch (align)
                 {
                     default:
-                    case YO_TEXT_ALIGN_LEFT:
-                    {
-                        line->start_x = 0.0f;
-                    } break;
-
-                    case YO_TEXT_ALIGN_RIGHT:
-                    {
-                        line->start_x = extra;
-                    } break;
-
-                    case YO_TEXT_ALIGN_CENTER:
-                    {
-                        line->start_x = extra / 2.0f;
-                    } break;
-
+                    case YO_TEXT_ALIGN_LEFT:    line->start_x = 0.0f;         break;
+                    case YO_TEXT_ALIGN_RIGHT:   line->start_x = extra;        break;
+                    case YO_TEXT_ALIGN_CENTER:  line->start_x = extra / 2.0f; break;
                     case YO_TEXT_ALIGN_JUSTIFY:
                     {
+                        if (line->chunks.last->allow_strech)
+                        {
+                            extra += line->chunks.last->advance_x;
+                        }
+
                         if (line->wrapped)
                         {
                             float per_chunk = extra / (line->chunk_count - 1);

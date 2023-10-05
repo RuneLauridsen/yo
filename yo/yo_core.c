@@ -422,6 +422,8 @@ static float yo_align(yo_align_t alignment, float pref_dim, float avail_dim)
     return ret;
 }
 
+static void yo_debug_print_text_layout(yo_text_layout_t layout);
+
 static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t avail_max)
 {
     yo_anim_box(box);
@@ -645,6 +647,11 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
             ret.x = box->text_layout.dim.x;
             ret.y = box->text_layout.dim.y;
+
+            if (box->text_align == YO_TEXT_ALIGN_JUSTIFY)
+            {
+                yo_debug_print_text_layout(box->text_layout);
+            }
         }
     }
 
@@ -805,9 +812,17 @@ static void yo_draw_aabb(yo_draw_aabb_t draw)
     }
 }
 
-static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p1, yo_v4f_t color)
+static void yo_draw_text_layout(yo_text_layout_t layout, yo_text_field_state_t field, bool is_field, yo_string_t full_string,
+                                yo_v2f_t p0, yo_v2f_t p1, yo_v4f_t color)
 {
     // TODO(rune): Cursor + selection
+
+    yo_v2f_t cursor_pos          = yo_v2f(0, 0);
+    yo_v2f_t selection_start_pos = yo_v2f(0, 0);
+    yo_v2f_t selection_end_pos   = yo_v2f(0, 0);
+
+    YO_UNUSED(cursor_pos, selection_start_pos, selection_end_pos);
+    YO_UNUSED(field, is_field, full_string);
 
     yo_font_slot_t *slot = yo_font_slot_find(layout.font);
     if (slot)
@@ -824,6 +839,8 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p
 
                 while (yo_utf8_advance_codepoint(&remaining, &decoded))
                 {
+                    size_t idx = remaining.data - full_string.data - decoded.byte_length;
+
                     yo_atlas_node_t *glyph = yo_glyph_get(slot, layout.font_size, &yo_ctx->atlas, decoded.codepoint, true);
 
                     if (glyph)
@@ -833,34 +850,57 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_v2f_t p0, yo_v2f_t p
                         yo_v2f_t offset = yo_v2f(glyph->bearing_x, glyph->bearing_y + font_metrics.ascent);
                         yo_rectf_t uv   = yo_atlas_node_uv(&yo_ctx->atlas, glyph);
 
-                        yo_draw_aabb_t draw =
+                        if (1) // TODO(rune): Skip whitespace draw.
                         {
-                            .p0         = yo_v2f_add(pos, offset),
-                            .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
-                            .clip_p0    = p0,
-                            .clip_p1    = p1,
-                            .color      = { color, color, color, color},
-                            .texture_id = 42, // TODO(rune): Hardcoded texture id
-                            .uv0        = uv.p0,
-                            .uv1        = uv.p1,
-                        };
+                            yo_draw_aabb_t draw =
+                            {
+                                .p0         = yo_v2f_add(pos, offset),
+                                .p1         = yo_v2f_add(pos, yo_v2f_add(offset, dim)),
+                                .clip_p0    = p0,
+                                .clip_p1    = p1,
+                                .color      = { color, color, color, color},
+                                .texture_id = 42, // TODO(rune): Hardcoded texture id
+                                .uv0        = uv.p0,
+                                .uv1        = uv.p1,
+                            };
 
-                        // TODO(rune): Support sub-pixel anti aliasing for text.
-                        draw.p0.x      = roundf(draw.p0.x);
-                        draw.p1.x      = roundf(draw.p1.x);
-                        draw.clip_p0.x = roundf(draw.clip_p0.x);
-                        draw.clip_p0.x = roundf(draw.clip_p0.x);
-                        draw.p0.y      = roundf(draw.p0.y);
-                        draw.p1.y      = roundf(draw.p1.y);
-                        draw.clip_p0.y = roundf(draw.clip_p0.y);
-                        draw.clip_p0.y = roundf(draw.clip_p0.y);
+                            if (idx == field.cursor) cursor_pos = pos;
 
-                        yo_draw_aabb(draw);
+                            // TODO(rune): Support sub-pixel anti aliasing for text.
+                            draw.p0.x      = roundf(draw.p0.x);
+                            draw.p1.x      = roundf(draw.p1.x);
+                            draw.clip_p0.x = roundf(draw.clip_p0.x);
+                            draw.clip_p0.x = roundf(draw.clip_p0.x);
+                            draw.p0.y      = roundf(draw.p0.y);
+                            draw.p1.y      = roundf(draw.p1.y);
+                            draw.clip_p0.y = roundf(draw.clip_p0.y);
+                            draw.clip_p0.y = roundf(draw.clip_p0.y);
+
+                            yo_draw_aabb(draw);
+                        }
 
                         x += glyph->advance_x;
                     }
                 }
             }
+        }
+
+        //
+        // (rune): Cursor + selection
+        //
+
+        if (is_field)
+        {
+            yo_draw_aabb_t draw =
+            {
+                .p0 = cursor_pos,
+                .p1 = yo_v2f_add(cursor_pos, yo_v2f(2, layout.font_metrics.line_gap)),
+                .clip_p0 = p0,
+                .clip_p1 = p1,
+                .color = { YO_CYAN, YO_CYAN, YO_CYAN, YO_CYAN }
+            };
+
+            yo_draw_aabb(draw);
         }
     }
 }
@@ -933,7 +973,10 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
 
         if (box->text_layout.lines.first)
         {
-            yo_draw_text_layout(box->text_layout, yo_v2f_add(p0, box->padding.p[0]), p1, box->font_color);
+            bool is_field = YO_HAS_FLAG(box->flags, YO_BOX_DRAW_TEXT_CURSOR);
+            yo_draw_text_layout(box->text_layout, box->text_field_state, is_field,
+                                yo_from_cstring(box->text),
+                                yo_v2f_add(p0, box->padding.p[0]), p1, box->font_color);
         }
 
         //
@@ -1187,6 +1230,23 @@ static void yo_debug_print_popups(void)
     {
         yo_popup_t *p = &yo_ctx->popups.elems[i];
         yo_debug_print("%llu\t%llu\t%llu\n", p->id, p->group_id, p->close_on_frame_count);
+    }
+}
+
+static void yo_debug_print_text_layout(yo_text_layout_t layout)
+{
+    printf("\033[2J" "\033[H");
+
+    for (yo_slist_each(yo_text_layout_line_t *, line, layout.lines.first))
+    {
+        printf("LINE: chunk_count: %i\tadvance_x: %f\n",
+               line->chunk_count, line->advance_x);
+
+        for (yo_slist_each(yo_text_layout_chunk_t *, chunk, line->chunks.first))
+        {
+            printf("\tCHUNK: start_x: %f\tadvance_x: %f\tstring: \"%.*s\"\n",
+                   chunk->start_x, chunk->advance_x, yo_string_fmt(chunk->string));
+        }
     }
 }
 

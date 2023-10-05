@@ -1,5 +1,19 @@
 #pragma once
 
+static char lorem[] =
+"Lorem ipsum dolor sit amet, consectetur         adipiscing elit. Donec dignissim viverra semper. "
+"In euismod ante vitae purus mollis egestas.\0Donec ac justo sit amet eros posuere ornare "
+"at sed urna. Sed dignissim metus eu semper lobortis. Sed bibendum, ipsum sodales tempor "
+"dapibus, metus tellus ullamcorper sapien, eu scelerisque velit libero eget ex. Quisque "
+"viverra, augue a volutpat tempor, erat neque bibendum massa, sed viverra orci risus sit "
+"amet sapien. Morbi non turpis a ex sollicitudin interdum. Aenean tincidunt congue augue eget "
+"accumsan. Cras urna metus, venenatis aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa   bbbbbbbbbbbbbbbbbbbbbbbbb "
+"cccccccccccccccceleifend sodales quis, gravida mollis tortor.\n"
+
+"Curabitur rutrum iaculis pretium. Nulla lectus nisl, vehicula quis suscipit eu, suscipit nec "
+"purus. Phasellus sed mollis erat. In eget felis tempor, egestas ex ut, venenatis mi. Mauris a est "
+"tempor magna rhoncus congue ac at orci.Phasellus nec massa interdum, accumsan nunc a, fringilla "
+"augue.Nullam sodales suscipit est, eget interdum enim maximus non.";
 
 static yo_platform_win32_t *global_platform; // TODO(rune): Remove global
 
@@ -173,7 +187,8 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
         //
 
         yo_begin_frame((tick_current - tick_start) / 1000.0f, 0);
-        yo_demo();
+        //yo_demo();
+        build_ui();
         yo_end_frame(&global_platform->render_info);
 
         //

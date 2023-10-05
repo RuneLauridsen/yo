@@ -50,6 +50,7 @@ enum yo_error
 {
     YO_ERROR_NONE,
 
+    // TODO(rune): Cleanup error messages.
     YO_ERROR_MEMORY_ALLOCATION_FAILED,
     YO_ERROR_OUT_OF_PERSITENT_MEMORY,
     YO_ERROR_OUT_OF_TEMPORARY_MEMORY,

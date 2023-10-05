@@ -53,13 +53,13 @@
 // (rune): Platform & backend
 //
 
+static void build_ui(void);
+
 #define YO_PLATFORM_API static
 #include "impl/yo_backend_opengl.h"
 #include "impl/yo_backend_opengl.c"
 #include "impl/yo_platform_win32.h"
 #include "impl/yo_platform_win32.c"
-
-static void build_ui(void);
 
 static void yo_platform_win32_app_main()
 {
@@ -80,9 +80,22 @@ void build_ui(void)
     yo_layout_y();
     yo_begin_children();
 
+    static char buffer[sizeof(lorem) + 100] = { 0 };
+    static bool buffer_init = false;
+
+    if (!buffer_init)
+    {
+        buffer_init = true;
+        yo_memcpy(buffer, lorem, sizeof(lorem));
+    }
+
     yo_button("Button 1");
     yo_button("Button 2");
     yo_button("Button 3");
+    yo_text_field(yo_id("my_txt"), buffer, sizeof(buffer));
+    yo_set_dim_x(yo_rel(1.0f));
+    yo_text(lorem);
+    yo_set_fill(yo_rgb(30, 30, 30));
 
     yo_end_children();
 }
