@@ -2,7 +2,7 @@
 
 static char lorem[] =
 "Lorem ipsum dolor sit amet, consectetur         adipiscing elit. Donec dignissim viverra semper. "
-"In euismod ante vitae purus mollis egestas.\0Donec ac justo sit amet eros posuere ornare "
+"In euismod ante vitae purus mollis egestas. Donec ac justo sit amet eros posuere ornare "
 "at sed urna. Sed dignissim metus eu semper lobortis. Sed bibendum, ipsum sodales tempor "
 "dapibus, metus tellus ullamcorper sapien, eu scelerisque velit libero eget ex. Quisque "
 "viverra, augue a volutpat tempor, erat neque bibendum massa, sed viverra orci risus sit "

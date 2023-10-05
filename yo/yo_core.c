@@ -818,6 +818,7 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_text_field_state_t f
     // TODO(rune): Cursor + selection
 
     yo_v2f_t cursor_pos          = yo_v2f(0, 0);
+    yo_v2f_t marker_pos            = yo_v2f(0, 0);
     yo_v2f_t selection_start_pos = yo_v2f(0, 0);
     yo_v2f_t selection_end_pos   = yo_v2f(0, 0);
 
@@ -828,6 +829,7 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_text_field_state_t f
     if (slot)
     {
         yo_font_metrics_t font_metrics = yo_font_metrics(slot, layout.font_size);
+        float x = 0.0f;
 
         for (yo_slist_each(yo_text_layout_line_t *, line, layout.lines.first))
         {
@@ -835,7 +837,7 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_text_field_state_t f
             {
                 yo_string_t remaining = chunk->string;
                 yo_decoded_codepoint_t decoded = { 0 };
-                float x = chunk->start_x;
+                x = chunk->start_x;
 
                 while (yo_utf8_advance_codepoint(&remaining, &decoded))
                 {
@@ -865,6 +867,7 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_text_field_state_t f
                             };
 
                             if (idx == field.cursor) cursor_pos = pos;
+                            if (idx == field.marker) marker_pos = pos;
 
                             // TODO(rune): Support sub-pixel anti aliasing for text.
                             draw.p0.x      = roundf(draw.p0.x);
@@ -885,22 +888,80 @@ static void yo_draw_text_layout(yo_text_layout_t layout, yo_text_field_state_t f
             }
         }
 
-        //
-        // (rune): Cursor + selection
-        //
-
         if (is_field)
         {
-            yo_draw_aabb_t draw =
-            {
-                .p0 = cursor_pos,
-                .p1 = yo_v2f_add(cursor_pos, yo_v2f(2, layout.font_metrics.line_gap)),
-                .clip_p0 = p0,
-                .clip_p1 = p1,
-                .color = { YO_CYAN, YO_CYAN, YO_CYAN, YO_CYAN }
-            };
+            //
+            // (rune): Cursor
+            //
 
-            yo_draw_aabb(draw);
+            {
+                yo_v2f_t dim = yo_v2f(2, layout.font_metrics.line_gap);
+                yo_draw_aabb_t draw =
+                {
+                    .p0 = cursor_pos,
+                    .p1 = yo_v2f_add(cursor_pos, dim),
+                    .clip_p0 = p0,
+                    .clip_p1 = p1,
+                    .color = { YO_CYAN, YO_CYAN, YO_CYAN, YO_CYAN }
+                };
+
+                yo_draw_aabb(draw);
+            }
+
+            //
+            // (rune): Selection
+            //
+
+            {
+                // (rune): Find selection min/max.
+                bool same_line = marker_pos.y == cursor_pos.y;
+                bool marker_before_cursor = (same_line) ? (marker_pos.x < cursor_pos.x) : (marker_pos.y < cursor_pos.y);
+                yo_v2f_t sel_min = marker_before_cursor ? marker_pos : cursor_pos;
+                yo_v2f_t sel_max = marker_before_cursor ? cursor_pos : marker_pos;
+
+                // (rune): Transparent selection draw.
+                yo_v4f_t sel_color = yo_rgba(0, 150, 150, 100);
+                yo_draw_aabb_t draw =
+                {
+                    .clip_p0 = p0,
+                    .clip_p1 = p1,
+                    .color = { sel_color, sel_color, sel_color, sel_color }
+                };
+
+                if (same_line)
+                {
+                    // (rune): Draw as single aabb.
+                    draw.p0 = sel_min;
+                    draw.p1 = yo_v2f_add(sel_max, yo_v2f(0, font_metrics.line_gap));
+                    yo_draw_aabb(draw);
+                }
+                else
+                {
+                    // rune): Draw as triple aabb.
+                    yo_draw_aabb_t draw_top = draw;
+                    yo_draw_aabb_t draw_mid = draw;
+                    yo_draw_aabb_t draw_bot = draw;
+
+                    draw_top.p0.x = sel_min.x;
+                    draw_top.p0.y = sel_min.y;
+                    draw_top.p1.x = p1.x;
+                    draw_top.p1.y = sel_min.y + font_metrics.line_gap;
+
+                    draw_mid.p0.x = p0.x;
+                    draw_mid.p0.y = sel_min.y + font_metrics.line_gap;
+                    draw_mid.p1.x = p1.x;
+                    draw_mid.p1.y = sel_max.y;
+
+                    draw_bot.p0.x = p0.x;
+                    draw_bot.p0.y = sel_max.y;
+                    draw_bot.p1.x = sel_max.x;
+                    draw_bot.p1.y = sel_max.y + font_metrics.line_gap;
+
+                    yo_draw_aabb(draw_top);
+                    yo_draw_aabb(draw_mid);
+                    yo_draw_aabb(draw_bot);
+                }
+            }
         }
     }
 }
@@ -1222,7 +1283,7 @@ static void yo_debug_print_performance(void)
         yo_debug_print("Error: %s\n", errorMessage);
 #endif
     }
-}
+    }
 
 static void yo_debug_print_popups(void)
 {
