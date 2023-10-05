@@ -15,8 +15,7 @@
 // (rune): Tracy
 //
 
-#if 1
-#   define TRACY_ENABLE
+#ifdef TRACY_ENABLE
 #   include "thirdparty/tracy/tracy/TracyC.h"
 #   define YO_PROFILE_FRAME_MARK() TracyCFrameMark
 #   define YO_PROFILE_BEGIN(name)  TracyCZoneN(__##name, #name, true)

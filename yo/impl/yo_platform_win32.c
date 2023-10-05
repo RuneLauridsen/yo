@@ -187,7 +187,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
 
         tick_prev = tick_current;
 
-        TracyCFrameMark;
+        YO_PROFILE_FRAME_MARK();
     }
 
     yo_platform_win32_app_main();
@@ -396,11 +396,11 @@ int main()
                 if (vk_code == VK_BACK)                yo_input_key(YO_KEYCODE_BACKSPACE, modifiers);
                 if (vk_code == VK_SPACE)               yo_input_key(YO_KEYCODE_SPACE, modifiers);
                 if (vk_code == VK_RETURN)              yo_input_key(YO_KEYCODE_RETURN, modifiers);
-        } break;
+            } break;
 #endif
-    }
+        }
 
         TranslateMessage(&msg);
         DispatchMessageA(&msg);
-}
+    }
 }

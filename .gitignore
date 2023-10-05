@@ -8,5 +8,7 @@ Debug/
 Release/
 /x64/
 /x86/
+yo/x64
+yo/x86
 svg/
 StructLayoutSettings.json
