@@ -52,11 +52,7 @@ static inline void yo_set_error(yo_error_t error)
 
 static inline yo_config_t yo_default_config(void)
 {
-    yo_config_t ret =
-    {
-        .popup_close_delay = 30,
-    };
-
+    yo_config_t ret = { 0 };
     return ret;
 }
 
@@ -159,8 +155,6 @@ static void yo_add_child_box(yo_box_t *parent, yo_box_t *child)
     yo_slist_queue_push(&parent->children, child);
 }
 
-static yo_popup_t *yo_get_popup_by_id(yo_id_t id); // TODO(rune): Cleanup declaration order
-
 static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
 {
     if (yo_ctx->error)
@@ -236,6 +230,8 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
     {
         yo_box_t *current_parent = yo_ctx->parent_stack.elems[yo_ctx->parent_stack.count - 1];
         yo_add_child_box(current_parent, box);
+
+        box->on_top = current_parent->on_top;
     }
 
     //
@@ -245,29 +241,7 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
     if (id)
     {
         // TODO(rune): Better way to check for input. We don't need the whole yo_signal_t struct.
-        yo_signal_t signal = yo_get_signal(box);
-
-        //
-        // (rune): Popup
-        //
-
-        for (size_t i = 0; i < yo_array_count(&yo_ctx->popup_build_stack); i++)
-        {
-            yo_id_t     current_popup_id = yo_ctx->popup_build_stack.elems[i];
-            yo_popup_t *current_popup    = yo_get_popup_by_id(current_popup_id);
-
-            if (current_popup && current_popup->is_building)
-            {
-                box->on_top = true;
-
-                if (signal.clicked) { current_popup->got_click = true; }
-                if (signal.hovered)
-                {
-                    current_popup->got_hover = true;
-                    current_popup->close_on_frame_count = yo_ctx->frame_count + yo_ctx->config.popup_close_delay;
-                }
-            }
-        }
+        yo_signal_t signal = yo_get_signal_of(box);
 
         //
         // (rune): Input flags
@@ -530,40 +504,52 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
                 float    total_rel       = 0.0f;
 
                 //
-                // (rune): Measure fixed sized children, and calculate sum of children rel.
+                // (rune): Measure fixed sized and floating children + calculate sum of children rel.
                 //
 
                 for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
-                    if (child->dim_a[axis].is_rel == false)
+                    if (!child->floating_a[axis])
                     {
-                        yo_v2f_t min = yo_v2f(0, 0);
-                        yo_v2f_t max = remaining_max;
+                        if (child->dim_a[axis].is_rel == false)
+                        {
+                            // (rune): Fixed sized children.
+                            yo_v2f_t min = yo_v2f(0, 0);
+                            yo_v2f_t max = remaining_max;
 
-                        if (child->dim_a[orto].is_rel) min.v[orto] = child_pref_dim_max.v[orto] * child->dim_a[orto].rel;
+                            if (child->dim_a[orto].is_rel) min.v[orto] = child_pref_dim_max.v[orto] * child->dim_a[orto].rel;
 
-                        yo_v2f_t child_pref_dim = yo_layout_recurse(child, min, max);
-                        child->pref_dim = child_pref_dim;
+                            yo_v2f_t child_pref_dim = yo_layout_recurse(child, min, max);
+                            child->pref_dim = child_pref_dim;
 
-                        remaining_min.v[axis] -= child_pref_dim.v[axis];
-                        remaining_max.v[axis] -= child_pref_dim.v[axis];
+                            remaining_min.v[axis] -= child_pref_dim.v[axis];
+                            remaining_max.v[axis] -= child_pref_dim.v[axis];
 
-                        child_pref_dim_max.x = YO_MAX(child_pref_dim_max.x, child_pref_dim.x);
-                        child_pref_dim_max.y = YO_MAX(child_pref_dim_max.y, child_pref_dim.y);
+                            child_pref_dim_max.x = YO_MAX(child_pref_dim_max.x, child_pref_dim.x);
+                            child_pref_dim_max.y = YO_MAX(child_pref_dim_max.y, child_pref_dim.y);
 
-                        child_count_abs++;
-                        total_abs += child_pref_dim.v[axis];
+                            child_count_abs++;
+                            total_abs += child_pref_dim.v[axis];
 
-                        ret.v[axis] += child->pref_dim.v[axis];
-                        ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
+                            ret.v[axis] += child->pref_dim.v[axis];
+                            ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
+                        }
+                        else
+                        {
+                            child_count_rel++;
+                            total_rel += child->dim_a[axis].rel;
+                        }
+
+                        child_count++;
                     }
                     else
                     {
-                        child_count_rel++;
-                        total_rel += child->dim_a[axis].rel;
+                        // (rune): Floating children.
+                        yo_v2f_t min = yo_v2f(0, 0);
+                        yo_v2f_t max = yo_v2f(YO_FLOAT32_MAX, YO_FLOAT32_MAX);
+                        yo_v2f_t child_pref_dim = yo_layout_recurse(child, min, max);
+                        child->pref_dim = child_pref_dim;
                     }
-
-                    child_count++;
                 }
 
                 remaining_min.x = YO_CLAMP_LOW(remaining_min.x, 0.0f);
@@ -575,32 +561,35 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
                 for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
-                    if (child->dim_a[axis].is_rel)
+                    if (!child->floating_a[axis])
                     {
-                        float fraction = child->dim_a[axis].rel / total_rel;
-
-                        yo_v2f_t space_for_child = { 0.0f, 0.0f };
-                        space_for_child.v[axis] = (avail_max.v[axis] - total_abs) * fraction;
-                        space_for_child.v[orto] = avail_for_children_max.v[orto];
-
-                        yo_v2f_t min = yo_v2f(0, 0);
-                        yo_v2f_t max = space_for_child;
-
-                        min.v[axis] = max.v[axis];
-
-                        if (child->dim_a[orto].is_rel)
+                        if (child->dim_a[axis].is_rel)
                         {
-                            min.v[orto] = child_pref_dim_max.v[orto] * child->dim_a[orto].rel;
+                            float fraction = child->dim_a[axis].rel / total_rel;
+
+                            yo_v2f_t space_for_child = { 0.0f, 0.0f };
+                            space_for_child.v[axis] = (avail_max.v[axis] - total_abs) * fraction;
+                            space_for_child.v[orto] = avail_for_children_max.v[orto];
+
+                            yo_v2f_t min = yo_v2f(0, 0);
+                            yo_v2f_t max = space_for_child;
+
+                            min.v[axis] = max.v[axis];
+
+                            if (child->dim_a[orto].is_rel)
+                            {
+                                min.v[orto] = child_pref_dim_max.v[orto] * child->dim_a[orto].rel;
+                            }
+
+                            yo_v2f_t child_pref_dim = yo_layout_recurse(child, min, max);
+                            child->pref_dim = child_pref_dim;
+
+                            remaining_min.v[axis] -= child_pref_dim.v[axis];
+                            remaining_max.v[axis] -= child_pref_dim.v[axis];
+
+                            ret.v[axis] += child->pref_dim.v[axis];
+                            ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
                         }
-
-                        yo_v2f_t child_pref_dim = yo_layout_recurse(child, min, max);
-                        child->pref_dim = child_pref_dim;
-
-                        remaining_min.v[axis] -= child_pref_dim.v[axis];
-                        remaining_max.v[axis] -= child_pref_dim.v[axis];
-
-                        ret.v[axis] += child->pref_dim.v[axis];
-                        ret.v[orto] = YO_MAX(ret.v[orto], child->pref_dim.v[orto]);
                     }
                 }
 
@@ -615,19 +604,27 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
                 for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
-                    // NOTE(rune): If child had overflow, child->pref_dim will be larger than available space.
-                    yo_v2f_t clamped_pref_dim = yo_v2f_min(child->pref_dim, avail_for_children_max);
+                    if (!child->floating_a[axis])
+                    {
+                        // NOTE(rune): If child had overflow, child->pref_dim will be larger than available space.
+                        yo_v2f_t clamped_pref_dim = yo_v2f_min(child->pref_dim, avail_for_children_max);
 
-                    child->layout_rect.p0.v[axis] = pos;
-                    child->layout_rect.p1.v[axis] = pos + clamped_pref_dim.v[axis];
+                        child->layout_rect.p0.v[axis] = pos;
+                        child->layout_rect.p1.v[axis] = pos + clamped_pref_dim.v[axis];
 
-                    float aligned_orto = yo_align(child->align_a[orto], clamped_pref_dim.v[orto], ret.v[orto]);
+                        float aligned_orto = yo_align(child->align_a[orto], clamped_pref_dim.v[orto], ret.v[orto]);
 
-                    child->layout_rect.p0.v[orto] = aligned_orto;
-                    child->layout_rect.p1.v[orto] = aligned_orto + clamped_pref_dim.v[orto];
+                        child->layout_rect.p0.v[orto] = aligned_orto;
+                        child->layout_rect.p1.v[orto] = aligned_orto + clamped_pref_dim.v[orto];
 
-                    pos += clamped_pref_dim.v[axis];
-                    pos += space;
+                        pos += clamped_pref_dim.v[axis];
+                        pos += space;
+                    }
+                    else
+                    {
+                        child->layout_rect.p0 = yo_v2f(0, 0);
+                        child->layout_rect.p1 = child->pref_dim;
+                    }
                 }
 
             } break;
@@ -975,8 +972,8 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     yo_v2f_t p0 = yo_v2f(rect.x0, rect.y0);
     yo_v2f_t p1 = yo_v2f(rect.x1, rect.y1);
 
-    bool clip_to_parent_x = (box->parent) && (!box->noclip_x);
-    bool clip_to_parent_y = (box->parent) && (!box->noclip_y);
+    bool clip_to_parent_x = box->parent;
+    bool clip_to_parent_y = box->parent;
 
     yo_v2f_t clip_p0 = p0;
     yo_v2f_t clip_p1 = p1;
@@ -991,6 +988,18 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
     {
         clip_p0.y = box->parent->screen_rect.y0;
         clip_p1.y = box->parent->screen_rect.y1;
+    }
+
+    if (box->noclip_x)
+    {
+        clip_p0.x = 0;
+        clip_p1.x = YO_FLOAT32_MAX;
+    }
+
+    if (box->noclip_y)
+    {
+        clip_p0.y = 0;
+        clip_p1.y = YO_FLOAT32_MAX;
     }
 
     if (box->on_top == on_top && box->id != YO_ID_ROOT)
@@ -1282,7 +1291,7 @@ static void yo_debug_print_performance(void)
 #else
         yo_debug_print("Error: %s\n", errorMessage);
 #endif
-    }
+}
 }
 
 static void yo_debug_print_popups(void)
@@ -1290,7 +1299,7 @@ static void yo_debug_print_popups(void)
     for (size_t i = 0; i < yo_ctx->popups.count; i++)
     {
         yo_popup_t *p = &yo_ctx->popups.elems[i];
-        yo_debug_print("%llu\t%llu\t%llu\n", p->id, p->group_id, p->close_on_frame_count);
+        yo_debug_print("%llu\t%llu\t%llu\t%llu\n", p->id, p->group_id, p->open_frame, p->close_frame);
     }
 }
 
@@ -1553,32 +1562,65 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         // (rune): Debug information
         //
 
-#if 0
+#if 1
         yo_clear_print_buffer();
 
         yo_debug_print_clear();
         //yo_debug_print_input();
         //yo_debug_print_cache(context);
-        yo_debug_print_hierarchy(yo_ctx->root, 0);
+        //yo_debug_print_hierarchy(yo_ctx->root, 0);
         //yo_debug_print_freelist(context);
         //yo_debug_print_performance();
-        //yo_debug_print_popups();
+        yo_debug_print_popups();
         //yo_debug_svg_atlas(yo_g_context->glyph_atlas);
 
         yo_flush_print_buffer();
 #endif
-
     }
+
+    //
+    // (rune): Popups
+    //
+
+    YO_PROFILE_BEGIN(popup_state);
+
+    for (yo_array_each(yo_popup_t, it, &yo_ctx->popups))
+    {
+        if (it->occupied)
+        {
+            YO_ASSERT(it->id);
+
+            // (rune): Check popup_close_delay_frames have passed.
+            if (it->close_frame <= yo_ctx->frame_count)
+            {
+                yo_zero_struct(it);
+            }
+            // (rune): Make sure there's only one active popup per. group.
+            else if (it->group_id)
+            {
+                for (yo_array_each(yo_popup_t, other, &yo_ctx->popups))
+                {
+                    if ((other != it) &&
+                        (other->occupied) &&
+                        (other->group_id == it->group_id) &&
+                        (other->open_frame <= it->open_frame))
+                    {
+                        yo_zero_struct(other);
+                    }
+                }
+            }
+        }
+    }
+
+    YO_PROFILE_END(popup_state);
 
     //
     // (rune): Swap frame state
     //
 
-    {
-        yo_ctx->frame_count++;
-        yo_ctx->this_frame = &yo_ctx->frame_states[(yo_ctx->frame_count + 0) % 2];
-        yo_ctx->prev_frame = &yo_ctx->frame_states[(yo_ctx->frame_count + 1) % 2];
-    }
+    yo_ctx->frame_count++;
+    yo_ctx->this_frame = &yo_ctx->frame_states[(yo_ctx->frame_count + 0) % 2];
+    yo_ctx->prev_frame = &yo_ctx->frame_states[(yo_ctx->frame_count + 1) % 2];
 
     YO_PROFILE_END(yo_end_frame);
 }
@@ -1761,128 +1803,83 @@ YO_API void yo_end_children(void)
 //
 ////////////////////////////////////////////////////////////////
 
-static yo_popup_t *yo_get_popup_by_id(yo_id_t id)
+static yo_popup_t *yo_get_popup_by_id(yo_id_t id, bool alloc_if_not_found)
 {
-    yo_popup_t *ret = NULL;
+    yo_popup_t *ret  = NULL;
+    yo_popup_t *free = NULL;
 
-    for (size_t i = 0; i < yo_ctx->popups.count; i++)
+    for (yo_array_each(yo_popup_t, it, &yo_ctx->popups))
     {
-        if (yo_ctx->popups.elems[i].id == id)
+        if (it->id == id)
         {
-            ret = &yo_ctx->popups.elems[i];
+            ret = it;
             break;
         }
+
+        if (!it->occupied)
+        {
+            free = it;
+        }
+    }
+
+    if (!ret && alloc_if_not_found)
+    {
+        ret = free ? free : yo_array_add(&yo_ctx->popups, 1, true);
     }
 
     return ret;
 }
 
-YO_API void yo_open_popup(yo_id_t id, yo_popup_flags_t flags)
+YO_API void yo_open_popup(yo_id_t id, yo_id_t group_id, uint32_t close_delay_frames, yo_popup_flags_t flags)
 {
-    yo_id_t group_id  = yo_array_last_or_default(&yo_ctx->popup_build_stack, 0);
-    yo_popup_t *popup = yo_get_popup_by_id(id);
+    YO_UNUSED(id, group_id, flags);
 
-    if (!popup)
-    {
-        popup           = yo_array_add(&yo_ctx->popups, 1, true);
-        popup->id       = id;
-        popup->group_id = group_id;
-    }
+    bool should_open = false;
 
-    if (popup)
+    if (flags & YO_POPUP_ONLY_IF_GROUP_IS_ALREADY_OPEN)
     {
-        // NOTE(rune): Close all other popups in same group.
-        if ((flags & YO_POPUP_FLAG_EXCLUSIVE) && (group_id))
+        if (group_id)
         {
-            for (size_t i = 0; i < yo_ctx->popups.count; i++)
+            for (yo_array_each(yo_popup_t, it, &yo_ctx->popups))
             {
-                yo_popup_t *check = &yo_ctx->popups.elems[i];
-                if (check->group_id == group_id)
+                if (it->group_id == group_id)
                 {
-                    check->close_on_frame_count = 0;
+                    should_open = true;
+                    break;
                 }
-            }
-        }
-
-        popup->got_click = false;
-        popup->got_hover = false;
-        popup->close_on_frame_count = yo_ctx->frame_count + yo_ctx->config.popup_close_delay;
-    }
-}
-
-static bool yo_popup_is_open(yo_id_t id)
-{
-    yo_popup_t *popup = yo_get_popup_by_id(id);
-
-    bool ret = false;
-
-    if (popup)
-    {
-        ret = (yo_ctx->frame_count <= popup->close_on_frame_count);
-    }
-
-    return ret;
-}
-
-YO_API bool yo_begin_popup(yo_id_t id)
-{
-    yo_popup_t *popup = yo_get_popup_by_id(id);
-
-    bool is_open = yo_popup_is_open(id);
-
-    if (popup)
-    {
-        popup->got_click = false;
-        popup->got_hover = false;
-
-        if (is_open)
-        {
-            if (yo_array_put(&yo_ctx->popup_build_stack, id))
-            {
-                popup->is_building = true;
-            }
-            else
-            {
-                is_open = false;
-            }
-        }
-    }
-
-    return is_open;
-}
-
-YO_API void yo_end_popup(void)
-{
-    if (yo_ctx->popup_build_stack.count > 0)
-    {
-        yo_id_t current_popup_id = yo_array_last(&yo_ctx->popup_build_stack);
-        yo_popup_t *popup = yo_get_popup_by_id(current_popup_id);
-        YO_ASSERT(popup);
-
-        bool close = false;
-        if (yo_ctx->frame_count >= popup->close_on_frame_count)
-        {
-            close = true;
-        }
-
-        yo_array_pop(&yo_ctx->popup_build_stack, 1);
-
-        if (close)
-        {
-            size_t idx = popup - yo_ctx->popups.elems;
-
-            if (!yo_array_remove(&yo_ctx->popups, idx, 1))
-            {
-                YO_ASSERT(false);
             }
         }
     }
     else
     {
-        // NOTE(rune): Popup stack underflow
-        // TODO(rune): yo_set_error
-        YO_ASSERT(false);
+        should_open = true;
     }
+
+    if (should_open)
+    {
+        yo_popup_t *popup = yo_get_popup_by_id(id, true);
+        if (popup)
+        {
+            popup->id          = id;
+            popup->group_id    = group_id;
+            popup->flags       = flags;
+            popup->open_frame  = yo_ctx->frame_count;
+            popup->close_frame = yo_ctx->frame_count + close_delay_frames;
+            popup->occupied    = true;
+        }
+    }
+}
+
+YO_API bool yo_begin_popup(yo_id_t id)
+{
+    yo_popup_t *popup = yo_get_popup_by_id(id, false);
+    bool ret = popup != NULL;
+    return ret;
+}
+
+YO_API void yo_end_popup(void)
+{
+
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1960,7 +1957,13 @@ YO_API yo_box_t *yo_box(yo_id_t id, yo_box_flags_t flags)
     return ret;
 }
 
-YO_API yo_signal_t yo_get_signal(yo_box_t *box)
+YO_API yo_signal_t yo_get_signal(void)
+{
+    yo_signal_t ret = yo_get_signal_of(yo_ctx->latest_child);
+    return ret;
+}
+
+YO_API yo_signal_t yo_get_signal_of(yo_box_t *box)
 {
     yo_signal_t ret = { 0 };
 
@@ -2007,10 +2010,11 @@ YO_API yo_signal_t yo_get_signal(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_v2f_t yo_get_screen_dim(yo_box_t *box)
+YO_API yo_v2f_t yo_get_screen_dim(void)
 {
     yo_v2f_t ret = { 0 };
 
+    yo_box_t *box = yo_ctx->latest_child;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2027,10 +2031,11 @@ YO_API yo_v2f_t yo_get_screen_dim(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_rectf_t yo_get_screen_rect(yo_box_t *box)
+YO_API yo_rectf_t yo_get_screen_rect(void)
 {
     yo_rectf_t ret = { 0 };
 
+    yo_box_t *box = yo_ctx->latest_child;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2047,10 +2052,11 @@ YO_API yo_rectf_t yo_get_screen_rect(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_rectf_t yo_get_layout_rect(yo_box_t *box)
+YO_API yo_rectf_t yo_get_layout_rect(void)
 {
     yo_rectf_t ret = { 0 };
 
+    yo_box_t *box = yo_ctx->latest_child;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2067,10 +2073,11 @@ YO_API yo_rectf_t yo_get_layout_rect(yo_box_t *box)
     return ret;
 }
 
-YO_API yo_v2f_t yo_get_content_dim(yo_box_t *box)
+YO_API yo_v2f_t yo_get_content_dim(void)
 {
     yo_v2f_t ret = { 0 };
 
+    yo_box_t *box = yo_ctx->latest_child;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2110,6 +2117,10 @@ YO_API void  yo_set_noclip(bool noclip_x, bool noclip_y)                        
 YO_API void  yo_set_noclip_a(bool noclip, yo_axis_t axis)                           { yo_ctx->latest_child->noclip_a[axis] = noclip; }
 YO_API void  yo_set_noclip_x(bool noclip)                                           { yo_ctx->latest_child->noclip_x = noclip; }
 YO_API void  yo_set_noclip_y(bool noclip)                                           { yo_ctx->latest_child->noclip_y = noclip; }
+YO_API void  yo_set_floating(bool floating_x, bool floating_y)                      { yo_ctx->latest_child->floating_x = floating_x; yo_ctx->latest_child->floating_y = floating_y; }
+YO_API void  yo_set_floating_a(bool floating, yo_axis_t axis)                       { yo_ctx->latest_child->floating_a[axis] = floating; }
+YO_API void  yo_set_floating_x(bool floating)                                       { yo_ctx->latest_child->floating_x = floating; }
+YO_API void  yo_set_floating_y(bool floating)                                       { yo_ctx->latest_child->floating_y = floating; }
 YO_API void  yo_set_align(yo_align_t align_x, yo_align_t align_y)                   { yo_ctx->latest_child->align_x = align_x; yo_ctx->latest_child->align_y = align_y; }
 YO_API void  yo_set_align_a(yo_align_t align, yo_axis_t axis)                       { yo_ctx->latest_child->align_a[axis] = align; }
 YO_API void  yo_set_align_x(yo_align_t align)                                       { yo_ctx->latest_child->align_x = align; }
@@ -2152,14 +2163,13 @@ YO_API void *yo_get_userdata(size_t size)
     else
     {
         YO_ASSERT(box->userdata_size == size);
-
     }
 
     void *ret = box->userdata;
     return ret;
 }
 
-#define yo_get_userdata_struct(T) (T *)yo_get_userdata(sizeof(T))
+#define yo_get_userdata_struct(T) ((T *)yo_get_userdata(sizeof(T)))
 
 ////////////////////////////////////////////////////////////////
 //
@@ -2377,7 +2387,6 @@ YO_API void yo_debug_show_atlas_texture()
     yo_set_fill(yo_rgb(255, 255, 255));
 }
 
-// DEBUG(rune):
 static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
 {
     float scale = 4.0f;

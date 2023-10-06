@@ -184,10 +184,7 @@ YO_API  bool yo_is_word_char(char c)
 // TODO(rune): Cleanup
 YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
 {
-    yo_box_t *box = yo_box(id,
-                           YO_BOX_ACTIVATE_ON_CLICK |
-                           YO_BOX_DRAW_TEXT_CURSOR);
-
+    yo_box(id, YO_BOX_ACTIVATE_ON_CLICK | YO_BOX_DRAW_TEXT_CURSOR);
     yo_set_text(buffer);
     yo_set_padding(5, 5, 5, 5);
     yo_set_font_color(yo_rgb(220, 220, 220));
@@ -197,7 +194,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
 
     yo_text_field_state_t *state = yo_get_text_field_state();
 
-    yo_signal_t box_signal = yo_get_signal(box);
+    yo_signal_t box_signal = yo_get_signal();
 
     if (box_signal.is_active)
     {
@@ -377,8 +374,7 @@ YO_API  yo_signal_t yo_button(char *text)
 {
     yo_button_style_t style = yo_default_style().button_style;
 
-    yo_box_t *box             = yo_box(yo_id_from_string(text),
-                                       YO_BOX_HOT_ON_HOVER);
+    yo_box(yo_id_from_string(text), YO_BOX_HOT_ON_HOVER);
     yo_set_text(text);
     yo_set_tag("TAG_BUTTON");
     yo_set_fill(style.fill);
@@ -389,7 +385,7 @@ YO_API  yo_signal_t yo_button(char *text)
     yo_set_align_x(YO_ALIGN_LEFT);
     yo_set_anim(YO_ANIM_FILL, 20.0f);
 
-    yo_signal_t signal = yo_get_signal(box);
+    yo_signal_t signal = yo_get_signal();
     if (signal.is_hot)
     {
         yo_set_fill(style.hot.fill);
@@ -424,7 +420,7 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
     yo_layout_x();
     YO_CHILD_SCOPE()
     {
-        yo_box_t *check_square    = yo_box(yo_id_from_string(label), 0);
+        yo_box(yo_id_from_string(label), 0);
         yo_set_tag("TAG_CHECK_SQUARE");
         yo_set_dim_x(yo_px(20));
         yo_set_dim_y(yo_px(20));
@@ -433,7 +429,7 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
         yo_set_fill(yo_rgb(64, 64, 64));
         yo_set_anim(YO_ANIM_FILL, 20.0f);
 
-        yo_signal_t signal = yo_get_signal(check_square);
+        yo_signal_t signal = yo_get_signal();
         if (signal.clicked)
         {
             *is_checked = !(*is_checked);
@@ -474,10 +470,10 @@ YO_API  bool yo_radio(char *label, uint32_t index, uint32_t *selected_index)
     yo_layout_x();
     yo_begin_children();
     {
-        yo_box_t *circle_container = yo_box(yo_id_from_string(label), 0);
+        yo_box(yo_id_from_string(label), 0);
         yo_set_dim_x(yo_px(24));
         yo_set_dim_y(yo_px(24));
-        yo_signal_t signal = yo_get_signal(circle_container);
+        yo_signal_t signal = yo_get_signal();
 
         yo_begin_children();
         {
@@ -546,15 +542,15 @@ YO_API void yo_bullet_item(char *label)
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_axis_t axis, float thumb_dim, yo_box_t *bounding_box)
+YO_API  yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_axis_t axis, float thumb_dim)
 {
     float dummy_value = 0.0f;
     if (!value) { value = &dummy_value; }
 
     *value = YO_CLAMP(*value, min, max);
 
-    yo_signal_t signal  = yo_get_signal(bounding_box);
-    yo_v2f_t screen_dim = yo_get_screen_dim(bounding_box);
+    yo_signal_t signal  = yo_get_signal();
+    yo_v2f_t screen_dim = yo_get_screen_dim();
 
     if (signal.is_active && yo_query_mouse_button(YO_MOUSE_BUTTON_LEFT))
     {
@@ -581,10 +577,10 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
     float dummy_value = 0.0f;
     if (!value) value = &dummy_value;
 
-    yo_box_t *bounding_box = yo_box(id, YO_BOX_ACTIVATE_ON_HOLD);
+    yo_box(id, YO_BOX_ACTIVATE_ON_HOLD);
     yo_set_tag("TAG_SLIDER_MAIN");
     yo_set_dim_a(yo_rel(1.0f), style->axis);
-    yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, thumb_dim, bounding_box);
+    yo_signal_t signal     = yo_slider_behaviour(value, min, max, style->axis, thumb_dim);
     YO_CHILD_SCOPE()
     {
 
@@ -611,8 +607,8 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
             {
                 yo_space_a(yo_rel((*value - min) / (max - min)), style->axis);
 
-                yo_box_t   *circle_container        = yo_box(yo_id_from_string("slider circle"), 0);
-                yo_signal_t circle_container_signal = yo_get_signal(circle_container);
+                yo_box(yo_id_from_string("slider circle"), 0);
+                yo_signal_t circle_container_signal = yo_get_signal();
 
                 yo_set_dim_x(yo_px(style->thumb_container_dim_x));
                 yo_set_dim_y(yo_px(style->thumb_container_dim_y));
@@ -649,34 +645,111 @@ YO_API  void yo_slider_with_label(char *label, float *value, float min, float ma
 ////////////////////////////////////////////////////////////////
 //
 //
+// Menu bar
+//
+//
+////////////////////////////////////////////////////////////////
+
+YO_API void yo_menubar_separator(void)
+{
+}
+
+YO_API bool yo_menubar_item(char *label)
+{
+    bool ret = false;
+
+    yo_id_t id = yo_id(label);
+    yo_box(id, 0);
+    yo_set_fill(yo_rgb(90, 90, 90));
+    yo_set_font_color(YO_WHITE);
+    yo_set_text(label);
+    yo_set_tag("yo_menubar_item");
+    yo_set_border(1, yo_rgb(128, 128, 128), 0);
+    yo_set_padding(5, 5, 5, 5);
+
+    yo_signal_t signal = yo_get_signal();
+
+    if (signal.hovered) yo_open_popup(id, 2, 60, YO_POPUP_ONLY_IF_GROUP_IS_ALREADY_OPEN);
+    if (signal.clicked) yo_open_popup(id, 2, 60, 0);
+
+    ret = yo_begin_popup(id);
+
+    return ret;
+}
+
+YO_API bool yo_menubar_begin(char *label)
+{
+    bool ret = yo_menubar_begin_ex(label, yo_rgb(60, 60, 60));
+    return ret;
+}
+
+YO_API bool yo_menubar_begin_ex(char *label, yo_v4f_t bg)
+{
+    yo_id_t id = yo_id(label);
+    yo_box(id, 0);
+    yo_set_layout(YO_LAYOUT_STACK);
+    yo_set_fill(bg);
+    yo_set_dim_x(yo_rel(1.0f));
+    yo_set_tag("yo_menubar");
+
+    yo_begin_children();
+
+    return true;
+}
+
+YO_API void yo_menubar_end(void)
+{
+    yo_end_children();
+}
+
+////////////////////////////////////////////////////////////////
+//
+//
 // Menu
 //
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API  void yo_menu_separator(void)
+YO_API void yo_menu_separator(void)
 {
 }
 
-YO_API  yo_signal_t yo_menu_item(char *label)
+YO_API yo_signal_t yo_menu_item(char *label)
 {
     YO_UNUSED(label);
     return (yo_signal_t) { 0 };
 }
 
-YO_API  bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
+YO_API bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
 {
     YO_UNUSED(label, bg);
     return false;
 }
 
-YO_API  bool yo_menu_begin(char *label)
+YO_API bool yo_menu_begin(char *label)
 {
-    YO_UNUSED(label);
+    yo_rectf_t parent_rect = yo_get_layout_rect();
+
+    yo_box(yo_id(label), 0);
+    yo_set_tag("yo_menu");
+    yo_set_layout(YO_LAYOUT_STACK_Y);
+    yo_set_fill(YO_RED);
+    yo_set_floating(true, true);
+    yo_set_noclip(true, true);
+    yo_set_on_top(true);
+    yo_set_margin_left(parent_rect.x0);
+    yo_set_margin_top(parent_rect.y1 - parent_rect.y0);
+
+    yo_begin_children();
+    yo_text("abcdaaaaaaaaaaaaaaaa");
+    yo_text("efgh");
+    yo_text("ijkl");
+    yo_end_children();
+
     return false;
 }
 
-YO_API  void yo_menu_end(void)
+YO_API void yo_menu_end(void)
 {
 }
 
@@ -700,14 +773,14 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
     if (!scroll_rate) scroll_rate = 20.0f;
     if (!anim_rate)   anim_rate   = 20.f;
 
-    yo_box_t *area = yo_box(id, 0);
+    yo_box(id, 0);
     yo_set_tag("yo_scroll_area");
     yo_set_layout(YO_LAYOUT_STACK_X);
     yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
 
     float scroll_delta_y = 0.0f;
 
-    yo_signal_t area_signal = yo_get_signal(area);
+    yo_signal_t area_signal = yo_get_signal();
     if (area_signal.hovered)
     {
         yo_v2f_t scroll = yo_query_scroll();
@@ -720,7 +793,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         // (rune): Content container
         //
 
-        yo_box_t *content_container     = yo_box(yo_id("scroll_container"), 0);
+        yo_box_t *content_container = yo_box(yo_id("scroll_container"), 0);
         yo_set_layout(YO_LAYOUT_STACK_Y);
         yo_set_tag("scroll_container");
         yo_set_dim_x(yo_rel(1.0f));
@@ -733,8 +806,8 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         // (rune): Scroll behaviour
         //
 
-        float content_dim_y = yo_get_content_dim(content_container).y;
-        float screen_dim_y  = yo_get_screen_dim(content_container).y;
+        float content_dim_y = yo_get_content_dim().y;
+        float screen_dim_y  = yo_get_screen_dim().y;
 
         float offset_min = 0.0f;
         float offset_max = YO_MAX(content_dim_y - screen_dim_y, 0.0f);

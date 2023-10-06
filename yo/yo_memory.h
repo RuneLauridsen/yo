@@ -297,6 +297,9 @@ static void     yo_arena_end_temp(yo_arena_t *arena);
 #define yo_array_reset(array, clear_to_zero)                        yo_array_void_reset      (&(array)->as_void_array, yo_array_elem_size(array), clear_to_zero)
 #define yo_array_put(array, val)                                    (yo_array_add(array, 1, false) ? ((array)->elems[(array)->count - 1] = (val), true) : false)
 
+#define yo_array_each(T, it, array)                                 T *it = (array)->elems; it < (array)->elems + (array)->count; it++
+
+
 // NOTE(rune): The elem_size field is not strictly necessary, since elem_size is passed as
 // a compile time constant argument to all yo_array_void_x functions anyway, buts its nice if you
 // want to write code, that works on any array(T).

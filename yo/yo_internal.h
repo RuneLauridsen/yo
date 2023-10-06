@@ -137,6 +137,12 @@ struct yo_box
             struct { bool noclip_x, noclip_y; };
             struct { bool noclip_a[2]; };
         };
+
+        union
+        {
+            struct { bool floating_x, floating_y; };
+            struct { bool floating_a[2]; };
+        };
     };
 
     // NOTE(rune): Used to identify box across frames.
@@ -182,10 +188,10 @@ struct yo_popup
 {
     yo_id_t id;
     yo_id_t group_id;
-    bool got_click;
-    bool got_hover;
-    bool is_building;
-    uint64_t close_on_frame_count;
+    yo_popup_flags_t flags;
+    bool occupied;
+    uint64_t open_frame;
+    uint64_t close_frame;
 };
 
 YO_TYPEDEF_ARRAY(yo_event_t);

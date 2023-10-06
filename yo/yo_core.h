@@ -144,17 +144,12 @@ enum yo_corner
 typedef uint32_t yo_popup_flags_t;
 enum yo_popup_flags
 {
-    YO_POPUP_FLAG_NONE,
-
-    // NOTE(rune): If this flags is set, all sibling popups get closed when a new popup is opened.
-    // This is useful within context-menu trees, when you only want a single submenu to be open at a time.
-    YO_POPUP_FLAG_EXCLUSIVE = 1,
+    YO_POPUP_ONLY_IF_GROUP_IS_ALREADY_OPEN = (1 << 0),
 };
 
 typedef uint32_t yo_box_flags_t;
 enum yo_box_flags
 {
-    YO_BOX_NONE              = 0,
     YO_BOX_ACTIVATE_ON_CLICK = (1 << 0),
     YO_BOX_ACTIVATE_ON_HOLD  = (1 << 1),
     YO_BOX_HOT_ON_HOVER      = (1 << 2),
@@ -426,7 +421,7 @@ struct yo_render_info
 typedef struct yo_config yo_config_t;
 struct yo_config
 {
-    uint32_t popup_close_delay;
+    int unused;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -544,11 +539,12 @@ YO_API yo_id_t          yo_pop_id(void);
 ////////////////////////////////////////////////////////////////
 
 YO_API yo_box_t *       yo_box(yo_id_t id, yo_box_flags_t flags);
-YO_API yo_signal_t      yo_get_signal(yo_box_t *box);
-YO_API yo_v2f_t         yo_get_screen_dim(yo_box_t *box);   // NOTE(rune): Post-layout dimensions, relative to screen top-left.
-YO_API yo_rectf_t       yo_get_screen_rect(yo_box_t *box);  // NOTE(rune): Post-layout rect, relative to screen top-left.
-YO_API yo_rectf_t       yo_get_layout_rect(yo_box_t *box);  // NOTE(rune): Post-layout rect, relative to parent top-left.
-YO_API yo_v2f_t         yo_get_content_dim(yo_box_t *box);  // NOTE(rune): Post-layout content dimensions.
+YO_API yo_signal_t      yo_get_signal(void);
+YO_API yo_signal_t      yo_get_signal_of(yo_box_t *box);
+YO_API yo_v2f_t         yo_get_screen_dim(void);   // NOTE(rune): Post-layout dimensions, relative to screen top-left.
+YO_API yo_rectf_t       yo_get_screen_rect(void);  // NOTE(rune): Post-layout rect, relative to screen top-left.
+YO_API yo_rectf_t       yo_get_layout_rect(void);  // NOTE(rune): Post-layout rect, relative to parent top-left.
+YO_API yo_v2f_t         yo_get_content_dim(void);  // NOTE(rune): Post-layout content dimensions.
 YO_API void             yo_set_tag(char *tag);
 YO_API void             yo_set_text(char *text);
 YO_API void             yo_set_text_align(yo_text_align_t text_align);
@@ -572,6 +568,10 @@ YO_API void             yo_set_noclip(bool noclip_x, bool noclip_y);
 YO_API void             yo_set_noclip_a(bool noclip, yo_axis_t axis);
 YO_API void             yo_set_noclip_x(bool noclip);
 YO_API void             yo_set_noclip_y(bool noclip);
+YO_API void             yo_set_floating(bool floating_x, bool floating_y);
+YO_API void             yo_set_floating_a(bool floating, yo_axis_t axis);
+YO_API void             yo_set_floating_x(bool floating);
+YO_API void             yo_set_floating_y(bool floating);
 YO_API void             yo_set_align(yo_align_t align_x, yo_align_t align_y);
 YO_API void             yo_set_align_a(yo_align_t align, yo_axis_t axis);
 YO_API void             yo_set_align_x(yo_align_t align);
@@ -622,10 +622,12 @@ YO_API void             yo_end_children(void);
 //
 ////////////////////////////////////////////////////////////////
 
-// WARNING(rune): Not finished
-YO_API void             yo_open_popup(yo_id_t id, yo_popup_flags_t flags);
+YO_API void             yo_open_popup(yo_id_t id, yo_id_t group_id, uint32_t close_delay_frames, yo_popup_flags_t flags);
 YO_API bool             yo_begin_popup(yo_id_t id);
 YO_API void             yo_end_popup(void);
+
+// TODO(rune): Consider adding yo_beign_popup_group(), yo_end_popup_group(), so the user doesn't have to
+// manage popup group_id themselves.
 
 ////////////////////////////////////////////////////////////////
 //
