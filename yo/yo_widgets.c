@@ -650,8 +650,16 @@ YO_API  void yo_slider_with_label(char *label, float *value, float min, float ma
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void yo_menubar_separator(void)
+YO_API void yo_menubar()
 {
+    yo_box(0, 0);
+    yo_set_tag("yo_menubar");
+    yo_set_layout(YO_LAYOUT_STACK);
+    yo_set_color(yo_rgb(30, 30, 30));
+    yo_set_dim_x(yo_rel(1.0f));
+    yo_set_padding(0, 5, 0, 5);
+    yo_set_font_size(16);
+    yo_set_font_color(yo_rgb(220, 220, 220));
 }
 
 YO_API bool yo_menubar_item(char *label)
@@ -659,47 +667,26 @@ YO_API bool yo_menubar_item(char *label)
     bool ret = false;
 
     yo_id_t id = yo_id(label);
-    yo_box(id, 0);
-    yo_set_fill(yo_rgb(90, 90, 90));
-    yo_set_font_color(YO_WHITE);
-    yo_set_text(label);
+    yo_box(id, YO_BOX_HOT_ON_HOVER);
     yo_set_tag("yo_menubar_item");
-    yo_set_border(1, yo_rgb(128, 128, 128), 0);
-    yo_set_padding(5, 5, 5, 5);
+    yo_set_text(label);
+    yo_set_padding(10, 2, 10, 2);
+    yo_set_align_y(YO_ALIGN_CENTER);
+    yo_set_border_thickness(1);
+    yo_set_anim(YO_ANIM_FILL, 20.0f);
 
     yo_signal_t signal = yo_get_signal();
 
-    if (signal.hovered) yo_open_popup(id, 2, 60, YO_POPUP_ONLY_IF_GROUP_IS_ALREADY_OPEN);
-    if (signal.clicked) yo_open_popup(id, 2, 60, 0);
+    if (signal.hovered) yo_popup_open(id, 2, 60, YO_POPUP_ONLY_IF_GROUP_IS_ALREADY_OPEN);
+    if (signal.clicked) yo_popup_open(id, 2, 60, 0);
+    if (signal.is_hot)
+    {
+        yo_set_color(yo_rgb(64, 64, 64));
+        yo_set_border_color(yo_rgb(120, 120, 120));
+    }
 
-    ret = yo_begin_popup(id);
-
+    ret = yo_popup_is_open(id);
     return ret;
-}
-
-YO_API bool yo_menubar_begin(char *label)
-{
-    bool ret = yo_menubar_begin_ex(label, yo_rgb(60, 60, 60));
-    return ret;
-}
-
-YO_API bool yo_menubar_begin_ex(char *label, yo_v4f_t bg)
-{
-    yo_id_t id = yo_id(label);
-    yo_box(id, 0);
-    yo_set_layout(YO_LAYOUT_STACK);
-    yo_set_fill(bg);
-    yo_set_dim_x(yo_rel(1.0f));
-    yo_set_tag("yo_menubar");
-
-    yo_begin_children();
-
-    return true;
-}
-
-YO_API void yo_menubar_end(void)
-{
-    yo_end_children();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -710,47 +697,56 @@ YO_API void yo_menubar_end(void)
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void yo_menu_separator(void)
-{
-}
-
-YO_API yo_signal_t yo_menu_item(char *label)
-{
-    YO_UNUSED(label);
-    return (yo_signal_t) { 0 };
-}
-
-YO_API bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
-{
-    YO_UNUSED(label, bg);
-    return false;
-}
-
-YO_API bool yo_menu_begin(char *label)
+YO_API void yo_menu()
 {
     yo_rectf_t parent_rect = yo_get_layout_rect();
 
-    yo_box(yo_id(label), 0);
+    yo_box(0, 0);
     yo_set_tag("yo_menu");
     yo_set_layout(YO_LAYOUT_STACK_Y);
-    yo_set_color(YO_RED);
+    yo_set_color(yo_rgb(48, 48, 48));
     yo_set_floating(true, true);
     yo_set_noclip(true, true);
     yo_set_on_top(true);
     yo_set_margin_left(parent_rect.x0);
     yo_set_margin_top(parent_rect.y1 - parent_rect.y0);
-
-    yo_begin_children();
-    yo_text("abcdaaaaaaaaaaaaaaaa");
-    yo_text("efgh");
-    yo_text("ijkl");
-    yo_end_children();
-
-    return false;
+    yo_set_border(1, yo_rgb(64, 64, 64), 0);
+    yo_set_padding(10, 5, 10, 5);
 }
 
 YO_API void yo_menu_end(void)
 {
+    yo_end_children();
+}
+
+YO_API yo_signal_t yo_menu_item(char *label)
+{
+    yo_box(yo_id(label), YO_BOX_HOT_ON_HOVER);
+    yo_set_tag("yo_menu_item");
+    yo_set_text(label);
+    yo_set_dim_x(yo_rel(1.0f));
+    yo_set_padding(5, 5, 5, 5);
+    yo_set_border_thickness(1);
+
+    yo_signal_t signal = yo_get_signal();
+    if (signal.is_hot)
+    {
+        yo_set_color(yo_rgb(64, 64, 64));
+        yo_set_border_color(yo_rgb(120, 120, 120));
+    }
+
+
+    YO_UNUSED(label);
+    return (yo_signal_t) { 0 };
+}
+
+YO_API void yo_menu_separator(void)
+{
+    yo_box(0, 0);
+    yo_set_dim_y(yo_px(1));
+    yo_set_dim_x(yo_rel(1.0f));
+    yo_set_color(yo_rgb(64, 64, 64));
+    yo_set_margin(0, 5, 0, 5);
 }
 
 ////////////////////////////////////////////////////////////////

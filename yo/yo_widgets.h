@@ -139,11 +139,8 @@ YO_API yo_signal_t yo_slider_behaviour(float *value, float min, float max, yo_ax
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API bool        yo_menubar_begin(char *label);
-YO_API bool        yo_menubar_begin_ex(char *label, yo_v4f_t bg);
-YO_API void        yo_menubar_end(void);
+YO_API void        yo_menubar();
 YO_API bool        yo_menubar_item(char *label);
-YO_API void        yo_menubar_separator(void);
 
 ////////////////////////////////////////////////////////////////
 //
@@ -153,9 +150,7 @@ YO_API void        yo_menubar_separator(void);
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API bool        yo_menu_begin(char *label);
-YO_API bool        yo_menu_begin_ex(char *label, yo_v4f_t bg);
-YO_API void        yo_menu_end(void);
+YO_API void        yo_menu();
 YO_API yo_signal_t yo_menu_item(char *label);
 YO_API void        yo_menu_separator(void);
 

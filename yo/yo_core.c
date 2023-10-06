@@ -155,7 +155,7 @@ static void yo_add_child_box(yo_box_t *parent, yo_box_t *child)
     yo_slist_queue_push(&parent->children, child);
 }
 
-static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
+YO_API yo_box_t *yo_box(yo_id_t id, yo_box_flags_t flags)
 {
     if (yo_ctx->error)
     {
@@ -231,7 +231,12 @@ static yo_box_t *yo_push_box(yo_id_t id, yo_box_flags_t flags)
         yo_box_t *current_parent = yo_ctx->parent_stack.elems[yo_ctx->parent_stack.count - 1];
         yo_add_child_box(current_parent, box);
 
-        box->on_top = current_parent->on_top;
+        // TODO(rune): Is this a good idea? Are we falling into the CSS trap???
+        // (rune): Inherit from parent.
+        box->on_top     = current_parent->on_top;
+        box->font       = current_parent->font;
+        box->font_size  = current_parent->font_size;
+        box->font_color = current_parent->font_color;
     }
 
     //
@@ -604,6 +609,8 @@ static yo_v2f_t yo_layout_recurse(yo_box_t *box, yo_v2f_t avail_min, yo_v2f_t av
 
                 for (yo_slist_each(yo_box_t, child, box->children.first))
                 {
+                    if (child->dim_a[orto].is_rel) child->pref_dim.v[orto] = child_pref_dim_max.v[orto] * child->dim_a[orto].rel;
+
                     if (!child->floating_a[axis])
                     {
                         // NOTE(rune): If child had overflow, child->pref_dim will be larger than available space.
@@ -1455,7 +1462,7 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
     yo_memset(yo_ctx->this_frame->hash_table, 0, sizeof(yo_ctx->this_frame->hash_table));
 
     yo_ctx->error                    = YO_ERROR_NONE;
-    yo_ctx->root                     = yo_push_box(YO_ID_ROOT, 0);
+    yo_ctx->root                     = yo_box(YO_ID_ROOT, 0);
     yo_ctx->root->tag                = "TAG_ROOT";
     yo_ctx->latest_child             = yo_ctx->root;
     yo_ctx->atlas.current_generation = yo_ctx->frame_count;
@@ -1562,7 +1569,7 @@ YO_API void yo_end_frame(yo_render_info_t *info)
         // (rune): Debug information
         //
 
-#if 1
+#if 0
         yo_clear_print_buffer();
 
         yo_debug_print_clear();
@@ -1830,7 +1837,7 @@ static yo_popup_t *yo_get_popup_by_id(yo_id_t id, bool alloc_if_not_found)
     return ret;
 }
 
-YO_API void yo_open_popup(yo_id_t id, yo_id_t group_id, uint32_t close_delay_frames, yo_popup_flags_t flags)
+YO_API void yo_popup_open(yo_id_t id, yo_id_t group_id, uint32_t close_delay_frames, yo_popup_flags_t flags)
 {
     YO_UNUSED(id, group_id, flags);
 
@@ -1870,16 +1877,11 @@ YO_API void yo_open_popup(yo_id_t id, yo_id_t group_id, uint32_t close_delay_fra
     }
 }
 
-YO_API bool yo_begin_popup(yo_id_t id)
+YO_API bool yo_popup_is_open(yo_id_t id)
 {
     yo_popup_t *popup = yo_get_popup_by_id(id, false);
     bool ret = popup != NULL;
     return ret;
-}
-
-YO_API void yo_end_popup(void)
-{
-
 }
 
 ////////////////////////////////////////////////////////////////
@@ -1950,12 +1952,6 @@ YO_API yo_id_t yo_pop_id(void)
 //
 //
 ////////////////////////////////////////////////////////////////
-
-YO_API yo_box_t *yo_box(yo_id_t id, yo_box_flags_t flags)
-{
-    yo_box_t *ret = yo_push_box(id, flags);
-    return ret;
-}
 
 YO_API yo_signal_t yo_get_signal(void)
 {

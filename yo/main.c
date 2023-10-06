@@ -80,31 +80,36 @@ void build_ui(void)
     yo_layout_y();
     yo_begin_children();
 
-    if (yo_menubar_begin("What's on the menu?"))
+    yo_menubar();
+    YO_CHILD_SCOPE()
     {
         if (yo_menubar_item("File"))
         {
-            yo_menu_begin("File menu");
-            yo_menu_end();
-
-            yo_end_popup();
+            yo_menu();
+            YO_CHILD_SCOPE()
+            {
+                yo_menu_item("New");
+                yo_menu_item("Open");
+                yo_menu_item("Save");
+            }
         }
 
         if (yo_menubar_item("Edit"))
         {
-            yo_menu_begin("Edit menu");
-            yo_menu_end();
-
-            yo_end_popup();
+            yo_menu();
+            YO_CHILD_SCOPE()
+            {
+                yo_menu_item("Undo");
+                yo_menu_item("Redo");
+                yo_menu_separator();
+                yo_menu_item("Copy");
+                yo_menu_item("Paste");
+            }
         }
 
         yo_menubar_item("View");
-        yo_menubar_separator();
         yo_menubar_item("Help");
-
-        yo_menubar_end();
     }
-
 
     static char buffer[sizeof(lorem) + 100] = { 0 };
     static bool buffer_init = false;
@@ -115,9 +120,9 @@ void build_ui(void)
         yo_memcpy(buffer, lorem, sizeof(lorem));
     }
 
-    yo_button("Button 1");
-    yo_button("Button 2");
-    yo_button("Button 3");
+    //yo_button("Button 1");
+    //yo_button("Button 2");
+    //yo_button("Button 3");
     //yo_text_field(yo_id("my_txt"), buffer, sizeof(buffer));
     //yo_set_dim_x(yo_rel(1.0f));
     //yo_text(lorem);

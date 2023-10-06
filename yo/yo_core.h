@@ -622,9 +622,9 @@ YO_API void             yo_end_children(void);
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void             yo_open_popup(yo_id_t id, yo_id_t group_id, uint32_t close_delay_frames, yo_popup_flags_t flags);
-YO_API bool             yo_begin_popup(yo_id_t id);
-YO_API void             yo_end_popup(void);
+// TODO(rune): Better naming.
+YO_API void             yo_popup_open(yo_id_t id, yo_id_t group_id, uint32_t close_delay_frames, yo_popup_flags_t flags);
+YO_API bool             yo_popup_is_open(yo_id_t id);
 
 // TODO(rune): Consider adding yo_beign_popup_group(), yo_end_popup_group(), so the user doesn't have to
 // manage popup group_id themselves.
