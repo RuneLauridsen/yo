@@ -549,7 +549,7 @@ YO_API void             yo_set_tag(char *tag);
 YO_API void             yo_set_text(char *text);
 YO_API void             yo_set_text_align(yo_text_align_t text_align);
 YO_API void             yo_set_layout(yo_layout_t layout);
-YO_API void             yo_set_fill(yo_v4f_t fill);
+YO_API void             yo_set_color(yo_v4f_t fill);
 YO_API void             yo_set_border_s(yo_border_t border);
 YO_API void             yo_set_border(float thickness, yo_v4f_t color, float radius);
 YO_API void             yo_set_border_thickness(float thickness);

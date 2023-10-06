@@ -12,7 +12,7 @@ YO_API  yo_box_t *yo_rectangle(yo_id_t id, yo_v4f_t fill, yo_length_t width, yo_
 {
     yo_box_t *box   = yo_box(id, 0);
     yo_set_tag("TAG_RECTANGLE");
-    yo_set_fill(fill);
+    yo_set_color(fill);
     yo_set_dim_x(width);
     yo_set_dim_y(height);
     return box;
@@ -32,7 +32,7 @@ YO_API  yo_box_t *yo_circle(yo_id_t id, float diameter, yo_v4f_t fill, uint32_t 
     yo_set_border((float)(border_thickness), border_color, (float)(diameter / 2));
     yo_set_dim_x(yo_px(diameter));
     yo_set_dim_y(yo_px(diameter));
-    yo_set_fill(fill);
+    yo_set_color(fill);
     return box;
 }
 
@@ -188,7 +188,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
     yo_set_text(buffer);
     yo_set_padding(5, 5, 5, 5);
     yo_set_font_color(yo_rgb(220, 220, 220));
-    yo_set_fill(yo_rgb(56, 56, 56));
+    yo_set_color(yo_rgb(56, 56, 56));
     yo_set_border(1, yo_rgb(66, 66, 66), 0);
     yo_set_tag("TAG_TEXT_FIELD");
 
@@ -199,7 +199,7 @@ YO_API void yo_text_field(yo_id_t id, char *buffer, size_t buffer_size)
     if (box_signal.is_active)
     {
         yo_set_border_color(yo_rgb(153, 153, 153));
-        yo_set_fill(yo_rgb(31, 31, 31));
+        yo_set_color(yo_rgb(31, 31, 31));
 
         if (box_signal.keycode)
         {
@@ -377,7 +377,7 @@ YO_API  yo_signal_t yo_button(char *text)
     yo_box(yo_id_from_string(text), YO_BOX_HOT_ON_HOVER);
     yo_set_text(text);
     yo_set_tag("TAG_BUTTON");
-    yo_set_fill(style.fill);
+    yo_set_color(style.fill);
     yo_set_font_size(style.font_size);
     yo_set_font_color(style.font_color);
     yo_set_border_s(style.border);
@@ -388,13 +388,13 @@ YO_API  yo_signal_t yo_button(char *text)
     yo_signal_t signal = yo_get_signal();
     if (signal.is_hot)
     {
-        yo_set_fill(style.hot.fill);
+        yo_set_color(style.hot.fill);
         yo_set_border_s(style.hot.border);
     }
 
     if (signal.is_hot && yo_query_mouse_button(YO_MOUSE_BUTTON_LEFT))
     {
-        yo_set_fill(yo_rgb(40, 40, 40)); // TODO(rune): User configurable styling
+        yo_set_color(yo_rgb(40, 40, 40)); // TODO(rune): User configurable styling
         yo_set_anim_rate(40.0f);
     }
 
@@ -426,7 +426,7 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
         yo_set_dim_y(yo_px(20));
         yo_set_padding(2, 2, 2, 2);
         yo_set_border(1, yo_rgb(128, 128, 128), 2);
-        yo_set_fill(yo_rgb(64, 64, 64));
+        yo_set_color(yo_rgb(64, 64, 64));
         yo_set_anim(YO_ANIM_FILL, 20.0f);
 
         yo_signal_t signal = yo_get_signal();
@@ -438,7 +438,7 @@ YO_API  bool yo_checkbox(char *label, bool *is_checked)
 
         if (signal.hovered)
         {
-            yo_set_fill(yo_rgb(100, 100, 100));
+            yo_set_color(yo_rgb(100, 100, 100));
         }
 
         if (*is_checked)
@@ -590,7 +590,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
         {
             yo_box(0, 0);
             yo_set_tag("TAG_SLIDER_LINE");
-            yo_set_fill(yo_rgb(64, 64, 64));
+            yo_set_color(yo_rgb(64, 64, 64));
             yo_set_border(0, yo_v4f(0, 0, 0, 0), 2);
             yo_set_dim_a(yo_rel(1.0f), style->axis);
             yo_set_dim_a(yo_px(10), !style->axis);
@@ -625,7 +625,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
 
                     yo_box(0, 0);
                     yo_set_border_s(thumb_style->border);
-                    yo_set_fill(thumb_style->fill);
+                    yo_set_color(thumb_style->fill);
                     yo_set_dim_x(yo_px(thumb_style->dim_x));
                     yo_set_dim_y(yo_px(thumb_style->dim_y));
                     yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
@@ -733,7 +733,7 @@ YO_API bool yo_menu_begin(char *label)
     yo_box(yo_id(label), 0);
     yo_set_tag("yo_menu");
     yo_set_layout(YO_LAYOUT_STACK_Y);
-    yo_set_fill(YO_RED);
+    yo_set_color(YO_RED);
     yo_set_floating(true, true);
     yo_set_noclip(true, true);
     yo_set_on_top(true);
@@ -931,7 +931,7 @@ YO_API  void yo_table_cell(yo_table_t *table)
     {
         yo_box(0, 0);
         yo_set_border(1, yo_rgb(128, 128, 128), 0);
-        yo_set_fill(yo_rgb(20, 20, 20));
+        yo_set_color(yo_rgb(20, 20, 20));
         yo_set_dim_x(table->cols[table->col_idx].width);
     }
 
@@ -976,7 +976,7 @@ YO_API  void yo_table_cell_checkbox(yo_table_t *table, char *label, bool *is_che
 YO_API  void yo_table_cell_header(yo_table_t *table, char *text)
 {
     yo_table_cell_text(table, text);
-    yo_set_fill(yo_rgb(64, 64, 64));
+    yo_set_color(yo_rgb(64, 64, 64));
 }
 
 YO_API  void yo_table_headers(yo_table_t *table)

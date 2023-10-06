@@ -103,7 +103,7 @@ struct yo_box
         yo_text_align_t text_align;
         yo_layout_t     child_layout;
         yo_border_t     border;
-        yo_v4f_t        fill;
+        yo_v4f_t        color;
         yo_font_id_t    font;
         uint32_t        font_size;
         yo_v4f_t        font_color;

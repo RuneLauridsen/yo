@@ -44,7 +44,7 @@ YO_API void yo_demo(void)
     } state;
 
     yo_box(0, 0);
-    yo_set_fill(pallette.background);
+    yo_set_color(pallette.background);
     yo_set_dim(yo_rel(1.0f), yo_rel(1.0f));
 
     yo_begin_scroll_area_ex(yo_id("demo_scroller"), 20.f, state.scroll_smooth_rate);
@@ -77,9 +77,9 @@ YO_API void yo_demo(void)
 
             yo_space_y(yo_px(20));
 
-            yo_button("Blue");     yo_set_fill(YO_BLUE);    yo_set_font_color(YO_CYAN);     yo_set_border(2, YO_BLACK, 10);
-            yo_button("Yellow");   yo_set_fill(YO_YELLOW);  yo_set_font_color(YO_ORANGE);   yo_set_border(2, YO_BLACK, 0);
-            yo_button("Red");      yo_set_fill(YO_RED);     yo_set_font_color(YO_MAGENTA);  yo_set_border(2, YO_BLACK, 15);
+            yo_button("Blue");     yo_set_color(YO_BLUE);    yo_set_font_color(YO_CYAN);     yo_set_border(2, YO_BLACK, 10);
+            yo_button("Yellow");   yo_set_color(YO_YELLOW);  yo_set_font_color(YO_ORANGE);   yo_set_border(2, YO_BLACK, 0);
+            yo_button("Red");      yo_set_color(YO_RED);     yo_set_font_color(YO_MAGENTA);  yo_set_border(2, YO_BLACK, 15);
 
         }
 
@@ -99,7 +99,7 @@ YO_API void yo_demo(void)
             yo_set_text(state.checkbox_value ? "(-: " : ":-(");
             yo_set_font_size(50);
             yo_set_font_color(YO_BLACK);
-            yo_set_fill(YO_YELLOW);
+            yo_set_color(YO_YELLOW);
             yo_set_align_x(YO_ALIGN_LEFT);
             yo_set_border(0, YO_TRANSPARENT, 10);
 

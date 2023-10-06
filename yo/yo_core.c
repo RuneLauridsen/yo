@@ -356,7 +356,7 @@ static void yo_anim_box(yo_box_t *box)
     float rate = box->anim_rate;
 
     // TODO(rune): This is quite branchy. Could we do something branch prediction friendly?
-    if (box->anim & YO_ANIM_FILL)           box->fill          = yo_anim_v4f(rate, prev->fill, box->fill);
+    if (box->anim & YO_ANIM_FILL)           box->color         = yo_anim_v4f(rate, prev->color, box->color);
     if (box->anim & YO_ANIM_BORDER_COLOR)   box->border.color  = yo_anim_v4f(rate, prev->border.color, box->border.color);
     if (box->anim & YO_ANIM_BORDER_RADIUS)  box->border.radius = yo_anim_corners_f32(rate, prev->border.radius, box->border.radius);
     if (box->anim & YO_ANIM_FONT_COLOR)     box->font_color    = yo_anim_v4f(rate, prev->font_color, box->font_color);
@@ -1009,7 +1009,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
         //
 
         {
-            yo_corners_v4f_t corner_background = { box->fill, box->fill, box->fill, box->fill };
+            yo_corners_v4f_t corner_background = { box->color, box->color, box->color, box->color };
             yo_draw_aabb_t draw =
             {
                 .p0               = p0,
@@ -1291,7 +1291,7 @@ static void yo_debug_print_performance(void)
 #else
         yo_debug_print("Error: %s\n", errorMessage);
 #endif
-}
+    }
 }
 
 static void yo_debug_print_popups(void)
@@ -2098,7 +2098,7 @@ YO_API void  yo_set_tag(char *tag)                                              
 YO_API void  yo_set_text(char *text)                                                { yo_ctx->latest_child->text = text; }
 YO_API void  yo_set_text_align(yo_text_align_t text_align)                          { yo_ctx->latest_child->text_align = text_align; }
 YO_API void  yo_set_layout(yo_layout_t layout)                                      { yo_ctx->latest_child->child_layout = layout; }
-YO_API void  yo_set_fill(yo_v4f_t fill)                                             { yo_ctx->latest_child->fill = fill; }
+YO_API void  yo_set_color(yo_v4f_t color)                                           { yo_ctx->latest_child->color = color; }
 YO_API void  yo_set_border_s(yo_border_t border)                                    { yo_ctx->latest_child->border = border; }
 YO_API void  yo_set_border(float thickness, yo_v4f_t color, float radius)           { yo_ctx->latest_child->border = yo_border(thickness, color, radius); }
 YO_API void  yo_set_border_thickness(float thickness)                               { yo_ctx->latest_child->border.thickness = thickness; }
@@ -2322,7 +2322,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
     yo_box(0, 0);
     yo_set_dim_x(yo_px((float)atlas->dim.x));
     yo_set_dim_y(yo_px((float)atlas->dim.y));
-    yo_set_fill(yo_rgb(30, 30, 30));
+    yo_set_color(yo_rgb(30, 30, 30));
     yo_begin_children();
 
     for (yo_dlist_each(yo_atlas_shelf_t, shelf, &atlas->shelf_list))
@@ -2331,7 +2331,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
         yo_set_align_y(YO_ALIGN_TOP);
         yo_set_dim_y(yo_px((float)shelf->dim_y));
         yo_set_margin_top((float)shelf->base_y);
-        yo_set_fill(shelf->used_x ? yo_rgb(250, 230, 150) : yo_rgb(250, 200, 100));
+        yo_set_color(shelf->used_x ? yo_rgb(250, 230, 150) : yo_rgb(250, 200, 100));
         yo_set_border_color(YO_BLACK);
         yo_set_border_thickness(1);
 
@@ -2344,7 +2344,7 @@ YO_API void yo_debug_show_atlas_partitions(void)
             yo_set_dim_y(yo_px((float)yo_recti_height(node->rect)));
             yo_set_margin_left((float)node->rect.x);
             yo_set_margin_top((float)node->rect.y);
-            yo_set_fill(yo_rgb(50, 50, 150));
+            yo_set_color(yo_rgb(50, 50, 150));
             yo_set_border_color(YO_BLACK);
             yo_set_border_thickness(1);
         }
@@ -2384,7 +2384,7 @@ YO_API void yo_debug_show_atlas_texture()
     yo_box(0, YO_BOX_FULL_ATLAS);
     yo_set_dim_x(yo_px((float)yo_ctx->atlas.dim.x));
     yo_set_dim_y(yo_px((float)yo_ctx->atlas.dim.y));
-    yo_set_fill(yo_rgb(255, 255, 255));
+    yo_set_color(yo_rgb(255, 255, 255));
 }
 
 static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
@@ -2394,7 +2394,7 @@ static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
     yo_box(0, 0);
     yo_set_dim_x(yo_px((float)atlas->dim.x * scale));
     yo_set_dim_y(yo_px((float)atlas->dim.y * scale));
-    yo_set_fill(yo_rgb(30, 30, 30));
+    yo_set_color(yo_rgb(30, 30, 30));
     yo_begin_children();
 
     for (yo_dlist_each(yo_atlas_shelf_t, shelf, &atlas->shelf_list))
@@ -2404,7 +2404,7 @@ static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
         yo_set_dim_y(yo_px((float)shelf->dim_y * scale));
         yo_set_dim_x(yo_px((float)atlas->dim.x * scale));
         yo_set_margin_top((float)shelf->base_y * scale);
-        yo_set_fill(yo_rgb(shelf->last_accessed_generation, 0, 0));
+        yo_set_color(yo_rgb(shelf->last_accessed_generation, 0, 0));
         yo_set_border_color(YO_CYAN);
         yo_set_border_thickness(1);
 
@@ -2417,7 +2417,7 @@ static void yo_debug_show_atlas_partitions_of(yo_atlas_t *atlas)
             yo_set_dim_y(yo_px((float)yo_recti_height(node->rect) * scale));
             yo_set_margin_left((float)node->rect.x * scale);
             yo_set_margin_top((float)node->rect.y * scale);
-            yo_set_fill(yo_rgb(0, node->last_accessed_generation, 0));
+            yo_set_color(yo_rgb(0, node->last_accessed_generation, 0));
             yo_set_border_color(YO_CYAN);
             yo_set_border_thickness(1);
         }
