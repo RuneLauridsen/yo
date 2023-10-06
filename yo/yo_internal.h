@@ -131,6 +131,12 @@ struct yo_box
             struct { yo_overflow_t overflow_x, overflow_y; };
             struct { yo_overflow_t overflow_a[2]; };
         };
+
+        union
+        {
+            struct { bool noclip_x, noclip_y; };
+            struct { bool noclip_a[2]; };
+        };
     };
 
     // NOTE(rune): Used to identify box across frames.

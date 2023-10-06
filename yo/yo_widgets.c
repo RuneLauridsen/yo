@@ -599,7 +599,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
             yo_set_dim_a(yo_rel(1.0f), style->axis);
             yo_set_dim_a(yo_px(10), !style->axis);
             yo_set_margin_a(2, 2, style->axis);
-            yo_set_align_center();
+            yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
         }
 
         //
@@ -616,7 +616,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
 
                 yo_set_dim_x(yo_px(style->thumb_container_dim_x));
                 yo_set_dim_y(yo_px(style->thumb_container_dim_y));
-                yo_set_align_center();
+                yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
 
                 bool thumb_hot    = circle_container_signal.hovered;
                 bool thumb_active = signal.is_active;
@@ -632,7 +632,7 @@ YO_API  void yo_slider_ex(yo_id_t id, float *value, float min, float max, yo_sli
                     yo_set_fill(thumb_style->fill);
                     yo_set_dim_x(yo_px(thumb_style->dim_x));
                     yo_set_dim_y(yo_px(thumb_style->dim_y));
-                    yo_set_align_center();
+                    yo_set_align(YO_ALIGN_CENTER, YO_ALIGN_CENTER);
                 }
 
                 yo_space_a(yo_rel(1.0f - (*value - min) / (max - min)), style->axis);
@@ -656,82 +656,28 @@ YO_API  void yo_slider_with_label(char *label, float *value, float min, float ma
 
 YO_API  void yo_menu_separator(void)
 {
-    yo_space_y(yo_px(5));
-    yo_rectangle(0, yo_rgb(64, 64, 64), yo_rel(1.0f), yo_px(1));
-    yo_space_y(yo_px(5));
 }
 
 YO_API  yo_signal_t yo_menu_item(char *label)
 {
-    yo_box_t *box = yo_box(yo_id_from_string(label), 0);
-    yo_set_text(label);
-    yo_set_dim_x(yo_rel(1.0f));
-    yo_set_text(label);
-    yo_set_tag("TAG_BUTTON");
-    yo_set_font_color(yo_rgb(230, 230, 230));
-    yo_set_padding(5, 5, 5, 5);
-    yo_set_fill(yo_rgb(48, 48, 48));
-    yo_set_border(1, yo_rgb(48, 48, 48), 0); // NOTE(rune): Dummy border, to keep same layout when items is hovered
-
-    yo_signal_t signal = yo_get_signal(box);
-    if (signal.hovered)
-    {
-        yo_set_fill(yo_rgb(64, 64, 64));
-        yo_set_border_color(yo_rgb(110, 110, 110));
-    }
-
-    return signal;
+    YO_UNUSED(label);
+    return (yo_signal_t) { 0 };
 }
 
 YO_API  bool yo_menu_begin_ex(char *label, yo_v4f_t bg)
 {
-    bool ret = false;
-
-    yo_id_t id = yo_id_from_string(label);
-    yo_box(id, 0);
-    yo_set_layout(YO_LAYOUT_STACK_X);
-    yo_begin_children();
-    {
-        if (yo_menu_item(label).hovered)
-        {
-            yo_open_popup(id, YO_POPUP_FLAG_EXCLUSIVE);
-        }
-
-    }
-    yo_end_children();
-
-    if (yo_begin_popup(id))
-    {
-        ret = true;
-
-        yo_begin_children();
-        yo_layout_x();
-        yo_set_overflow_x(YO_OVERFLOW_SPILL);
-        yo_set_overflow_y(YO_OVERFLOW_SPILL);
-        yo_begin_children();
-
-        yo_layout_y();
-        yo_set_fill(bg);
-        yo_set_border(1, yo_rgb(64, 64, 64), 0);
-        yo_set_padding(5, 5, 5, 0);
-        yo_begin_children();
-    }
-
-    return ret;
+    YO_UNUSED(label, bg);
+    return false;
 }
 
 YO_API  bool yo_menu_begin(char *label)
 {
-    bool ret = yo_menu_begin_ex(label, yo_rgb(48, 48, 48));
-    return ret;
+    YO_UNUSED(label);
+    return false;
 }
 
 YO_API  void yo_menu_end(void)
 {
-    yo_end_children();
-    yo_end_children();
-    yo_end_children();
-    yo_end_popup();
 }
 
 ////////////////////////////////////////////////////////////////
@@ -796,7 +742,7 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         float content_ratio = screen_dim_y * YO_CLAMP01(screen_dim_y / content_dim_y);
 
         userdata->y = YO_CLAMP(userdata->y + scroll_delta_y, offset_min, offset_max);
-        yo_set_scroll(*userdata);
+        yo_set_scroll(userdata->x, userdata->y);
 
         //
         // (rune): Scroll bar
@@ -914,11 +860,6 @@ YO_API  void yo_table_cell(yo_table_t *table)
         yo_set_border(1, yo_rgb(128, 128, 128), 0);
         yo_set_fill(yo_rgb(20, 20, 20));
         yo_set_dim_x(table->cols[table->col_idx].width);
-
-        if (table->cols[table->col_idx].width.is_rel)
-        {
-            yo_set_overflow_x(YO_OVERFLOW_CLIP);
-        }
     }
 
     table->col_idx++;

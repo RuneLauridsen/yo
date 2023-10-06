@@ -109,22 +109,11 @@ enum yo_align
     YO_ALIGN_BOTTOM = YO_ALIGN_BACK,
 };
 
+// TODO(rune): If we don't need more than 2 overflow, it could just be a boolean.
 typedef uint32_t yo_overflow_t;
 enum yo_overflow
 {
-    // NOTE(rune): If content is larger than maximum width/height, the box is expanded
-    // to fits its contents.
-    YO_OVERFLOW_FIT,
-
-    // NOTE(rune): If content is larger than maximum width/height, the content will
-    // "spill" outside the box and potentially overlap with other boxes.
-    YO_OVERFLOW_SPILL,
-
-    // NOTE(rune): If content is larger than maximum width/height, the content is
-    // clipped to the maximum width/height.
-    YO_OVERFLOW_CLIP,
-
-    // TODO(rune): Could YO_OVERFLOW_SCROLL more generalized are removed entirely?
+    YO_OVERFLOW_NONE,
     YO_OVERFLOW_SCROLL,
 
     YO_OVERFLOW_COUNT
@@ -563,10 +552,6 @@ YO_API yo_v2f_t         yo_get_content_dim(yo_box_t *box);  // NOTE(rune): Post-
 YO_API void             yo_set_tag(char *tag);
 YO_API void             yo_set_text(char *text);
 YO_API void             yo_set_text_align(yo_text_align_t text_align);
-YO_API void             yo_set_text_align_left();
-YO_API void             yo_set_text_align_right();
-YO_API void             yo_set_text_align_center();
-YO_API void             yo_set_text_align_justify();
 YO_API void             yo_set_layout(yo_layout_t layout);
 YO_API void             yo_set_fill(yo_v4f_t fill);
 YO_API void             yo_set_border_s(yo_border_t border);
@@ -579,20 +564,18 @@ YO_API void             yo_set_font_id(yo_font_id_t font);
 YO_API void             yo_set_font_size(uint32_t size);
 YO_API void             yo_set_font_color(yo_v4f_t color);
 YO_API void             yo_set_on_top(bool on_top);
+YO_API void             yo_set_overflow(yo_overflow_t overflow_x, yo_overflow_t overflow_y);
 YO_API void             yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis);
 YO_API void             yo_set_overflow_x(yo_overflow_t overflow);
 YO_API void             yo_set_overflow_y(yo_overflow_t overflow);
+YO_API void             yo_set_noclip(bool noclip_x, bool noclip_y);
+YO_API void             yo_set_noclip_a(bool noclip, yo_axis_t axis);
+YO_API void             yo_set_noclip_x(bool noclip);
+YO_API void             yo_set_noclip_y(bool noclip);
 YO_API void             yo_set_align(yo_align_t align_x, yo_align_t align_y);
 YO_API void             yo_set_align_a(yo_align_t align, yo_axis_t axis);
 YO_API void             yo_set_align_x(yo_align_t align);
 YO_API void             yo_set_align_y(yo_align_t align);
-YO_API void             yo_set_align_x_left();
-YO_API void             yo_set_align_x_right();
-YO_API void             yo_set_align_x_center();
-YO_API void             yo_set_align_y_top();
-YO_API void             yo_set_align_y_bottom();
-YO_API void             yo_set_align_y_center();
-YO_API void             yo_set_align_center();
 YO_API void             yo_set_dim(yo_length_t dim_x, yo_length_t dim_y);
 YO_API void             yo_set_dim_a(yo_length_t dim, yo_axis_t axis);
 YO_API void             yo_set_dim_x(yo_length_t dim);
@@ -609,7 +592,7 @@ YO_API void             yo_set_padding_xy(float x, float y);
 YO_API void             yo_set_anim(yo_anim_flags_t flags, float rate);
 YO_API void             yo_set_anim_flags(yo_anim_flags_t flags);
 YO_API void             yo_set_anim_rate(float rate);
-YO_API void             yo_set_scroll(yo_v2f_t offset);
+YO_API void             yo_set_scroll(float offset_x, float offset_y);
 YO_API void             yo_set_scroll_a(float offset, yo_axis_t axis);
 YO_API void             yo_set_scroll_x(float offset);
 YO_API void             yo_set_scroll_y(float offset);
