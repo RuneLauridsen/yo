@@ -214,17 +214,16 @@ static yo_atlas_node_t *yo_glyph_get(yo_font_slot_t *font, uint32_t font_size, y
 
 static void yo_text_layout_reset_chunk(yo_text_layout_t *l)
 {
-    l->current_chunk.string.data   = l->remaining.data;
-    l->current_chunk.string.length = 0;
-    l->current_chunk.start_x       = l->current_line.advance_x;
-    l->current_chunk.advance_x     = 0.0f;
-    l->current_chunk.strech        = 0.0f;
-    l->current_chunk.allow_strech  = false;
+    l->current_chunk.string.data    = l->remaining.data;
+    l->current_chunk.string.length  = 0;
+    l->current_chunk.start_x        = l->current_line.advance_x;
+    l->current_chunk.advance_x      = 0.0f;
+    l->current_chunk.allow_stretch  = false;
 }
 
 static void yo_text_layout_commit_chunk(yo_text_layout_t *l)
 {
-    // (rune): Add to list of chunks..
+    // (rune): Add to list of chunks.
     if (l->current_chunk.string.length > 0)
     {
         yo_text_layout_chunk_t *chunk = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_text_layout_chunk_t, true);
@@ -329,8 +328,8 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
                     case ' ':
                     {
                         // (rune): End chunk of previous characters were non-stretchy.
-                        if (!l.current_chunk.allow_strech) yo_text_layout_commit_chunk(&l);
-                        l.current_chunk.allow_strech = true;
+                        if (!l.current_chunk.allow_stretch) yo_text_layout_commit_chunk(&l);
+                        l.current_chunk.allow_stretch = true;
 
                         l.current_chunk.advance_x += space_advance_x;
                         l.current_chunk.string.length += decoded.byte_length;
@@ -339,8 +338,8 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
                     default:
                     {
                         // (rune): End chunk of previous characters were stretchy.
-                        if (l.current_chunk.allow_strech) yo_text_layout_commit_chunk(&l);
-                        l.current_chunk.allow_strech = false;
+                        if (l.current_chunk.allow_stretch) yo_text_layout_commit_chunk(&l);
+                        l.current_chunk.allow_stretch = false;
 
                         // (rune): Determine advance_x of current codepoint.
                         float advance_x = 0.0f;
@@ -399,7 +398,7 @@ static yo_text_layout_t yo_text_layout(yo_font_id_t font, uint32_t font_size, yo
                     case YO_TEXT_ALIGN_CENTER:  line->start_x = extra / 2.0f; break;
                     case YO_TEXT_ALIGN_JUSTIFY:
                     {
-                        if (line->chunks.last->allow_strech)
+                        if (line->chunks.last->allow_stretch)
                         {
                             extra += line->chunks.last->advance_x;
                         }

@@ -173,13 +173,15 @@ enum yo_anim_flags
     YO_ANIM_BORDER = YO_ANIM_BORDER_COLOR|YO_ANIM_BORDER_THICKNESS|YO_ANIM_BORDER_RADIUS
 };
 
-// TODO(rune): Why not just use flags like in yo_modifier_t?
-typedef uint32_t yo_mouse_button_t;
+typedef uint32_t yo_mouse_buttons_t;
 enum yo_mouse_button
 {
-    YO_MOUSE_BUTTON_LEFT,
-    YO_MOUSE_BUTTON_RIGHT,
-    YO_MOUSE_BUTTON_MIDDLE,
+    YO_MOUSE_BUTTON_NONE    = 0,
+
+    YO_MOUSE_BUTTON_LEFT    = (1 << 0),
+    YO_MOUSE_BUTTON_RIGHT   = (1 << 1),
+    YO_MOUSE_BUTTON_MIDDLE  = (1 << 2),
+
     YO_MOUSE_BUTTON_COUNT,
 };
 
@@ -239,15 +241,12 @@ enum yo_frame_flags
 typedef struct yo_signal yo_signal_t;
 struct yo_signal
 {
-    union
-    {
-        struct { bool left_clicked, right_clicked, middle_clicked; };
-        struct { bool mouse_button_clicked[YO_MOUSE_BUTTON_COUNT]; };
-        struct { bool clicked; };
-    };
+    union { bool left_clicked, clicked; };
+    bool right_clicked;
+    bool middle_clicked;
 
     bool     hovered;
-    yo_v2i_t mouse_pos;  // NOTE(rune): Relative to arranged rect
+    yo_v2f_t mouse_pos;  // NOTE(rune): Relative to arranged rect
 
     yo_keycode_t keycode;
     yo_modifier_t modifiers;
@@ -495,18 +494,21 @@ YO_API void             yo_end_frame(yo_render_info_t *buffer);
 ////////////////////////////////////////////////////////////////
 
 YO_API void             yo_input_clear(void);
-YO_API void             yo_input_mouse_state(bool buttons[YO_MOUSE_BUTTON_COUNT], uint32_t x, uint32_t y);
-YO_API void             yo_input_mouse_click(yo_mouse_button_t button, uint32_t x, uint32_t y, yo_modifier_t modifiers);
+YO_API void             yo_input_mouse_state(yo_mouse_buttons_t buttons, uint32_t x, uint32_t y);
+YO_API void             yo_input_mouse_click(yo_mouse_buttons_t button, uint32_t x, uint32_t y, yo_modifier_t modifiers);
 YO_API void             yo_input_scroll(float x, float y);
 YO_API void             yo_input_key(yo_keycode_t key, yo_modifier_t modifiers);
 YO_API void             yo_input_char(char c, yo_modifier_t modifiers);
 YO_API void             yo_input_unicode(uint32_t codepoint, yo_modifier_t modifiers);
 
-YO_API yo_v2i_t         yo_query_mouse_pos(void);
-YO_API bool             yo_query_mouse_button(yo_mouse_button_t button);      // NOTE(m2dx): Was mouse button down during frame?
-YO_API bool             yo_query_mouse_button_down(yo_mouse_button_t button); // NOTE(m2dx): Did mouse button change from up->down during frame?
-YO_API bool             yo_query_mouse_button_up(yo_mouse_button_t button);   // NOTE(m2dx): Dis mouse button change from down->up during frame?
-YO_API yo_v2f_t         yo_query_scroll(void);
+YO_API yo_v2f_t           yo_query_mouse_pos(void);
+YO_API bool               yo_query_mouse_button(yo_mouse_buttons_t button);      // NOTE(m2dx): Was mouse button down during frame?
+YO_API bool               yo_query_mouse_button_down(yo_mouse_buttons_t button); // NOTE(m2dx): Did mouse button change from up->down during frame?
+YO_API bool               yo_query_mouse_button_up(yo_mouse_buttons_t button);   // NOTE(m2dx): Dis mouse button change from down->up during frame?
+YO_API yo_mouse_buttons_t yo_query_mouse_buttons(void);
+YO_API yo_mouse_buttons_t yo_query_mouse_buttons_down(void);
+YO_API yo_mouse_buttons_t yo_query_mouse_buttons_up(void);
+YO_API yo_v2f_t           yo_query_scroll(void);
 
 // TODO(rune): Procedures for querying keyboard state.
 
@@ -539,63 +541,87 @@ YO_API yo_id_t          yo_pop_id(void);
 ////////////////////////////////////////////////////////////////
 
 YO_API yo_box_t *       yo_box(yo_id_t id, yo_box_flags_t flags);
+
+YO_API void             yo_bind(yo_box_t *box);
+
 YO_API yo_signal_t      yo_get_signal(void);
 YO_API yo_signal_t      yo_get_signal_of(yo_box_t *box);
 YO_API yo_v2f_t         yo_get_screen_dim(void);   // NOTE(rune): Post-layout dimensions, relative to screen top-left.
 YO_API yo_rectf_t       yo_get_screen_rect(void);  // NOTE(rune): Post-layout rect, relative to screen top-left.
 YO_API yo_rectf_t       yo_get_layout_rect(void);  // NOTE(rune): Post-layout rect, relative to parent top-left.
 YO_API yo_v2f_t         yo_get_content_dim(void);  // NOTE(rune): Post-layout content dimensions.
+
 YO_API void             yo_set_tag(char *tag);
 YO_API void             yo_set_text(char *text);
 YO_API void             yo_set_text_align(yo_text_align_t text_align);
 YO_API void             yo_set_layout(yo_layout_t layout);
 YO_API void             yo_set_color(yo_v4f_t fill);
+
 YO_API void             yo_set_border_s(yo_border_t border);
 YO_API void             yo_set_border(float thickness, yo_v4f_t color, float radius);
 YO_API void             yo_set_border_thickness(float thickness);
 YO_API void             yo_set_border_color(yo_v4f_t color);
 YO_API void             yo_set_border_radius(float radius);
+
 YO_API void             yo_set_font(yo_font_id_t font, uint32_t size, yo_v4f_t color);
 YO_API void             yo_set_font_id(yo_font_id_t font);
 YO_API void             yo_set_font_size(uint32_t size);
 YO_API void             yo_set_font_color(yo_v4f_t color);
+
 YO_API void             yo_set_on_top(bool on_top);
+
 YO_API void             yo_set_overflow(yo_overflow_t overflow_x, yo_overflow_t overflow_y);
 YO_API void             yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis);
 YO_API void             yo_set_overflow_x(yo_overflow_t overflow);
 YO_API void             yo_set_overflow_y(yo_overflow_t overflow);
+
 YO_API void             yo_set_noclip(bool noclip_x, bool noclip_y);
 YO_API void             yo_set_noclip_a(bool noclip, yo_axis_t axis);
 YO_API void             yo_set_noclip_x(bool noclip);
 YO_API void             yo_set_noclip_y(bool noclip);
+
 YO_API void             yo_set_floating(bool floating_x, bool floating_y);
 YO_API void             yo_set_floating_a(bool floating, yo_axis_t axis);
 YO_API void             yo_set_floating_x(bool floating);
 YO_API void             yo_set_floating_y(bool floating);
+
 YO_API void             yo_set_align(yo_align_t align_x, yo_align_t align_y);
 YO_API void             yo_set_align_a(yo_align_t align, yo_axis_t axis);
 YO_API void             yo_set_align_x(yo_align_t align);
 YO_API void             yo_set_align_y(yo_align_t align);
+
 YO_API void             yo_set_dim(yo_length_t dim_x, yo_length_t dim_y);
 YO_API void             yo_set_dim_a(yo_length_t dim, yo_axis_t axis);
 YO_API void             yo_set_dim_x(yo_length_t dim);
 YO_API void             yo_set_dim_y(yo_length_t dim);
-YO_API void             yo_set_margin(float left, float top, float right, float bottom);
-YO_API void             yo_set_margin_xy(float x, float y);
-YO_API void             yo_set_margin_a(float front, float back, yo_axis_t axis);
-YO_API void             yo_set_margin_left(float left);
-YO_API void             yo_set_margin_top(float top);
-YO_API void             yo_set_margin_right(float right);
-YO_API void             yo_set_margin_bottom(float bottom);
-YO_API void             yo_set_padding(float left, float top, float right, float bottom);
-YO_API void             yo_set_padding_xy(float x, float y);
-YO_API void             yo_set_anim(yo_anim_flags_t flags, float rate);
-YO_API void             yo_set_anim_flags(yo_anim_flags_t flags);
-YO_API void             yo_set_anim_rate(float rate);
+
 YO_API void             yo_set_scroll(float offset_x, float offset_y);
 YO_API void             yo_set_scroll_a(float offset, yo_axis_t axis);
 YO_API void             yo_set_scroll_x(float offset);
 YO_API void             yo_set_scroll_y(float offset);
+
+YO_API void             yo_set_margin(float left, float top, float right, float bottom);
+YO_API void             yo_set_margin_a(float front, float back, yo_axis_t axis);
+YO_API void             yo_set_margin_x(float margin);
+YO_API void             yo_set_margin_y(float margin);
+YO_API void             yo_set_margin_xy(float x, float y);
+YO_API void             yo_set_margin_left(float left);
+YO_API void             yo_set_margin_top(float top);
+YO_API void             yo_set_margin_right(float right);
+YO_API void             yo_set_margin_bottom(float bottom);
+
+YO_API void             yo_set_padding(float left, float top, float right, float bottom);
+YO_API void             yo_set_padding_a(float front, float back, yo_axis_t axis);
+YO_API void             yo_set_padding_x(float padding);
+YO_API void             yo_set_padding_y(float padding);
+YO_API void             yo_set_padding_xy(float x, float y);
+YO_API void             yo_set_padding_left(float left);
+YO_API void             yo_set_padding_top(float top);
+YO_API void             yo_set_padding_right(float right);
+
+YO_API void             yo_set_anim(yo_anim_flags_t flags, float rate);
+YO_API void             yo_set_anim_flags(yo_anim_flags_t flags);
+YO_API void             yo_set_anim_rate(float rate);
 
 // TODO(rune): Can we store text_field_state like normal userdata?
 // Renderer needs to know about text_field_state to draw cursor+selection.
@@ -626,7 +652,7 @@ YO_API void             yo_end_children(void);
 YO_API void             yo_popup_open(yo_id_t id, yo_id_t group_id, uint32_t close_delay_frames, yo_popup_flags_t flags);
 YO_API bool             yo_popup_is_open(yo_id_t id);
 
-// TODO(rune): Consider adding yo_beign_popup_group(), yo_end_popup_group(), so the user doesn't have to
+// TODO(rune): Consider adding yo_begin_popup_group(), yo_end_popup_group(), so the user doesn't have to
 // manage popup group_id themselves.
 
 ////////////////////////////////////////////////////////////////
@@ -761,7 +787,7 @@ static inline yo_corners_f32_t yo_corners(float top_left, float top_right, float
     return ret;
 }
 
-static inline yo_sides_f32_t yo_margin(float left, float top, float right, float bottom)
+static inline yo_sides_f32_t yo_sides(float left, float top, float right, float bottom)
 {
     yo_sides_f32_t ret =
     {
@@ -773,39 +799,15 @@ static inline yo_sides_f32_t yo_margin(float left, float top, float right, float
     return ret;
 }
 
-static inline yo_sides_f32_t yo_margin_xy(float x, float y)
+static inline yo_sides_f32_t yo_sides_xy(float x, float y)
 {
-    yo_sides_f32_t ret = yo_margin(x, y, x, y);
+    yo_sides_f32_t ret = yo_sides(x, y, x, y);
     return ret;
 }
 
-static inline yo_sides_f32_t yo_margin_all(float all_sides)
+static inline yo_sides_f32_t yo_sides_all(float all_sides)
 {
-    yo_sides_f32_t ret = yo_margin(all_sides, all_sides, all_sides, all_sides);
-    return ret;
-}
-
-static inline yo_sides_f32_t yo_padding(float left, float top, float right, float bottom)
-{
-    yo_sides_f32_t ret =
-    {
-        .left   = left,
-        .right  = right,
-        .top    = top,
-        .bottom = bottom,
-    };
-    return ret;
-}
-
-static inline yo_sides_f32_t yo_padding_xy(float x, float y)
-{
-    yo_sides_f32_t ret = yo_padding(x, y, x, y);
-    return ret;
-}
-
-static inline yo_sides_f32_t yo_padding_all(float all_sides)
-{
-    yo_sides_f32_t ret = yo_padding(all_sides, all_sides, all_sides, all_sides);
+    yo_sides_f32_t ret = yo_sides(all_sides, all_sides, all_sides, all_sides);
     return ret;
 }
 

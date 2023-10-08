@@ -64,7 +64,7 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
 
     yo_modifier_t modifiers = 0;
     yo_v2i_t mouse_pos = yo_v2i(0, 0);
-    bool mouse_button[3] = { false, false, false };
+    yo_mouse_buttons_t mouse_button_state = 0;
 
     uint64_t tick_start = GetTickCount64();
     uint64_t tick_prev = 0;
@@ -104,15 +104,15 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
                     uint32_t x = LOWORD(msg.lParam);
                     uint32_t y = HIWORD(msg.lParam);
 
-                    yo_mouse_button_t button =
+                    yo_mouse_buttons_t button_bit =
                         msg.message == WM_LBUTTONDOWN ? YO_MOUSE_BUTTON_LEFT :
                         msg.message == WM_RBUTTONDOWN ? YO_MOUSE_BUTTON_RIGHT :
                         msg.message == WM_MBUTTONDOWN ? YO_MOUSE_BUTTON_MIDDLE :
                         0;
 
-                    mouse_button[button] = true;
+                    mouse_button_state |= button_bit;
 
-                    yo_input_mouse_click(button, x, y, modifiers);
+                    yo_input_mouse_click(button_bit, x, y, modifiers);
 
                 } break;
 
@@ -120,13 +120,13 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
                 case WM_RBUTTONUP:
                 case WM_MBUTTONUP:
                 {
-                    yo_mouse_button_t button =
-                        msg.message == WM_LBUTTONDOWN ? YO_MOUSE_BUTTON_LEFT :
-                        msg.message == WM_RBUTTONDOWN ? YO_MOUSE_BUTTON_RIGHT :
-                        msg.message == WM_MBUTTONDOWN ? YO_MOUSE_BUTTON_MIDDLE :
+                    yo_mouse_buttons_t button_bit =
+                        msg.message == WM_LBUTTONUP ? YO_MOUSE_BUTTON_LEFT :
+                        msg.message == WM_RBUTTONUP ? YO_MOUSE_BUTTON_RIGHT :
+                        msg.message == WM_MBUTTONUP ? YO_MOUSE_BUTTON_MIDDLE :
                         0;
 
-                    mouse_button[button] = false;
+                    mouse_button_state &= ~button_bit;
 
                 } break;
 
@@ -180,15 +180,15 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
             }
         }
 
-        yo_input_mouse_state(mouse_button, mouse_pos.x, mouse_pos.y);
+        yo_input_mouse_state(mouse_button_state, mouse_pos.x, mouse_pos.y);
 
         //
         // (rune): Build UI
         //
 
         yo_begin_frame((tick_current - tick_start) / 1000.0f, 0);
-        //yo_demo();
-        build_ui();
+        yo_demo();
+        //build_ui();
         yo_end_frame(&global_platform->render_info);
 
         //

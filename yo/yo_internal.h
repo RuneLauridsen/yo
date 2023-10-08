@@ -8,17 +8,12 @@
 //
 ////////////////////////////////////////////////////////////////
 
-#define fallthrough                 // NOTE(rune): empty macro to mark intentional fall through in switch cases
 #define countof(x)                  (sizeof(x) / sizeof(x[0]))
 
 // TODO(rune): Make this a parameter in yo_config_t
 #define YO_BOX_CACHE_COUNT          (256)
 
-#define YO_HASH(x)                  (((x) * 42727) ^ ((x) * 86197))
-
 #define YO_COALESCE(a,b)            ((a)?(a):(b))
-#define YO_ZERO(T)                  ((T){0})
-#define YO_HAS_FLAG(a,b)            (bool)(((a)&(b)) != 0)
 
 ////////////////////////////////////////////////////////////////
 //
@@ -45,7 +40,7 @@ struct yo_event
     yo_modifier_t modifiers;
     union
     {
-        struct { yo_v2f_t pos; }; // TODO(rune): Modifiers on mouse too
+        struct { yo_v2f_t pos; };
         struct { yo_keycode_t keycode; };
     };
 };
@@ -208,9 +203,9 @@ struct yo_frame
     yo_array(yo_event_t) events;
     yo_v2f_t scroll;
     yo_v2f_t mouse_pos;
-    bool mouse_button[YO_MOUSE_BUTTON_COUNT];       // NOTE(m2dx): Was mouse button down during frame?
-    bool mouse_button_down[YO_MOUSE_BUTTON_COUNT];  // NOTE(m2dx): Did mouse button change from up->down during frame?
-    bool mouse_button_up[YO_MOUSE_BUTTON_COUNT];    // NOTE(m2dx): Dis mouse button change from down->up during frame?
+    yo_mouse_buttons_t mouse_buttons;       // NOTE(m2dx): Was mouse button down during frame?
+    yo_mouse_buttons_t mouse_buttons_down;  // NOTE(m2dx): Did mouse button change from up->down during frame?
+    yo_mouse_buttons_t mouse_buttons_up;    // NOTE(m2dx): Dis mouse button change from down->up during frame?
 
     // TODO(rune): Probably not a good idea to store time in floating point. Delta is OK as floating point.
     float time;
@@ -241,7 +236,7 @@ struct yo_context
 
     // NOTE(rune): Data for building current frame hierarchy.
     yo_box_t *root;
-    yo_box_t *latest_child;
+    yo_box_t *bound;
     yo_array(yo_box_ptr_t) parent_stack;
     yo_array(yo_id_t)  id_stack;
 
@@ -250,7 +245,7 @@ struct yo_context
     yo_array(yo_id_t)    popup_build_stack; // NOTE(rune): Tracks yo_begin_popup/yo_end_popup calls. Cleared every frame.
 
     // NOTE(rune): Fonts.
-    yo_atlas_t  atlas;
+    yo_atlas_t   atlas;
     yo_font_id_t default_font;
 
     uint64_t    frame_count;

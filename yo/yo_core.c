@@ -173,28 +173,18 @@ YO_API yo_box_t *yo_box(yo_id_t id, yo_box_flags_t flags)
 
     if (id)
     {
-        //
         // (rune): Check id collision.
-        //
-
         yo_box_t *already_in_hash = yo_get_box_by_id_this_frame(id);
         YO_ASSERT(already_in_hash == NULL && "Id collision");
 
-        //
         // (rune): Store in hash.
-        //
-
         yo_add_box_to_hash(box, yo_ctx->this_frame);
 
-        //
         // (rune): Copy persistent state from previous frame.
-        //
-
         yo_box_t *box_prev = yo_get_box_by_id_prev_frame(id);
         if (box_prev)
         {
             box->text_field_state = box_prev->text_field_state;
-
             if (box_prev->userdata)
             {
                 box->userdata = yo_arena_push_size(&yo_ctx->this_frame->arena, box_prev->userdata_size, false);
@@ -265,7 +255,7 @@ YO_API yo_box_t *yo_box(yo_id_t id, yo_box_flags_t flags)
         }
     }
 
-    yo_ctx->latest_child = box;
+    yo_bind(box);
 
     return box;
 }
@@ -1050,7 +1040,7 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
 
         if (box->text_layout.lines.first)
         {
-            bool is_field = YO_HAS_FLAG(box->flags, YO_BOX_DRAW_TEXT_CURSOR);
+            bool is_field = (box->flags & YO_BOX_DRAW_TEXT_CURSOR) && (box->id == yo_ctx->prev_frame->active_id);
             yo_draw_text_layout(box->text_layout, box->text_field_state, is_field,
                                 yo_from_cstring(box->text),
                                 yo_v2f_add(p0, box->padding.p[0]), p1, box->font_color);
@@ -1434,9 +1424,9 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
         // TODO(rune): Would be easier if all relevant fields were in a nested struct.
         bool lazy_input = ((yo_ctx->this_frame->events.count == 0) &&
                            (yo_ctx->prev_frame->events.count == 0) &&
-                           yo_struct_equal(yo_ctx->this_frame->mouse_button, yo_ctx->prev_frame->mouse_button) &&
-                           yo_struct_equal(yo_ctx->this_frame->mouse_button_down, yo_ctx->prev_frame->mouse_button_down) &&
-                           yo_struct_equal(yo_ctx->this_frame->mouse_button_up, yo_ctx->prev_frame->mouse_button_up) &&
+                           (yo_ctx->this_frame->mouse_buttons == yo_ctx->prev_frame->mouse_buttons) &&
+                           (yo_ctx->this_frame->mouse_buttons_down == yo_ctx->prev_frame->mouse_buttons_down) &&
+                           (yo_ctx->this_frame->mouse_buttons_up == yo_ctx->prev_frame->mouse_buttons_up) &&
                            yo_v2f_equal(yo_ctx->this_frame->mouse_pos, yo_ctx->prev_frame->mouse_pos) &&
                            yo_v2f_equal(yo_ctx->this_frame->scroll, yo_ctx->prev_frame->scroll));
 
@@ -1462,14 +1452,15 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
     yo_memset(yo_ctx->this_frame->hash_table, 0, sizeof(yo_ctx->this_frame->hash_table));
 
     yo_ctx->error                    = YO_ERROR_NONE;
-    yo_ctx->root                     = yo_box(YO_ID_ROOT, 0);
-    yo_ctx->root->tag                = "TAG_ROOT";
-    yo_ctx->latest_child             = yo_ctx->root;
     yo_ctx->atlas.current_generation = yo_ctx->frame_count;
 
     yo_ctx->this_frame->time        = time;
     yo_ctx->this_frame->delta       = 1.0f / 60.0f; // TODO(rune): Fix time
     yo_ctx->this_frame->played_anim = false;
+
+    yo_ctx->root = yo_box(YO_ID_ROOT, 0);
+    yo_set_tag("TAG_ROOT");
+    yo_bind(yo_ctx->root);
 
     //
     // (rune): Update hot id
@@ -1633,7 +1624,7 @@ YO_API void yo_end_frame(yo_render_info_t *info)
 }
 
 ////////////////////////////////////////////////////////////////
-//
+//'
 //
 // Input
 //
@@ -1646,20 +1637,17 @@ YO_API void yo_input_clear(void)
     yo_array_reset(&yo_ctx->this_frame->events, false);
 }
 
-YO_API void yo_input_mouse_state(bool buttons[YO_MOUSE_BUTTON_COUNT], uint32_t x, uint32_t y)
+YO_API void yo_input_mouse_state(yo_mouse_buttons_t buttons, uint32_t x, uint32_t y)
 {
     yo_ctx->this_frame->mouse_pos.x = (float)x; // TODO(rune): Input mouse in floating point?
     yo_ctx->this_frame->mouse_pos.y = (float)y;
 
-    for (uint32_t i = 0; i < YO_MOUSE_BUTTON_COUNT; i++)
-    {
-        yo_ctx->this_frame->mouse_button[i]      =  buttons[i];
-        yo_ctx->this_frame->mouse_button_down[i] =  buttons[i] && !yo_ctx->prev_frame->mouse_button[i];
-        yo_ctx->this_frame->mouse_button_up[i]   = !buttons[i] &&  yo_ctx->prev_frame->mouse_button[i];
-    }
+    yo_ctx->this_frame->mouse_buttons      =  buttons;
+    yo_ctx->this_frame->mouse_buttons_down =  buttons & ~yo_ctx->prev_frame->mouse_buttons;
+    yo_ctx->this_frame->mouse_buttons_up   = ~buttons &  yo_ctx->prev_frame->mouse_buttons;
 }
 
-YO_API void yo_input_mouse_click(yo_mouse_button_t button, uint32_t x, uint32_t y, yo_modifier_t modifiers)
+YO_API void yo_input_mouse_click(yo_mouse_buttons_t button, uint32_t x, uint32_t y, yo_modifier_t modifiers)
 {
     yo_event_t *e = yo_array_add(&yo_ctx->this_frame->events, 1, false);
     if (e)
@@ -1713,44 +1701,15 @@ YO_API void yo_input_unicode(uint32_t codepoint, yo_modifier_t modifiers)
     yo_input_key(codepoint, modifiers);
 }
 
-YO_API yo_v2i_t yo_query_mouse_pos()
-{
-    // TODO(rune): Should mouse be in floating point?
-    yo_v2i_t ret = yo_v2i((int32_t)yo_ctx->this_frame->mouse_pos.x,
-                          (int32_t)yo_ctx->this_frame->mouse_pos.y);
-
-    return ret;
-}
-
-YO_API bool yo_query_mouse_button(yo_mouse_button_t button)
-{
-    bool ret = yo_ctx->this_frame->mouse_button[button];
-    return ret;
-}
-
-YO_API bool yo_query_mouse_button_down(yo_mouse_button_t button)
-{
-    bool ret = yo_ctx->this_frame->mouse_button_down[button];
-    return ret;
-}
-
-YO_API bool yo_query_mouse_button_up(yo_mouse_button_t button)
-{
-    bool ret = yo_ctx->this_frame->mouse_button_up[button];
-    return ret;
-}
-
-YO_API yo_v2f_t yo_query_scroll()
-{
-    yo_v2f_t ret = yo_ctx->this_frame->scroll;
-    return ret;
-}
-
-YO_API float yo_delta()
-{
-    float ret = yo_ctx->this_frame->delta;
-    return ret;
-}
+YO_API yo_v2f_t yo_query_mouse_pos()                                { return yo_ctx->this_frame->mouse_pos; }
+YO_API bool yo_query_mouse_button(yo_mouse_buttons_t button)        { return (yo_ctx->this_frame->mouse_buttons & button) != 0; }
+YO_API bool yo_query_mouse_button_down(yo_mouse_buttons_t button)   { return (yo_ctx->this_frame->mouse_buttons_down & button) != 0; }
+YO_API bool yo_query_mouse_button_up(yo_mouse_buttons_t button)     { return (yo_ctx->this_frame->mouse_buttons_up & button) != 0; }
+YO_API yo_mouse_buttons_t yo_query_mouse_buttons(void)              { return yo_ctx->this_frame->mouse_buttons; }
+YO_API yo_mouse_buttons_t yo_query_mouse_buttons_down(void)         { return yo_ctx->this_frame->mouse_buttons_down; }
+YO_API yo_mouse_buttons_t yo_query_mouse_buttons_up(void)           { return yo_ctx->this_frame->mouse_buttons_up; }
+YO_API yo_v2f_t yo_query_scroll()                                   { return yo_ctx->this_frame->scroll; }
+YO_API float yo_delta()                                             { return yo_ctx->this_frame->delta; }
 
 ////////////////////////////////////////////////////////////////
 //
@@ -1762,7 +1721,7 @@ YO_API float yo_delta()
 
 YO_API void yo_begin_children(void)
 {
-    yo_begin_children_of((yo_box_t *)yo_ctx->latest_child);
+    yo_begin_children_of(yo_ctx->bound);
 }
 
 YO_API void yo_begin_children_of(yo_box_t *box)
@@ -1793,7 +1752,7 @@ YO_API void yo_end_children(void)
             YO_ASSERT(popped == current_parent->id);
         }
 
-        yo_ctx->latest_child = current_parent;
+        yo_bind(current_parent);
         yo_array_pop(&yo_ctx->parent_stack, 1);
     }
     else
@@ -1953,9 +1912,14 @@ YO_API yo_id_t yo_pop_id(void)
 //
 ////////////////////////////////////////////////////////////////
 
+YO_API void yo_bind(yo_box_t *box)
+{
+    yo_ctx->bound = box;
+}
+
 YO_API yo_signal_t yo_get_signal(void)
 {
-    yo_signal_t ret = yo_get_signal_of(yo_ctx->latest_child);
+    yo_signal_t ret = yo_get_signal_of(yo_ctx->bound);
     return ret;
 }
 
@@ -1988,8 +1952,9 @@ YO_API yo_signal_t yo_get_signal_of(yo_box_t *box)
 
         if (yo_clips_rectf2(hit_test_rect, event->pos))
         {
-            if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_LEFT)  ret.left_clicked  = true;
-            if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_RIGHT) ret.right_clicked = true;
+            if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_LEFT)   ret.left_clicked = true;
+            if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_RIGHT)  ret.right_clicked = true;
+            if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_MIDDLE) ret.middle_clicked = true;
         }
 
         if (event->type == YO_EVENT_TYPE_KEY_PRESS)
@@ -1999,9 +1964,9 @@ YO_API yo_signal_t yo_get_signal_of(yo_box_t *box)
         }
     }
 
-    yo_v2i_t mouse = yo_query_mouse_pos();
-    ret.mouse_pos.x = mouse.x - (int32_t)hit_test_rect.x0; // TODO(rune): Input mouse in floating point?
-    ret.mouse_pos.y = mouse.y - (int32_t)hit_test_rect.y0;
+    yo_v2f_t mouse = yo_query_mouse_pos();
+    ret.mouse_pos.x = mouse.x - hit_test_rect.x0; // TODO(rune): Input mouse in floating point?
+    ret.mouse_pos.y = mouse.y - hit_test_rect.y0;
 
     return ret;
 }
@@ -2010,7 +1975,7 @@ YO_API yo_v2f_t yo_get_screen_dim(void)
 {
     yo_v2f_t ret = { 0 };
 
-    yo_box_t *box = yo_ctx->latest_child;
+    yo_box_t *box = yo_ctx->bound;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2031,7 +1996,7 @@ YO_API yo_rectf_t yo_get_screen_rect(void)
 {
     yo_rectf_t ret = { 0 };
 
-    yo_box_t *box = yo_ctx->latest_child;
+    yo_box_t *box = yo_ctx->bound;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2052,7 +2017,7 @@ YO_API yo_rectf_t yo_get_layout_rect(void)
 {
     yo_rectf_t ret = { 0 };
 
-    yo_box_t *box = yo_ctx->latest_child;
+    yo_box_t *box = yo_ctx->bound;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2073,7 +2038,7 @@ YO_API yo_v2f_t yo_get_content_dim(void)
 {
     yo_v2f_t ret = { 0 };
 
-    yo_box_t *box = yo_ctx->latest_child;
+    yo_box_t *box = yo_ctx->bound;
     if (box && box->id)
     {
         yo_box_t *prev = yo_get_box_by_id_prev_frame(box->id);
@@ -2090,63 +2055,84 @@ YO_API yo_v2f_t yo_get_content_dim(void)
     return ret;
 }
 
-YO_API void  yo_set_tag(char *tag)                                                  { yo_ctx->latest_child->tag = tag; }
-YO_API void  yo_set_text(char *text)                                                { yo_ctx->latest_child->text = text; }
-YO_API void  yo_set_text_align(yo_text_align_t text_align)                          { yo_ctx->latest_child->text_align = text_align; }
-YO_API void  yo_set_layout(yo_layout_t layout)                                      { yo_ctx->latest_child->child_layout = layout; }
-YO_API void  yo_set_color(yo_v4f_t color)                                           { yo_ctx->latest_child->color = color; }
-YO_API void  yo_set_border_s(yo_border_t border)                                    { yo_ctx->latest_child->border = border; }
-YO_API void  yo_set_border(float thickness, yo_v4f_t color, float radius)           { yo_ctx->latest_child->border = yo_border(thickness, color, radius); }
-YO_API void  yo_set_border_thickness(float thickness)                               { yo_ctx->latest_child->border.thickness = thickness; }
-YO_API void  yo_set_border_color(yo_v4f_t color)                                    { yo_ctx->latest_child->border.color = color; }
-YO_API void  yo_set_border_radius(float radius)                                     { yo_ctx->latest_child->border.radius = yo_corners(radius, radius, radius, radius); }
-YO_API void  yo_set_font(yo_font_id_t font, uint32_t size, yo_v4f_t color)          { yo_ctx->latest_child->font = font; yo_ctx->latest_child->font_size = size; yo_ctx->latest_child->font_color = color; }
-YO_API void  yo_set_font_id(yo_font_id_t font)                                      { yo_ctx->latest_child->font = font; }
-YO_API void  yo_set_font_size(uint32_t size)                                        { yo_ctx->latest_child->font_size = size; }
-YO_API void  yo_set_font_color(yo_v4f_t color)                                      { yo_ctx->latest_child->font_color = color; }
-YO_API void  yo_set_on_top(bool on_top)                                             { yo_ctx->latest_child->on_top = on_top; }
-YO_API void  yo_set_overflow(yo_overflow_t overflow_x, yo_overflow_t overflow_y)    { yo_ctx->latest_child->overflow_x = overflow_x; yo_ctx->latest_child->overflow_y = overflow_y; }
-YO_API void  yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis)              { yo_ctx->latest_child->overflow_a[axis] = overflow; }
-YO_API void  yo_set_overflow_x(yo_overflow_t overflow)                              { yo_ctx->latest_child->overflow_x = overflow; }
-YO_API void  yo_set_overflow_y(yo_overflow_t overflow)                              { yo_ctx->latest_child->overflow_y = overflow; }
-YO_API void  yo_set_noclip(bool noclip_x, bool noclip_y)                            { yo_ctx->latest_child->noclip_x = noclip_x; yo_ctx->latest_child->noclip_y = noclip_y; }
-YO_API void  yo_set_noclip_a(bool noclip, yo_axis_t axis)                           { yo_ctx->latest_child->noclip_a[axis] = noclip; }
-YO_API void  yo_set_noclip_x(bool noclip)                                           { yo_ctx->latest_child->noclip_x = noclip; }
-YO_API void  yo_set_noclip_y(bool noclip)                                           { yo_ctx->latest_child->noclip_y = noclip; }
-YO_API void  yo_set_floating(bool floating_x, bool floating_y)                      { yo_ctx->latest_child->floating_x = floating_x; yo_ctx->latest_child->floating_y = floating_y; }
-YO_API void  yo_set_floating_a(bool floating, yo_axis_t axis)                       { yo_ctx->latest_child->floating_a[axis] = floating; }
-YO_API void  yo_set_floating_x(bool floating)                                       { yo_ctx->latest_child->floating_x = floating; }
-YO_API void  yo_set_floating_y(bool floating)                                       { yo_ctx->latest_child->floating_y = floating; }
-YO_API void  yo_set_align(yo_align_t align_x, yo_align_t align_y)                   { yo_ctx->latest_child->align_x = align_x; yo_ctx->latest_child->align_y = align_y; }
-YO_API void  yo_set_align_a(yo_align_t align, yo_axis_t axis)                       { yo_ctx->latest_child->align_a[axis] = align; }
-YO_API void  yo_set_align_x(yo_align_t align)                                       { yo_ctx->latest_child->align_x = align; }
-YO_API void  yo_set_align_y(yo_align_t align)                                       { yo_ctx->latest_child->align_y = align; }
-YO_API void  yo_set_dim(yo_length_t dim_x, yo_length_t dim_y)                       { yo_ctx->latest_child->dim_x = dim_x;  yo_ctx->latest_child->dim_y = dim_y; }
-YO_API void  yo_set_dim_a(yo_length_t dim, yo_axis_t axis)                          { yo_ctx->latest_child->dim_a[axis] = dim; }
-YO_API void  yo_set_dim_x(yo_length_t dim)                                          { yo_ctx->latest_child->dim_x = dim; }
-YO_API void  yo_set_dim_y(yo_length_t dim)                                          { yo_ctx->latest_child->dim_y = dim; }
-YO_API void  yo_set_margin(float left, float top, float right, float bottom)        { yo_ctx->latest_child->margin = yo_margin(left, top, right, bottom); }
-YO_API void  yo_set_margin_xy(float x, float y)                                     { yo_ctx->latest_child->margin = yo_margin_xy(x, y); }
-YO_API void  yo_set_margin_a(float front, float back, yo_axis_t axis)               { yo_ctx->latest_child->margin.p[0].v[axis] = front; yo_ctx->latest_child->margin.p[1].v[axis] = back; }
-YO_API void  yo_set_margin_left(float left)                                         { yo_ctx->latest_child->margin.left = left; }
-YO_API void  yo_set_margin_top(float top)                                           { yo_ctx->latest_child->margin.top = top; }
-YO_API void  yo_set_margin_right(float right)                                       { yo_ctx->latest_child->margin.right = right; }
-YO_API void  yo_set_margin_bottom(float bottom)                                     { yo_ctx->latest_child->margin.bottom = bottom; }
-YO_API void  yo_set_padding(float left, float top, float right, float bottom)       { yo_ctx->latest_child->padding = yo_padding(left, top, right, bottom); }
-YO_API void  yo_set_padding_xy(float x, float y)                                    { yo_ctx->latest_child->padding = yo_padding_xy(x, y); }
-YO_API void  yo_set_anim(yo_anim_flags_t anim, float rate)                          { yo_ctx->latest_child->anim = anim; yo_ctx->latest_child->anim_rate = rate; }
-YO_API void  yo_set_anim_flags(yo_anim_flags_t anim)                                { yo_ctx->latest_child->anim = anim; }
-YO_API void  yo_set_anim_rate(float rate)                                           { yo_ctx->latest_child->anim_rate = rate; }
-YO_API void  yo_set_scroll(float offset_x, float offset_y)                          { yo_ctx->latest_child->scroll_offset.x = offset_x; yo_ctx->latest_child->scroll_offset.y = offset_y; }
-YO_API void  yo_set_scroll_a(float offset, yo_axis_t axis)                          { yo_ctx->latest_child->scroll_offset.v[axis] = offset; }
-YO_API void  yo_set_scroll_x(float offset)                                          { yo_ctx->latest_child->scroll_offset.x = offset; }
-YO_API void  yo_set_scroll_y(float offset)                                          { yo_ctx->latest_child->scroll_offset.y = offset; }
+YO_API void  yo_set_tag(char *tag)                                                  { yo_ctx->bound->tag = tag; }
+YO_API void  yo_set_text(char *text)                                                { yo_ctx->bound->text = text; }
+YO_API void  yo_set_text_align(yo_text_align_t text_align)                          { yo_ctx->bound->text_align = text_align; }
+YO_API void  yo_set_layout(yo_layout_t layout)                                      { yo_ctx->bound->child_layout = layout; }
+YO_API void  yo_set_color(yo_v4f_t color)                                           { yo_ctx->bound->color = color; }
 
-YO_API yo_text_field_state_t *yo_get_text_field_state(void)                     { return &yo_ctx->latest_child->text_field_state; }
+YO_API void  yo_set_border_s(yo_border_t border)                                    { yo_ctx->bound->border = border; }
+YO_API void  yo_set_border(float thickness, yo_v4f_t color, float radius)           { yo_ctx->bound->border = yo_border(thickness, color, radius); }
+YO_API void  yo_set_border_thickness(float thickness)                               { yo_ctx->bound->border.thickness = thickness; }
+YO_API void  yo_set_border_color(yo_v4f_t color)                                    { yo_ctx->bound->border.color = color; }
+YO_API void  yo_set_border_radius(float radius)                                     { yo_ctx->bound->border.radius = yo_corners(radius, radius, radius, radius); }
+
+YO_API void  yo_set_font(yo_font_id_t font, uint32_t size, yo_v4f_t color)          { yo_ctx->bound->font = font; yo_ctx->bound->font_size = size; yo_ctx->bound->font_color = color; }
+YO_API void  yo_set_font_id(yo_font_id_t font)                                      { yo_ctx->bound->font = font; }
+YO_API void  yo_set_font_size(uint32_t size)                                        { yo_ctx->bound->font_size = size; }
+YO_API void  yo_set_font_color(yo_v4f_t color)                                      { yo_ctx->bound->font_color = color; }
+
+YO_API void  yo_set_on_top(bool on_top)                                             { yo_ctx->bound->on_top = on_top; }
+
+YO_API void  yo_set_overflow(yo_overflow_t overflow_x, yo_overflow_t overflow_y)    { yo_ctx->bound->overflow_x = overflow_x; yo_ctx->bound->overflow_y = overflow_y; }
+YO_API void  yo_set_overflow_a(yo_overflow_t overflow, yo_axis_t axis)              { yo_ctx->bound->overflow_a[axis] = overflow; }
+YO_API void  yo_set_overflow_x(yo_overflow_t overflow)                              { yo_ctx->bound->overflow_x = overflow; }
+YO_API void  yo_set_overflow_y(yo_overflow_t overflow)                              { yo_ctx->bound->overflow_y = overflow; }
+
+YO_API void  yo_set_noclip(bool noclip_x, bool noclip_y)                            { yo_ctx->bound->noclip_x = noclip_x; yo_ctx->bound->noclip_y = noclip_y; }
+YO_API void  yo_set_noclip_a(bool noclip, yo_axis_t axis)                           { yo_ctx->bound->noclip_a[axis] = noclip; }
+YO_API void  yo_set_noclip_x(bool noclip)                                           { yo_ctx->bound->noclip_x = noclip; }
+YO_API void  yo_set_noclip_y(bool noclip)                                           { yo_ctx->bound->noclip_y = noclip; }
+
+YO_API void  yo_set_floating(bool floating_x, bool floating_y)                      { yo_ctx->bound->floating_x = floating_x; yo_ctx->bound->floating_y = floating_y; }
+YO_API void  yo_set_floating_a(bool floating, yo_axis_t axis)                       { yo_ctx->bound->floating_a[axis] = floating; }
+YO_API void  yo_set_floating_x(bool floating)                                       { yo_ctx->bound->floating_x = floating; }
+YO_API void  yo_set_floating_y(bool floating)                                       { yo_ctx->bound->floating_y = floating; }
+
+YO_API void  yo_set_align(yo_align_t align_x, yo_align_t align_y)                   { yo_ctx->bound->align_x = align_x; yo_ctx->bound->align_y = align_y; }
+YO_API void  yo_set_align_a(yo_align_t align, yo_axis_t axis)                       { yo_ctx->bound->align_a[axis] = align; }
+YO_API void  yo_set_align_x(yo_align_t align)                                       { yo_ctx->bound->align_x = align; }
+YO_API void  yo_set_align_y(yo_align_t align)                                       { yo_ctx->bound->align_y = align; }
+
+YO_API void  yo_set_dim(yo_length_t dim_x, yo_length_t dim_y)                       { yo_ctx->bound->dim_x = dim_x;  yo_ctx->bound->dim_y = dim_y; }
+YO_API void  yo_set_dim_a(yo_length_t dim, yo_axis_t axis)                          { yo_ctx->bound->dim_a[axis] = dim; }
+YO_API void  yo_set_dim_x(yo_length_t dim)                                          { yo_ctx->bound->dim_x = dim; }
+YO_API void  yo_set_dim_y(yo_length_t dim)                                          { yo_ctx->bound->dim_y = dim; }
+
+YO_API void  yo_set_margin(float left, float top, float right, float bottom)        { yo_ctx->bound->margin = yo_sides(left, top, right, bottom); }
+YO_API void  yo_set_margin_a(float front, float back, yo_axis_t axis)               { yo_ctx->bound->margin.p[0].v[axis] = front; yo_ctx->bound->margin.p[1].v[axis] = back; }
+YO_API void  yo_set_margin_x(float margin)                                          { yo_ctx->bound->margin.p[0].x = margin; yo_ctx->bound->margin.p[1].x = margin; }
+YO_API void  yo_set_margin_y(float margin)                                          { yo_ctx->bound->margin.p[0].y = margin; yo_ctx->bound->margin.p[1].y = margin; }
+YO_API void  yo_set_margin_xy(float x, float y)                                     { yo_ctx->bound->margin = yo_sides_xy(x, y); }
+YO_API void  yo_set_margin_left(float left)                                         { yo_ctx->bound->margin.left = left; }
+YO_API void  yo_set_margin_top(float top)                                           { yo_ctx->bound->margin.top = top; }
+YO_API void  yo_set_margin_right(float right)                                       { yo_ctx->bound->margin.right = right; }
+YO_API void  yo_set_margin_bottom(float bottom)                                     { yo_ctx->bound->margin.bottom = bottom; }
+
+YO_API void  yo_set_padding(float left, float top, float right, float bottom)       { yo_ctx->bound->padding = yo_sides(left, top, right, bottom); }
+YO_API void  yo_set_padding_a(float front, float back, yo_axis_t axis)              { yo_ctx->bound->padding.p[0].v[axis] = front; yo_ctx->bound->padding.p[1].v[axis] = back; }
+YO_API void  yo_set_padding_x(float padding)                                        { yo_ctx->bound->padding.p[0].x = padding; yo_ctx->bound->padding.p[1].x = padding; }
+YO_API void  yo_set_padding_y(float padding)                                        { yo_ctx->bound->padding.p[0].y = padding; yo_ctx->bound->padding.p[1].y = padding; }
+YO_API void  yo_set_padding_xy(float x, float y)                                    { yo_ctx->bound->padding = yo_sides_xy(x, y); }
+YO_API void  yo_set_padding_left(float left)                                        { yo_ctx->bound->padding.left = left; }
+YO_API void  yo_set_padding_top(float top)                                          { yo_ctx->bound->padding.top = top; }
+YO_API void  yo_set_padding_right(float right)                                      { yo_ctx->bound->padding.right = right; }
+YO_API void  yo_set_padding_bottom(float bottom)                                    { yo_ctx->bound->padding.bottom = bottom; }
+
+YO_API void  yo_set_anim(yo_anim_flags_t anim, float rate)                          { yo_ctx->bound->anim = anim; yo_ctx->bound->anim_rate = rate; }
+YO_API void  yo_set_anim_flags(yo_anim_flags_t anim)                                { yo_ctx->bound->anim = anim; }
+YO_API void  yo_set_anim_rate(float rate)                                           { yo_ctx->bound->anim_rate = rate; }
+
+YO_API void  yo_set_scroll(float offset_x, float offset_y)                          { yo_ctx->bound->scroll_offset.x = offset_x; yo_ctx->bound->scroll_offset.y = offset_y; }
+YO_API void  yo_set_scroll_a(float offset, yo_axis_t axis)                          { yo_ctx->bound->scroll_offset.v[axis] = offset; }
+YO_API void  yo_set_scroll_x(float offset)                                          { yo_ctx->bound->scroll_offset.x = offset; }
+YO_API void  yo_set_scroll_y(float offset)                                          { yo_ctx->bound->scroll_offset.y = offset; }
+
+YO_API yo_text_field_state_t *yo_get_text_field_state(void)                         { return &yo_ctx->bound->text_field_state; }
 
 YO_API void *yo_get_userdata(size_t size)
 {
-    yo_box_t *box = yo_ctx->latest_child;
+    yo_box_t *box = yo_ctx->bound;
 
     if (!box->userdata)
     {
@@ -2252,7 +2238,7 @@ YO_API char *yo_alloc_temp_string_v(YO_PRINTF_FORMAT_STRING char *format, va_lis
 YO_API void yo_scaled_triangle(yo_v2f_t p0, yo_v2f_t p1, yo_v2f_t p2,
                                yo_v4f_t color0, yo_v4f_t color1, yo_v4f_t color2)
 {
-    if (yo_ctx->latest_child)
+    if (yo_ctx->bound)
     {
         yo_scaled_element_t *new_element = yo_arena_push_struct(&yo_ctx->this_frame->arena, yo_scaled_element_t, false);
         if (new_element)
@@ -2265,7 +2251,7 @@ YO_API void yo_scaled_triangle(yo_v2f_t p0, yo_v2f_t p1, yo_v2f_t p2,
             new_element->triangle.color1 = color1;
             new_element->triangle.color2 = color2;
 
-            YO_SLSTACK_PUSH(yo_ctx->latest_child->scaled_elements, next, new_element);
+            yo_slist_stack_push(yo_ctx->bound->scaled_elements, new_element);
         }
         else
         {

@@ -528,7 +528,7 @@ YO_API void yo_bullet_item(char *label)
     {
         yo_circle(0, 7, yo_rgb(200, 200, 200), 0, YO_TRANSPARENT, 0);
         yo_set_align_y(YO_ALIGN_CENTER);
-        yo_set_margin(10, 7, 6, 0);
+        yo_set_margin_x(10);
 
         yo_text(label);
     }
@@ -735,9 +735,7 @@ YO_API yo_signal_t yo_menu_item(char *label)
         yo_set_border_color(yo_rgb(120, 120, 120));
     }
 
-
-    YO_UNUSED(label);
-    return (yo_signal_t) { 0 };
+    return signal;
 }
 
 YO_API void yo_menu_separator(void)
@@ -757,12 +755,12 @@ YO_API void yo_menu_separator(void)
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API  void yo_begin_scroll_area(yo_id_t id)
+YO_API  void yo_scroll_area(yo_id_t id)
 {
-    yo_begin_scroll_area_ex(id, 0, 0);
+    yo_scroll_area_ex(id, 0, 0);
 }
 
-YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_rate)
+YO_API  void yo_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_rate)
 {
     // TODO(rune): Horizontal scrolling
 
@@ -783,13 +781,15 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
         scroll_delta_y = scroll.y * -scroll_rate;
     }
 
-    yo_begin_children();
+    yo_box_t *content_container = NULL;
+
+    YO_CHILD_SCOPE()
     {
         //
         // (rune): Content container
         //
 
-        yo_box_t *content_container = yo_box(yo_id("scroll_container"), 0);
+        content_container = yo_box(yo_id("scroll_container"), 0);
         yo_set_layout(YO_LAYOUT_STACK_Y);
         yo_set_tag("scroll_container");
         yo_set_dim_x(yo_rel(1.0f));
@@ -841,17 +841,10 @@ YO_API  void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_r
 
             yo_slider_ex(yo_id("vert slider"), &userdata->y, offset_min, offset_max, &slider_style);
         }
-
-        yo_begin_children_of(content_container);
     }
-}
 
-YO_API  void yo_end_scroll_area(void)
-{
-    yo_end_children();
-    yo_end_children();
+    yo_bind(content_container);
 }
-
 
 ////////////////////////////////////////////////////////////////
 //

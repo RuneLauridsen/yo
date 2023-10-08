@@ -82,8 +82,7 @@ struct yo_text_layout_chunk
 
     float start_x;
     float advance_x;
-    float strech;
-    bool  allow_strech;
+    bool  allow_stretch;
 
     yo_text_layout_chunk_t *next;
 };
@@ -109,7 +108,7 @@ struct yo_text_layout
     // NOTE(rune): Result data.
     struct
     {
-        yo_dlist(yo_text_layout_line_t) lines;
+        yo_slist(yo_text_layout_line_t) lines;
 
         yo_font_id_t      font;
         uint32_t          font_size;

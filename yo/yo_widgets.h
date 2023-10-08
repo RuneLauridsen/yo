@@ -162,9 +162,8 @@ YO_API void        yo_menu_separator(void);
 //
 ////////////////////////////////////////////////////////////////
 
-YO_API void yo_begin_scroll_area(yo_id_t id);
-YO_API void yo_begin_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_rate);
-YO_API void yo_end_scroll_area(void);
+YO_API void yo_scroll_area(yo_id_t id);
+YO_API void yo_scroll_area_ex(yo_id_t id, float scroll_rate, float anim_rate);
 
 ////////////////////////////////////////////////////////////////
 //
