@@ -727,6 +727,7 @@ YO_API yo_signal_t yo_menu_item(char *label)
     yo_set_dim_x(yo_rel(1.0f));
     yo_set_padding(5, 5, 5, 5);
     yo_set_border_thickness(1);
+    yo_set_z(100);
 
     yo_signal_t signal = yo_get_signal();
     if (signal.is_hot)

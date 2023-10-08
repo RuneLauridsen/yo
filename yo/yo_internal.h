@@ -108,6 +108,7 @@ struct yo_box
         yo_sides_f32_t  margin;
         yo_sides_f32_t  padding;
         yo_v2f_t        scroll_offset;
+        uint32_t        z;
 
         union
         {
@@ -198,6 +199,10 @@ struct yo_frame
     yo_box_t *hash_table[YO_BOX_CACHE_COUNT]; // TODO(rune): Dynamic hash table size
     yo_id_t active_id;
     yo_id_t hot_id;
+
+    uint32_t active_z;
+    uint32_t hot_z;
+
     bool played_anim;
 
     yo_array(yo_event_t) events;

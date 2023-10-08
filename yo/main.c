@@ -120,13 +120,21 @@ void build_ui(void)
         yo_memcpy(buffer, lorem, sizeof(lorem));
     }
 
-    //yo_button("Button 1");
-    //yo_button("Button 2");
-    //yo_button("Button 3");
-    //yo_text_field(yo_id("my_txt"), buffer, sizeof(buffer));
-    //yo_set_dim_x(yo_rel(1.0f));
-    //yo_text(lorem);
-    //yo_set_fill(yo_rgb(30, 30, 30));
+    yo_button("Button 1");
+    yo_button("Button 2");
+    yo_button("Button 3");
+
+    yo_text_field(yo_id("my_txt"), buffer, sizeof(buffer));
+    yo_set_dim_x(yo_rel(1.0f));
+
+    yo_text_field(yo_id("my_txt2"), buffer, sizeof(buffer));
+    yo_set_floating(true, true);
+    yo_set_dim_x(yo_rel(0.5f));
+    yo_set_margin_top(200);
+    yo_set_on_top(true);
+
+    yo_text(lorem);
+    yo_set_color(yo_rgb(30, 30, 30));
 
     yo_end_children();
 }
@@ -248,7 +256,7 @@ void build_ui(void)
             yo_debug_show_atlas_partitions();
             yo_debug_show_atlas_texture();
         }
-    }
+}
 
     yo_end_children();
 }

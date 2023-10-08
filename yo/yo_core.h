@@ -623,6 +623,8 @@ YO_API void             yo_set_anim(yo_anim_flags_t flags, float rate);
 YO_API void             yo_set_anim_flags(yo_anim_flags_t flags);
 YO_API void             yo_set_anim_rate(float rate);
 
+YO_API void             yo_set_z(uint32_t z);
+
 // TODO(rune): Can we store text_field_state like normal userdata?
 // Renderer needs to know about text_field_state to draw cursor+selection.
 YO_API yo_text_field_state_t *  yo_get_text_field_state(void);

@@ -22,6 +22,8 @@ static char *error_message_table[YO_ERROR_COUNT] =
     [YO_ERROR_ID_COLLISION]             = "Id collision"
 };
 
+#define YO_DEBUG_BOX_IDEN(box) ((box) ? ((box)->text ? (box)->text : (box)->tag ? (box)->tag : "") : "")
+
 ////////////////////////////////////////////////////////////////
 //
 //
@@ -80,7 +82,7 @@ static yo_box_t *yo_alloc_box(yo_id_t id)
 //
 ////////////////////////////////////////////////////////////////
 
-static yo_box_t *yo_get_box_by_id_(yo_id_t id, yo_frame_t *frame)
+static yo_box_t *yo_get_box_by_id(yo_id_t id, yo_frame_t *frame)
 {
     yo_box_t *ret = NULL;
 
@@ -103,13 +105,13 @@ static yo_box_t *yo_get_box_by_id_(yo_id_t id, yo_frame_t *frame)
 
 static yo_box_t *yo_get_box_by_id_this_frame(yo_id_t id)
 {
-    yo_box_t *ret = yo_get_box_by_id_(id, yo_ctx->this_frame);
+    yo_box_t *ret = yo_get_box_by_id(id, yo_ctx->this_frame);
     return ret;
 }
 
 static yo_box_t *yo_get_box_by_id_prev_frame(yo_id_t id)
 {
-    yo_box_t *ret = yo_get_box_by_id_(id, yo_ctx->prev_frame);
+    yo_box_t *ret = yo_get_box_by_id(id, yo_ctx->prev_frame);
     return ret;
 }
 
@@ -227,32 +229,6 @@ YO_API yo_box_t *yo_box(yo_id_t id, yo_box_flags_t flags)
         box->font       = current_parent->font;
         box->font_size  = current_parent->font_size;
         box->font_color = current_parent->font_color;
-    }
-
-    //
-    // (rune): Persistent state
-    //
-
-    if (id)
-    {
-        // TODO(rune): Better way to check for input. We don't need the whole yo_signal_t struct.
-        yo_signal_t signal = yo_get_signal_of(box);
-
-        //
-        // (rune): Input flags
-        //
-
-        if ((box->flags & YO_BOX_HOT_ON_HOVER) &&
-            (signal.hovered))
-        {
-            yo_ctx->this_frame->hot_id = id;
-        }
-
-        if ((box->flags & (YO_BOX_ACTIVATE_ON_CLICK|YO_BOX_ACTIVATE_ON_HOLD)) &&
-            (signal.clicked))
-        {
-            yo_ctx->this_frame->active_id = id;
-        }
     }
 
     yo_bind(box);
@@ -1094,6 +1070,56 @@ static void yo_render_recurse(yo_box_t *box, yo_render_info_t *render_info, bool
 ////////////////////////////////////////////////////////////////
 //
 //
+// Input/focus
+//
+//
+////////////////////////////////////////////////////////////////
+
+static void yo_input_focus_recurse(yo_box_t *box)
+{
+    if (box->id)
+    {
+        if ((box->flags & (YO_BOX_HOT_ON_HOVER|YO_BOX_ACTIVATE_ON_CLICK|YO_BOX_ACTIVATE_ON_HOLD)))
+        {
+            yo_signal_t signal = yo_get_signal_of(box);
+
+            if ((box->flags & YO_BOX_HOT_ON_HOVER) && (signal.hovered))
+            {
+                if (box->z >= yo_ctx->this_frame->hot_z)
+                {
+                    yo_ctx->this_frame->hot_id = box->id;
+                    yo_ctx->this_frame->hot_z  = box->z;
+                }
+            }
+
+            if ((box->flags & (YO_BOX_ACTIVATE_ON_CLICK|YO_BOX_ACTIVATE_ON_HOLD)) && (signal.clicked))
+            {
+                if (box->z >= yo_ctx->this_frame->active_z)
+                {
+                    yo_ctx->this_frame->active_id = box->id;
+                    yo_ctx->this_frame->active_z  = box->z;
+                }
+            }
+        }
+    }
+
+    for (yo_slist_each(yo_box_t, child, box->children.first))
+    {
+        yo_input_focus_recurse(child);
+    }
+}
+
+static void yo_input_focus_pass()
+{
+    yo_ctx->this_frame->hot_z = 0;
+    yo_ctx->this_frame->active_z = 0;
+
+    yo_input_focus_recurse(yo_ctx->root);
+}
+
+////////////////////////////////////////////////////////////////
+//
+//
 // Debug
 //
 //
@@ -1464,12 +1490,15 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
 
     //
     // (rune): Update hot id
+    // TODO(rune): Can this be moved to yo_end_frame()?
     //
+
 
     yo_ctx->this_frame->hot_id = 0;
 
     //
     // (rune): Update active id
+    // TODO(rune): Can this be moved to yo_end_frame()?
     //
 
     yo_box_t *prev_active_box = yo_get_box_by_id_prev_frame(yo_ctx->prev_frame->active_id);
@@ -1501,7 +1530,6 @@ YO_API bool yo_begin_frame(float time, yo_frame_flags_t flags)
     YO_PROFILE_END(yo_begin_frame);
 
     return yo_ctx->this_frame->lazy;
-
 }
 
 YO_API void yo_end_frame(yo_render_info_t *info)
@@ -1611,6 +1639,14 @@ YO_API void yo_end_frame(yo_render_info_t *info)
     }
 
     YO_PROFILE_END(popup_state);
+
+    //
+    // (rune): Input/focus
+    //
+
+    YO_PROFILE_BEGIN(input_focus_pass);
+    yo_input_focus_pass();
+    YO_PROFILE_END(input_focus_pass);
 
     //
     // (rune): Swap frame state
@@ -1927,7 +1963,7 @@ YO_API yo_signal_t yo_get_signal_of(yo_box_t *box)
 {
     yo_signal_t ret = { 0 };
 
-    yo_rectf_t hit_test_rect = yo_rectf(yo_v2f(0, 0), yo_v2f(9999, 9999));
+    yo_rectf_t hit_test_rect = yo_rectf(yo_v2f(0, 0), yo_v2f(0, 0));
 
     if (box)
     {
@@ -1941,7 +1977,7 @@ YO_API yo_signal_t yo_get_signal_of(yo_box_t *box)
         if (prev) hit_test_rect = prev->screen_rect;
     }
 
-    if (yo_clips_rectf2(hit_test_rect, yo_ctx->this_frame->mouse_pos))
+    if (yo_clips_rectf(hit_test_rect, yo_ctx->this_frame->mouse_pos))
     {
         ret.hovered = true;
     }
@@ -1950,7 +1986,7 @@ YO_API yo_signal_t yo_get_signal_of(yo_box_t *box)
     {
         yo_event_t *event = &yo_ctx->this_frame->events.elems[i];
 
-        if (yo_clips_rectf2(hit_test_rect, event->pos))
+        if (yo_clips_rectf(hit_test_rect, event->pos))
         {
             if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_LEFT)   ret.left_clicked = true;
             if (event->type == YO_EVENT_TYPE_MOUSE_CLICK_RIGHT)  ret.right_clicked = true;
@@ -2127,6 +2163,8 @@ YO_API void  yo_set_scroll(float offset_x, float offset_y)                      
 YO_API void  yo_set_scroll_a(float offset, yo_axis_t axis)                          { yo_ctx->bound->scroll_offset.v[axis] = offset; }
 YO_API void  yo_set_scroll_x(float offset)                                          { yo_ctx->bound->scroll_offset.x = offset; }
 YO_API void  yo_set_scroll_y(float offset)                                          { yo_ctx->bound->scroll_offset.y = offset; }
+
+YO_API void  yo_set_z(uint32_t z)                                                   { yo_ctx->bound->z = z; }
 
 YO_API yo_text_field_state_t *yo_get_text_field_state(void)                         { return &yo_ctx->bound->text_field_state; }
 

@@ -137,39 +137,14 @@ union yo_rectf
     struct { float left, top, right, bottom; };
 };
 
-static inline bool yo_clips_rect(yo_recti_t rect, yo_v2i_t point)
-{
-    bool ret = ((point.x >= rect.x) &&
-                (point.x < (rect.x + (int32_t)rect.w)) &&
-                (point.y >= rect.y) &&
-                (point.y < (rect.y + (int32_t)rect.h)));
-
-    return ret;
-}
-
-static inline bool yo_clips_rectf2(yo_rectf_t rect, yo_v2f_t point)
+static inline bool yo_clips_rectf(yo_rectf_t rect, yo_v2f_t point)
 {
     bool ret = ((point.x >= rect.x0) &&
-                (point.x <= rect.x1) &&
                 (point.y >= rect.y0) &&
-                (point.y <= rect.y1));
+                (point.x <  rect.x1) &&
+                (point.y <  rect.y1));
 
     return ret;
-}
-
-static inline bool yo_recti_equal(yo_recti_t a, yo_recti_t b)
-{
-    if ((a.x == b.x) &&
-        (a.y == b.y) &&
-        (a.w == b.w) &&
-        (a.h == b.h))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
 }
 
 // TODO(rune): yo_recti_intersection

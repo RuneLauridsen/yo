@@ -187,8 +187,8 @@ static DWORD WINAPI yo_platform_win32_app_thread(LPVOID param)
         //
 
         yo_begin_frame((tick_current - tick_start) / 1000.0f, 0);
-        yo_demo();
-        //build_ui();
+        //yo_demo();
+        build_ui();
         yo_end_frame(&global_platform->render_info);
 
         //
